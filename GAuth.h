@@ -2,6 +2,7 @@
 #define GAUTH_H
 
 #include <QObject>
+#include "GTransport.h"
 
 class GAuth : public QObject
 {
@@ -9,12 +10,19 @@ class GAuth : public QObject
 public:
     explicit GAuth(QObject *parent = 0);
 
-    const QString token();
+    const QByteArray token();
 
 private:
-    void init();
+    bool init();
 
     bool auth();
+
+    const QByteArray deviceCode();
+
+    GTransport	*iTransport;
+    QString	iDeviceCode;
+    QString iUserCode;
+    QString iVerificationURL;
 
 signals:
     
