@@ -13,21 +13,28 @@ class GTransport : public QObject
 {
     Q_OBJECT
 public:
+
+    typedef enum {
+        GET,
+        POST,
+        DELETE,
+        PUT,
+        HEAD
+    } HTTP_REQUEST_TYPE;
+
     explicit GTransport(QObject *parent = 0);
 
-    explicit GTransport(const QString url, QByteArray *data, QList<QPair<QByteArray, QByteArray> > *headers);
+    explicit GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers);
 
     virtual ~GTransport();
 
-    void init();
+    void setHeaders();
 
-    void setHeaders(QList<QPair<QByteArray, QByteArray> > headers);
+    void request(const HTTP_REQUEST_TYPE type);
 
-    const QString POST( );
+    const QNetworkReply* reply() const;
 
-    const QString GET( );
-
-    const QString PUT( );
+    const QString replyBody() const;
 
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
@@ -58,9 +65,17 @@ private:
 
     QIODevice								*iPostData;
 
+    QNetworkReply::NetworkError				iNetworkError;
+
 signals:
-    
-public slots:
+
+    void finishedRequest();
+
+private slots:
+
+    virtual void finishedSlot( QNetworkReply* reply );
+
+    virtual void readyRead();
     
 };
 

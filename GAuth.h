@@ -10,21 +10,34 @@ class GAuth : public QObject
 public:
     explicit GAuth(QObject *parent = 0);
 
+    void authenticate();
+
     const QByteArray token();
 
 private:
-    bool init();
+    void getToken();
 
-    bool auth();
+    void processTokenResponse(const QString tokenJSON);
 
-    const QByteArray deviceCode();
+    void deviceAuth();
 
-    GTransport	*iTransport;
+    void processDeviceCode(const QString deviceCodeJSON);
+
+    GTransport* iTransport;
+
     QString	iDeviceCode;
+
     QString iUserCode;
+
     QString iVerificationURL;
 
-signals:
+    QByteArray iToken;
+
+private slots:
+
+    void deviceCodeResponse();
+
+    void tokenResponse();
     
 public slots:
     

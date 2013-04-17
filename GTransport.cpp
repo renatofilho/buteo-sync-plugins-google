@@ -28,12 +28,17 @@ GTransport::GTransport(QObject *parent) :
 {
 }
 
-GTransport::GTransport(const QString url, QByteArray *data, QList<QPair<QByteArray, QByteArray> > *headers) :
-        iNetworkMgr(this), iNetworkRequest(NULL), iNetworkReply(NULL), iUrl(url), iHeaders(headers)
+GTransport::GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers) :
+        iUrl(url), iHeaders(headers), iNetworkMgr(this), iNetworkRequest(NULL), iNetworkReply(NULL)
 {
     QBuffer *buffer = new QBuffer(this);
-    buffer->setBuffer(data);
+    buffer->setData(data);
     iPostData = buffer;
+
+    if (headers != NULL)
+    {
+        setHeaders();
+    }
 
     QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
                      this, SLOT(finishedSlot(QNetworkReply*)));
@@ -62,11 +67,11 @@ GTransport::~GTransport()
     }
 }
 
-void GTransport::setHeaders(QList<QPair<QByteArray, QByteArray> > headers)
+void GTransport::setHeaders()
 {
-    for (int i=0; i<headers.size(); i++)
+    for (int i=0; i < iHeaders->size(); i++)
     {
-        QPair<QByteArray, QByteArray> headerPair = headers.at(i);
+        QPair<QByteArray, QByteArray> headerPair = iHeaders->at(i);
         iNetworkRequest->setRawHeader(headerPair.first, headerPair.second);
     }
 }
@@ -74,7 +79,7 @@ void GTransport::setHeaders(QList<QPair<QByteArray, QByteArray> > headers)
 void GTransport::encode(QUrl& url)
 {
     QList<QPair<QString, QString> > queryList = url.queryItems();
-    for (int i=0; i<queryList.size(); i++)
+    for (int i=0; i < queryList.size(); i++)
     {
         QPair<QString, QString> pair = queryList.at(i);
         QByteArray leftEncode = QUrl::toPercentEncoding(pair.first);
@@ -82,4 +87,74 @@ void GTransport::encode(QUrl& url)
         url.removeQueryItem(pair.first);
         url.addEncodedQueryItem(leftEncode, rightEncode);
     }
+}
+
+void GTransport::request(const HTTP_REQUEST_TYPE type)
+{
+    iNetworkReplyBody = "";
+    iNetworkRequest = new QNetworkRequest;
+    iNetworkRequest->setUrl(iUrl);
+    setHeaders();
+
+    switch (type)
+    {
+        case GET:
+            iNetworkReply = iNetworkMgr.get(*iNetworkRequest);
+        break;
+        case POST:
+            iNetworkReply = iNetworkMgr.post(*iNetworkRequest, iPostData);
+        break;
+        case PUT:
+            iNetworkReply = iNetworkMgr.put(*iNetworkRequest, iPostData);
+        break;
+        case DELETE:
+            iNetworkReply = iNetworkMgr.deleteResource(*iNetworkRequest);
+        break;
+        case HEAD:
+            // Nothing
+        break;
+        default:
+            // FIXME: Handle the error
+        break;
+    }
+
+    QObject::connect(iNetworkReply, SIGNAL(readyRead()), this,
+                     SLOT(readyRead()));
+
+    iNetworkError = iNetworkReply->error();
+}
+
+const QNetworkReply *GTransport::reply() const
+{
+    return iNetworkReply;
+}
+
+const QString GTransport::replyBody() const
+{
+    return iNetworkReplyBody;
+}
+
+void GTransport::readyRead()
+{
+    QByteArray bytes = iNetworkReply->readAll();
+    iNetworkReplyBody = iNetworkReplyBody + bytes;
+}
+
+void GTransport::finishedSlot(QNetworkReply *reply)
+{
+    QVariant statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
+
+    QVariant redirectionUrl = reply->attribute(QNetworkRequest::RedirectionTargetAttribute);
+
+    iNetworkError = reply->error();
+
+    if (iNetworkError != QNetworkReply::NoError)
+    {
+        // report error
+    }
+
+    emit finishedRequest();
+
+    delete iPostData;
+    iPostData = NULL;
 }
