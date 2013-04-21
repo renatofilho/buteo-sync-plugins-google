@@ -1,3 +1,26 @@
+/*
+ * This file is part of buteo-gcontact-plugin package
+ *
+ * Copyright (C) 2013 Jolla Ltd. and/or its subsidiary(-ies).
+ *
+ * Contributors: Sateesh Kavuri <sateesh.kavuri@gmail.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
 #ifndef GTRANSPORT_H
 #define GTRANSPORT_H
 
@@ -34,7 +57,7 @@ public:
 
     const QNetworkReply* reply() const;
 
-    const QString replyBody() const;
+    const QByteArray replyBody() const;
 
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
@@ -61,7 +84,7 @@ private:
 
     QNetworkReply							*iNetworkReply;
 
-    QString									iNetworkReplyBody;
+    QByteArray								iNetworkReplyBody;
 
     QIODevice								*iPostData;
 

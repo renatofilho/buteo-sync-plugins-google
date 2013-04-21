@@ -1,5 +1,31 @@
+/*
+ * This file is part of buteo-gcontact-plugin package
+ *
+ * Copyright (C) 2013 Jolla Ltd. and/or its subsidiary(-ies).
+ *
+ * Contributors: Sateesh Kavuri <sateesh.kavuri@gmail.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
 #include "GAuth.h"
 #include "GTransport.h"
+#include <qjson/parser.h>
+#include <QVariantMap>
+#include <LogMacros.h>
 
 /* Values obtained after registering with Google */
 const QString CODE_TAG            	("code");
@@ -23,8 +49,9 @@ GAuth::GAuth(QObject *parent) :
 {
 }
 
-const QByteArray GAuth::token()
+const QString GAuth::token()
 {
+    LOG_DEBUG("Token:" << iToken);
     return iToken;
 }
 
@@ -38,7 +65,7 @@ void GAuth::getToken()
 {
     if (iDeviceCode == "")
     {
-        // FIXME: Error condition
+        // FIXME: Error condition, emit an error signal
     }
     const QString data = CLIENT_ID_TAG + EQUALS + CLIENT_ID + AND +
                          CLIENT_SECRET_TAG + EQUALS + CLIENT_SECRET + AND +
@@ -53,7 +80,7 @@ void GAuth::getToken()
     iTransport = new GTransport(TOKEN_URI, data.toAscii(), NULL);
     QObject::connect(iTransport, SIGNAL(finishedRequest()),
                      this, SLOT(tokenResponse()));
-    iTransport->request(GTransport::GET);
+    iTransport->request(GTransport::POST);
 }
 
 void GAuth::tokenResponse()
@@ -63,13 +90,13 @@ void GAuth::tokenResponse()
         const QNetworkReply* reply = iTransport->reply();
         if (reply->error() == QNetworkReply::NoError)
         {
-            QString body = iTransport->replyBody();
+            QByteArray body = iTransport->replyBody();
             processTokenResponse(body);
         }
     }
 }
 
-void GAuth::processTokenResponse(const QString tokenJSON)
+void GAuth::processTokenResponse(const QByteArray tokenJSON)
 {
     /*
     {
@@ -81,8 +108,13 @@ void GAuth::processTokenResponse(const QString tokenJSON)
     }
     */
 
-    // FIXME: Retrieve the proper token
-    iToken = QString("").toAscii();
+    QJson::Parser parser;
+    bool ok;
+    QVariantMap result = parser.parse(tokenJSON, &ok).toMap();
+    if (ok)
+        iToken = result["access_token"].toString();
+    else
+        iToken = QString("");
 }
 
 void GAuth::deviceAuth()
@@ -96,7 +128,7 @@ void GAuth::deviceAuth()
     QObject::connect(iTransport, SIGNAL(finishedRequest()),
                      this, SLOT(deviceCodeResponse()));
 
-    iTransport->request(GTransport::GET);
+    iTransport->request(GTransport::POST);
 }
 
 void GAuth::deviceCodeResponse()
@@ -107,17 +139,17 @@ void GAuth::deviceCodeResponse()
         if (reply->error() == QNetworkReply::NoError)
         {
             QString body = iTransport->replyBody();
-            processDeviceCode(body);
+            processDeviceCode(body.toAscii());
         }
     }
 }
 
-void GAuth::processDeviceCode(const QString deviceCodeJSON)
+void GAuth::processDeviceCode(const QByteArray deviceCodeJSON)
 {
     /*
      Parse the json output and store the values
      {
-       "device_code" : "4/OPkob1JigTUheZ72hm4fEmcHXy3E",
+       "device_code" : "4/OPkob1JigTUheZ72hm4fEmcHXy3E", => this will be used to get the token
        "user_code" : "wkwnjjvj",
        "verification_url" : "http://www.google.com/device",
        "expires_in" : 1800,
@@ -125,6 +157,16 @@ void GAuth::processDeviceCode(const QString deviceCodeJSON)
      }
     */
 
-    // FIXME: Do a raw processing or use some JSON library?
-    iDeviceCode = "";
+    QJson::Parser parser;
+    bool ok;
+
+    QVariantMap result = parser.parse(deviceCodeJSON, &ok).toMap();
+    if (ok)
+        iDeviceCode = result["device_code"].toString();
+    else
+        iDeviceCode = QString("").toAscii();
+
+    LOG_DEBUG("Verification url:" << result["verification_url"].toString() <<
+              ", user_code:" << result["user_code"].toString() <<
+              ",device_code" << result["device_code"].toString());
 }
