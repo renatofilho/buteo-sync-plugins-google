@@ -5,6 +5,5 @@
 #-------------------------------------------------
 
 TEMPLATE = subdirs
-SUBDIRS = src \
-    atom
+SUBDIRS = src
 

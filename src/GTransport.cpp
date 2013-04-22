@@ -160,8 +160,14 @@ const QByteArray GTransport::replyBody() const
 
 void GTransport::readyRead()
 {
-    QByteArray bytes = iNetworkReply->readAll();
-    iNetworkReplyBody = iNetworkReplyBody + bytes;
+    mResponseCode = iNetworkReply->attribute (
+                QNetworkRequest::HttpStatusCodeAttribute).toInt ();
+    if (mResponseCode >= 200 && mResponseCode <= 300)
+    {
+        QByteArray bytes = iNetworkReply->readAll ();
+        iNetworkReplyBody = iNetworkReplyBody + bytes;
+        emit readyToParse();
+    }
 }
 
 void GTransport::finishedSlot(QNetworkReply *reply)

@@ -62,11 +62,12 @@ public:
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
 
-    enum RESPONSE_CODES {
+    typedef enum
+    {
         HTTP_OK = 200,
         HTTP_CONTACT_CREATED = 201,
         HTTP_PRECONDITION_FAILED = 412
-    };
+    } RESPONSE_CODE;
 
 private:
 
@@ -90,16 +91,20 @@ private:
 
     QNetworkReply::NetworkError				iNetworkError;
 
+    int                                     mResponseCode;
+    //RESPONSE_CODE                           mResponseCode;
 signals:
 
     void finishedRequest();
+
+    void readyToParse();
 
 private slots:
 
     virtual void finishedSlot( QNetworkReply* reply );
 
     virtual void readyRead();
-    
+
 };
 
 #endif // GTRANSPORT_H

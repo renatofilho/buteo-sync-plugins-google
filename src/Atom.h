@@ -30,7 +30,8 @@
 #include <QMetaObject>
 #include <QMetaEnum>
 #include <QMap>
-#include "../src/GContactEntry.h"
+
+#include "GContactEntry.h"
 
 class ATOMSHARED_EXPORT Atom : public QObject
 {
@@ -94,7 +95,9 @@ public:
 
     QString getTitle();
 
-    void setGenerator(QString name = "Contacts", QString version = "1.0", QString uri = "http://sailfish.org");
+    void setGenerator(QString name = "Contacts",
+                      QString version = "1.0",
+                      QString uri = "http://sailfish.org");
 
     QString getGeneratorName();
     QString getGeneratorVersion();
@@ -102,21 +105,24 @@ public:
 
     QString getValue(AtomFeed key);
 
+    void setTotalResults(int totalResults);
     int getTotalResults();
 
+    void setStartIndex(int startIndex);
     int getStartIndex();
 
+    void setItemsPerPage(int itemsPerPage);
     int getItemsPerPage();
 
     QString toString();
 
     void addEntry(GContactEntry* entry);
 
-private:
-
     QString enumToString(AtomFeed element);
 
     AtomFeed stringToEnum(QString element);
+
+private:
 
     QMetaEnum mMetaEnum;
 
@@ -150,7 +156,7 @@ private:
 
     int mItemsPerPage;
 
-    QMap<AtomFeed, QString>* mContactEntries;
+    GContactEntry* mContact;
 };
 
 #endif // ATOM_H

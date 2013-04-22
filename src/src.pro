@@ -32,14 +32,18 @@ DEFINES += BUTEOGCONTACTPLUGIN_LIBRARY
 SOURCES += GContactClient.cpp \
     GAuth.cpp \
     GTransport.cpp \
-    GContactEntry.cpp
+    GContactEntry.cpp \
+    Atom.cpp \
+    ParseStream.cpp
 
 HEADERS += GContactClient.h\
         buteo-gcontact-plugin_global.h \
     GAuth.h \
     GTransport.h \
     GContactTags.h \
-    GContactEntry.h
+    GContactEntry.h \
+    Atom.h \
+    ParseStream.h
 
 unix:!symbian {
     maemo5 {
