@@ -30,6 +30,7 @@
 #include <QMetaObject>
 #include <QMetaEnum>
 #include <QMap>
+#include <QList>
 
 #include "GContactEntry.h"
 
@@ -38,7 +39,7 @@ class ATOMSHARED_EXPORT Atom : public QObject
     Q_OBJECT
 
 public:
-    Atom();
+    Atom(bool generateXmlFlag);
 
     typedef enum
     {
@@ -70,35 +71,30 @@ public:
 
     Q_ENUMS (AtomFeed)
 
-    void setAuthor(const QString authorName, const QString authorEmail);
+    void setGenerateXml(bool flag);
 
+    void setAuthorName(QString authorName);
+    void setAuthorEmail(QString authorEmail);
     QString getAuthorName();
     QString getAuthorEmail();
 
-    void setId(const QString id);
-
+    void setId(const QString id, const QString tag="id");
     QString getId();
 
-    void setUpdated(QString updated);
-
+    void setUpdated(QString updated, const QString tag="updated");
     QString getUpdated();
 
-    void setCategory(QString schema = "http://schemas.google.com/g/2005#kind",
-                     QString term = "http://schemas.google.com/contact/2008#contact",
-                     QString label = "");
-
+    void setCategorySchema (QString schema = "http://schemas.google.com/g/2005#kind");
+    void setCategoryTerm (QString term = "http://schemas.google.com/contact/2008#contact");
     QString getCategorySchema();
     QString getCategoryTerm();
-    QString getCategoryLabel();
 
     void setTitle(QString title, TYPE type = text);
-
     QString getTitle();
 
     void setGenerator(QString name = "Contacts",
                       QString version = "1.0",
                       QString uri = "http://sailfish.org");
-
     QString getGeneratorName();
     QString getGeneratorVersion();
     QString getGeneratorUri();
@@ -118,15 +114,11 @@ public:
 
     void addEntry(GContactEntry* entry);
 
-    QString enumToString(AtomFeed element);
-
-    AtomFeed stringToEnum(QString element);
-
 private:
 
-    QMetaEnum mMetaEnum;
+    QString mAuthorEmail;
 
-    QString mAuthor;
+    QString mAuthorName;
 
     QString mCategory;
 
@@ -156,7 +148,9 @@ private:
 
     int mItemsPerPage;
 
-    GContactEntry* mContact;
+    QList<GContactEntry*>* mContactList;
+
+    bool mGenerateXml;
 };
 
 #endif // ATOM_H

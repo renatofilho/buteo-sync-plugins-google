@@ -35,21 +35,75 @@ ParseStream::ParseStream(QObject *parent) :
 ParseStream::ParseStream(QByteArray xmlStream)
 {
     mXml = new QXmlStreamReader (xmlStream);
+    mAtom = new Atom (false);
+
     initFunctionMap ();
-    mAtom = new Atom ();
 }
 
 void
 ParseStream::initFunctionMap ()
 {
     // Initialize the function map
-    mFunctionMap.insert (Atom::updated, &ParseStream::handleAtomUpdated);
-    mFunctionMap.insert (Atom::category, &ParseStream::handleAtomCategory);
-    mFunctionMap.insert (Atom::author, &ParseStream::handleAtomAuthor);
-    mFunctionMap.insert (Atom::totalResults, &ParseStream::handleOpenSearch);
-    mFunctionMap.insert (Atom::startIndex, &ParseStream::handleOpenSearch);
-    mFunctionMap.insert (Atom::itemsPerPage, &ParseStream::handleOpenSearch);
-    mFunctionMap.insert (Atom::entry, &ParseStream::handleEntry);
+    mFunctionMap.insert ("updated", &ParseStream::handleAtomUpdated);
+    mFunctionMap.insert ("category", &ParseStream::handleAtomCategory);
+    mFunctionMap.insert ("author", &ParseStream::handleAtomAuthor);
+    mFunctionMap.insert ("totalResults", &ParseStream::handleOpenSearch);
+    mFunctionMap.insert ("startIndex", &ParseStream::handleOpenSearch);
+    mFunctionMap.insert ("itemsPerPage", &ParseStream::handleOpenSearch);
+    mFunctionMap.insert ("entry", &ParseStream::parseEntry);
+
+    mFunctionMap.insert ("gContact:billingInformation", NULL);
+    mFunctionMap.insert ("gContact:birthday", NULL);
+    mFunctionMap.insert ("gContact:calendarLink", NULL);
+    mFunctionMap.insert ("gContact:directoryServer", NULL);
+    mFunctionMap.insert ("gContact:event", NULL);
+    mFunctionMap.insert ("gContact:externalId", NULL);
+    mFunctionMap.insert ("gContact:gender", NULL);
+    mFunctionMap.insert ("gContact:groupMembershipInfo", NULL);
+    mFunctionMap.insert ("gContact:hobby", NULL);
+    mFunctionMap.insert ("gContact:initials", NULL);
+    mFunctionMap.insert ("gContact:jot", NULL);
+    mFunctionMap.insert ("gContact:language", NULL);
+    mFunctionMap.insert ("gContact:maidenName", NULL);
+    mFunctionMap.insert ("gContact:mileage", NULL);
+    mFunctionMap.insert ("gContact:nickname", NULL);
+    mFunctionMap.insert ("gContact:occupation", NULL);
+    mFunctionMap.insert ("gContact:priority", NULL);
+    mFunctionMap.insert ("gContact:relation", NULL);
+    mFunctionMap.insert ("gContact:sensitivity", NULL);
+    mFunctionMap.insert ("gContact:shortName", NULL);
+    mFunctionMap.insert ("gContact:subject", NULL);
+    mFunctionMap.insert ("gContact:systemGroup", NULL);
+    mFunctionMap.insert ("gContact:userDefinedField", NULL);
+    mFunctionMap.insert ("gContact:website", NULL);
+
+    mFunctionMap.insert ("gd:additionalName", NULL);
+    mFunctionMap.insert ("gd:comments", NULL);
+    mFunctionMap.insert ("gd:country", NULL);
+    mFunctionMap.insert ("gd:deleted", NULL);
+    mFunctionMap.insert ("gd:email", NULL);
+    mFunctionMap.insert ("gd:entryLink", NULL);
+    mFunctionMap.insert ("gd:extendedProperty", NULL);
+    mFunctionMap.insert ("gd:familyName", NULL);
+    mFunctionMap.insert ("gd:feedLink", NULL);
+    mFunctionMap.insert ("gd:geoPt", NULL);
+    mFunctionMap.insert ("gd:givenName", NULL);
+    mFunctionMap.insert ("gd:im", NULL);
+    mFunctionMap.insert ("gd:money", NULL);
+    mFunctionMap.insert ("gd:name", NULL);
+    mFunctionMap.insert ("gd:organization", NULL);
+    mFunctionMap.insert ("gd:orgDepartment", NULL);
+    mFunctionMap.insert ("gd:orgJobDescription", NULL);
+    mFunctionMap.insert ("gd:orgName", NULL);
+    mFunctionMap.insert ("gd:orgSymbol", NULL);
+    mFunctionMap.insert ("gd:orgTitle", NULL);
+    mFunctionMap.insert ("gd:originalEvent", NULL);
+    mFunctionMap.insert ("gd:phoneNumber", NULL);
+    mFunctionMap.insert ("gd:postalAddress", NULL);
+    mFunctionMap.insert ("gd:rating", NULL);
+    mFunctionMap.insert ("gd:resourceId", NULL);
+    mFunctionMap.insert ("gd:structuredPostalAddress", NULL);
+
 }
 
 Atom*
@@ -65,8 +119,7 @@ ParseStream::parse ()
     {
         if (mXml->readNextStartElement ())
         {
-            Handler handler = mFunctionMap.value (
-                    mAtom->stringToEnum ( mXml->name ().toString ()));
+            Handler handler = mFunctionMap.value (mXml->name ().toString ());
             if (handler)
                 (*this.*handler) ();
 
@@ -89,35 +142,31 @@ void
 ParseStream::handleAtomCategory ()
 {
     QXmlStreamAttributes attributes = mXml->attributes ();
-    QString schema, term;
     for (int i=0; i<attributes.size (); i++)
     {
         QXmlStreamAttribute attr = mXml->attributes ().at (i);
         if (attr.name () == "schema")
-           schema = attr.value ().toString ();
+            mAtom->setCategorySchema (attr.value ().toString ());
         else if (attr.name () == "term")
-            term = attr.value ().toString ();
+            mAtom->setCategoryTerm (attr.value ().toString ());
     }
-    mAtom->setCategory (schema, term);
 }
 
 void
 ParseStream::handleAtomAuthor ()
 {
     mXml->readNextStartElement ();
-    QString authorName, authorEmail;
     if (mXml->name () == "name")
     {
-        authorName = mXml->readElementText ();
+        mAtom->setAuthorName (mXml->readElementText ());
     }
     mXml->readNextStartElement ();
     mXml->readNextStartElement ();
     if (mXml->name () == "email")
     {
-        authorEmail = mXml->readElementText ();
+        mAtom->setAuthorEmail (mXml->readElementText ());
     }
 
-    mAtom->setAuthor (authorName, authorEmail);
 }
 
 void
@@ -132,6 +181,9 @@ ParseStream::handleOpenSearch ()
 }
 
 void
-ParseStream::handleEntry ()
+ParseStream::parseEntry ()
 {
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "entry");
+
+    GContactEntry* contact = new GContactEntry(false);
 }

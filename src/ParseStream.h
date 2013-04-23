@@ -59,11 +59,15 @@ private:
 
     void handleOpenSearch();
 
-    void handleEntry();
+    void parseEntry();
 
     void handleEntryId();
 
     void handleEntryName();
+
+    void handleEntryNickName();
+
+    void handleEntryBirthday();
 
     void handleEntryOrganization();
 
@@ -77,11 +81,17 @@ private:
 
     void handleEntryRelation();
 
+    void handleEntryWebsite();
+
+    void handleEntryBillingInformation();
+
+    void handleEntryCalendarLink();
+
     QXmlStreamReader* mXml;
 
     typedef void (ParseStream::*Handler)();
 
-    QMap<Atom::AtomFeed, ParseStream::Handler> mFunctionMap;
+    QMap<QString, ParseStream::Handler> mFunctionMap;
 
     Atom* mAtom;
 };

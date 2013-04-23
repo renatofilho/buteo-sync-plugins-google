@@ -34,52 +34,37 @@ class GContactEntry : public QObject
     Q_OBJECT
 public:
 
-    class Name
+    explicit GContactEntry(bool generateXmlFlag, QObject *parent = 0);
+
+    void setId(QString id);
+
+    typedef enum
     {
-        public:
-            typedef enum
-            {
-                fullName,
-                givenName,
-                additionalName,
-                familyName,
-                namePrefix,
-                nameSuffix
-            } NAME;
+        fullName,
+        givenName,
+        additionalName,
+        familyName,
+        namePrefix,
+        nameSuffix
+    } NAME;
 
-            void setFullName(QString fullName);
-            QString getFullName();
+    void setFullName(QString fullName);
+    QString getFullName();
 
-            void setAdditionalName(QString additionalName);
-            QString getAdditionalName();
+    void setAdditionalName(QString additionalName);
+    QString getAdditionalName();
 
-            void setFamilyName(QString familyName);
-            QString getFamilyName();
+    void setFamilyName(QString familyName);
+    QString getFamilyName();
 
-            void setNamePrefix(QString namePrefix);
-            QString getNamePrefix();
+    void setNamePrefix(QString namePrefix);
+    QString getNamePrefix();
 
-            void setNameSuffix(QString nameSuffix);
-            QString getNameSuffix();
+    void setNameSuffix(QString nameSuffix);
+    QString getNameSuffix();
 
-            void setGivenName(QString fullName);
-            QString getGivenName();
-
-        private:
-            QString mGivenName;
-
-            QString mAdditionalName;
-
-            QString mFamilyName;
-
-            QString mNamePrefix;
-
-            QString mNameSuffix;
-
-            QString mFullName;
-    };
-
-    explicit GContactEntry(QObject *parent = 0);
+    void setGivenName(QString fullName);
+    QString getGivenName();
 
     typedef enum
     {
@@ -87,10 +72,11 @@ public:
         email,
         im,
         phoneNumber,
-        postalAddress,
+        structuredPostalAddress,
         deleted,
-        groupMembershipInfo
-    } GD_CONTACT;
+        groupMembershipInfo,
+        where
+    } CONTACT_NAMESPACE;
 
     typedef enum
     {
@@ -151,7 +137,14 @@ private:
 
     QString mNote;
 
+    QString mGivenName;
+    QString mAdditionalName;
+    QString mFamilyName;
+    QString mNamePrefix;
+    QString mNameSuffix;
+    QString mFullName;
 
+    bool mGenerateXmlFlag;
 
 signals:
 

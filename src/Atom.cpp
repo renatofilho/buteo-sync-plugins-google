@@ -24,22 +24,28 @@
 #include "Atom.h"
 
 
-Atom::Atom()
+Atom::Atom(bool generateXmlFlag) :
+    mGenerateXml(generateXmlFlag)
 {
-    QMetaObject metaObject = Atom::staticMetaObject;
-    int index = metaObject.indexOfEnumerator ("AtomFeed");
-    mMetaEnum = metaObject.enumerator (index);
-
+    mContactList = new QList<GContactEntry*>();
 }
 
-QString Atom::enumToString (AtomFeed element)
+void
+Atom::setGenerateXml (bool flag)
 {
-    Q_ASSERT(mMetaEnum);
-    return mMetaEnum.valueToKey (element);
+    mGenerateXml = flag;
 }
 
-Atom::AtomFeed Atom::stringToEnum (QString element)
+void
+Atom::setAuthorEmail (QString authorEmail)
 {
-    Q_ASSERT(mMetaEnum);
-    return static_cast<AtomFeed> (mMetaEnum.keyToValue (element.toUtf8 ().constData ())) ;
+    mAuthorEmail = authorEmail;
+    if (mGenerateXml) {}
+        // TODO: Write to XML
+}
+
+void
+Atom::addEntry (GContactEntry *entry)
+{
+    mContactList->append (entry);
 }
