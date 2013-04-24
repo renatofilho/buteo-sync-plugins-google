@@ -38,16 +38,6 @@ public:
 
     void setId(QString id);
 
-    typedef enum
-    {
-        fullName,
-        givenName,
-        additionalName,
-        familyName,
-        namePrefix,
-        nameSuffix
-    } NAME;
-
     void setFullName(QString fullName);
     QString getFullName();
 
@@ -66,34 +56,132 @@ public:
     void setGivenName(QString fullName);
     QString getGivenName();
 
-    typedef enum
-    {
-        name,
-        email,
-        im,
-        phoneNumber,
-        structuredPostalAddress,
-        deleted,
-        groupMembershipInfo,
-        where
-    } CONTACT_NAMESPACE;
-
-    typedef enum
-    {
-        address,
-        label,
-        rel,
-        primary,
-        protocol,
-        uri,
-        orgName,
-        orgTitle,
-        orgDepartment,
-        orgSymbol,
-        orgJobDescription
-    } PROPERTIES;
-
     void setEmail(QString address, QString label, QString rel, bool primary);
+    QString email();
+
+    void setBillingInformation(QString billingInfo);
+    QString billingInformation();
+
+    void setBirthday(QString birthday);
+    QString birthday();
+
+    void setCalendarLink(QString href, QString label, QString rel, QString primary);
+    QString calendarLink();
+
+    void setDirectoryServer(QString dirServer);
+    QString directoryServer();
+
+    void setEvent(QString event, QString when);
+    QString event();
+
+    void setExternalId(QString externalId, QString rel, QString label=0);
+    QString externalId();
+
+    void setGender(QString gender);
+    QString gender();
+
+    void setGroupMembershipInfo(QString membershipInfo, QString deleted);
+    QString groupMembershipInfo();
+
+    void setHobby(QString hobby);
+    QString hobby();
+
+    void setInitials(QString initials);
+    QString initials();
+
+    void setJot(QString jot, QString jotType);
+    QString jot();
+
+    void setLanguage(QString language);
+    QString language();
+
+    void setMaidenName(QString maidenName);
+    QString maidenName();
+
+    void setMileage(QString mileage);
+    QString mileage();
+
+    void setNickname(QString nickname);
+    QString nickname();
+
+    void setOccupation(QString occupation);
+    QString occupation();
+
+    void setPriority(QString priority);
+    QString priority();
+
+    void setRelation(QString relativeName, QString relation);
+    QString relation();
+
+    void setSensitivity(QString sensitivity);
+    QString sensitivity();
+
+    void setShortname(QString shortname);
+    QString shortname();
+
+    void setSubject(QString subject);
+    QString subject();
+
+    void setSystemGroup(QString systemGroup);
+    QString systemGroup();
+
+    void setUserDefinedField(QString key, QString value);
+    QString userDefinedField();
+
+    void setWebsite(QString website, QString rel, QString primary="false");
+    QString website();
+
+    // gd:xxx schema handler methods
+    void setComments(QString comments);
+    QString comments();
+
+    void setCountry(QString country);
+    QString country();
+
+    void setDeleted(QString deleted);
+    QString deleted();
+
+    void setEntryLink(QString link);
+    QString entryLink();
+
+    void setExtendedProperty(QString extProperty);
+    QString extendedProperty();
+
+    void setFeedLink(QString feedLink);
+    QString feedLink();
+
+    void setGeoPt(QString geoPt);
+    QString geoPt();
+
+    void setIm(QString im);
+    QString im();
+
+    void setMoney(QString money);
+    QString money();
+
+    void setOrgDepartment(QString orgDept);
+    QString orgDepartment();
+
+    void setOrgJobDescription(QString orgJobDesc);
+    QString orgJobDescription();
+
+    void setOrgName(QString orgName);
+    QString orgName();
+
+    void setOrgSymbol(QString orgSymbol);
+    QString orgSymbol();
+
+    void setOrgTitle(QString orgTitle);
+    QString orgTitle();
+
+    void setOriginalEvent(QString origEvent);
+    QString originalEvent();
+
+    void setRating(QString rating);
+    QString rating();
+
+    void setResourceId(QString resId);
+    QString resourceId();
 
     typedef enum
     {

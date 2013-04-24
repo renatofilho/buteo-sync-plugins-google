@@ -51,49 +51,73 @@ private:
 
     void initFunctionMap();
 
+    // Atom feed elements handler methods
     void handleAtomUpdated();
-
     void handleAtomCategory();
-
     void handleAtomAuthor();
+    void handleAtomOpenSearch();
+    void handleAtomEntry();
 
-    void handleOpenSearch();
-
-    void parseEntry();
-
+    // gContact:xxx schema handler methods
     void handleEntryId();
-
-    void handleEntryName();
-
-    void handleEntryNickName();
-
+    void handleEntryBillingInformation();
     void handleEntryBirthday();
-
-    void handleEntryOrganization();
-
-    void handleEntryEmail();
-
-    void handleEntryIm();
-
-    void handleEntryPhoneNumber();
-
-    void handleEntryPostalAddress();
-
+    void handleEntryCalendarLink();
+    void handleEntryDirectoryServer();
+    void handleEntryEvent();
+    void handleEntryExternalId();
+    void handleEntryGender();
+    void handleEntryGroupMembershipInfo();
+    void handleEntryHobby();
+    void handleEntryInitials();
+    void handleEntryJot();
+    void handleEntryLanguage();
+    void handleEntryMaidenName();
+    void handleEntryMileage();
+    void handleEntryNickname();
+    void handleEntryOccupation();
+    void handleEntryPriority();
     void handleEntryRelation();
-
+    void handleEntrySensitivity();
+    void handleEntryShortname();
+    void handleEntrySubject();
+    void handleEntrySystemGroup();
+    void handleEntryUserDefinedField();
     void handleEntryWebsite();
 
-    void handleEntryBillingInformation();
-
-    void handleEntryCalendarLink();
+    // gd:xxx schema handler methods
+    void handleEntryName();
+    void handleEntryOrganization();
+    void handleEntryPhoneNumber();
+    void handleEntryAdditionalName();
+    void handleEntryComments();
+    void handleEntryCountry();
+    void handleEntryDeleted();
+    void handleEntryEmail();
+    void handleEntryEntryLink();
+    void handleEntryExtendedProperty();
+    void handleEntryFamilyName();
+    void handleEntryFeedLink();
+    void handleEntryGeoPt();
+    void handleEntryGivenName();
+    void handleEntryIm();
+    void handleEntryMoney();
+    void handleEntryOriginalEvent();
+    void handleEntryRating();
+    void handleEntryResourceId();
+    void handleEntryStructuredPostalAddress();
 
     QXmlStreamReader* mXml;
 
     typedef void (ParseStream::*Handler)();
 
-    QMap<QString, ParseStream::Handler> mFunctionMap;
+    QMap<QString, ParseStream::Handler> mAtomFunctionMap;
+
+    QMap<QString, ParseStream::Handler> mContactFunctionMap;
 
     Atom* mAtom;
+
+    GContactEntry* mContactEntry;
 };
 
 #endif // PARSESTREAM_H
