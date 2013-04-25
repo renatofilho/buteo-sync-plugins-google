@@ -34,154 +34,188 @@ class GContactEntry : public QObject
     Q_OBJECT
 public:
 
-    explicit GContactEntry(bool generateXmlFlag, QObject *parent = 0);
+    explicit GContactEntry (bool generateXmlFlag, QObject *parent = 0);
 
-    void setId(QString id);
+    void setId (QString id);
 
-    void setFullName(QString fullName);
-    QString getFullName();
+    void setFullName (QString fullName);
+    QString getFullName ();
 
-    void setAdditionalName(QString additionalName);
-    QString getAdditionalName();
+    void setAdditionalName (QString additionalName);
+    QString getAdditionalName ();
 
-    void setFamilyName(QString familyName);
-    QString getFamilyName();
+    void setFamilyName (QString familyName);
+    QString getFamilyName ();
 
-    void setNamePrefix(QString namePrefix);
-    QString getNamePrefix();
+    void setNamePrefix (QString namePrefix);
+    QString getNamePrefix ();
 
-    void setNameSuffix(QString nameSuffix);
-    QString getNameSuffix();
+    void setNameSuffix (QString nameSuffix);
+    QString getNameSuffix ();
 
-    void setGivenName(QString fullName);
-    QString getGivenName();
+    void setGivenName (QString fullName);
+    QString getGivenName ();
 
-    void setEmail(QString address, QString label, QString rel, bool primary);
-    QString email();
+    void setEmail (QString address, QString label, QString rel, bool primary);
+    QString email ();
 
-    void setBillingInformation(QString billingInfo);
-    QString billingInformation();
+    void setBillingInformation (QString billingInfo);
+    QString billingInformation ();
 
-    void setBirthday(QString birthday);
-    QString birthday();
+    void setBirthday (QString birthday);
+    QString birthday ();
 
-    void setCalendarLink(QString href, QString label, QString rel, QString primary);
-    QString calendarLink();
+    void setCalendarLink (QString href, QString label, QString rel, QString primary);
+    QString calendarLink ();
 
-    void setDirectoryServer(QString dirServer);
-    QString directoryServer();
+    void setDirectoryServer (QString dirServer);
+    QString directoryServer ();
 
-    void setEvent(QString event, QString when);
-    QString event();
+    void setEvent (QString event, QString when);
+    QString event ();
 
-    void setExternalId(QString externalId, QString rel, QString label=0);
-    QString externalId();
+    void setExternalId (QString externalId, QString rel, QString label=0);
+    QString externalId ();
 
-    void setGender(QString gender);
-    QString gender();
+    void setGender (QString gender);
+    QString gender ();
 
-    void setGroupMembershipInfo(QString membershipInfo, QString deleted);
-    QString groupMembershipInfo();
+    void setGroupMembershipInfo (QString membershipInfo, QString deleted);
+    QString groupMembershipInfo ();
 
-    void setHobby(QString hobby);
-    QString hobby();
+    void setHobby (QString hobby);
+    QString hobby ();
 
-    void setInitials(QString initials);
-    QString initials();
+    void setInitials (QString initials);
+    QString initials ();
 
-    void setJot(QString jot, QString jotType);
-    QString jot();
+    void setJot (QString jot, QString jotType);
+    QString jot ();
 
-    void setLanguage(QString language);
-    QString language();
+    void setLanguage (QString language);
+    QString language ();
 
-    void setMaidenName(QString maidenName);
-    QString maidenName();
+    void setMaidenName (QString maidenName);
+    QString maidenName ();
 
-    void setMileage(QString mileage);
-    QString mileage();
+    void setMileage (QString mileage);
+    QString mileage ();
 
-    void setNickname(QString nickname);
-    QString nickname();
+    void setNickname (QString nickname);
+    QString nickname ();
 
-    void setOccupation(QString occupation);
-    QString occupation();
+    void setOccupation (QString occupation);
+    QString occupation ();
 
-    void setPriority(QString priority);
-    QString priority();
+    void setPriority (QString priority);
+    QString priority ();
 
-    void setRelation(QString relativeName, QString relation);
-    QString relation();
+    void setRelation (QString relativeName, QString relation);
+    QString relation ();
 
-    void setSensitivity(QString sensitivity);
-    QString sensitivity();
+    void setSensitivity (QString sensitivity);
+    QString sensitivity ();
 
-    void setShortname(QString shortname);
-    QString shortname();
+    void setShortname (QString shortname);
+    QString shortname ();
 
-    void setSubject(QString subject);
-    QString subject();
+    void setSubject (QString subject);
+    QString subject ();
 
-    void setSystemGroup(QString systemGroup);
-    QString systemGroup();
+    void setSystemGroup (QString systemGroup);
+    QString systemGroup ();
 
-    void setUserDefinedField(QString key, QString value);
-    QString userDefinedField();
+    void setUserDefinedField (QString key, QString value);
+    QString userDefinedField ();
 
-    void setWebsite(QString website, QString rel, QString primary="false");
-    QString website();
+    void setWebsite (QString website, QString rel, QString primary="false");
+    QString website ();
 
     // gd:xxx schema handler methods
-    void setComments(QString comments);
-    QString comments();
+    void setComments (QString comments);
+    QString comments ();
 
-    void setCountry(QString country);
-    QString country();
+    void setCountry (QString country);
+    QString country ();
 
-    void setDeleted(QString deleted);
-    QString deleted();
+    void setDeleted (bool deleted);
+    bool deleted ();
 
-    void setEntryLink(QString link);
-    QString entryLink();
+    void setEntryLink (QString link);
+    QString entryLink ();
 
-    void setExtendedProperty(QString extProperty);
-    QString extendedProperty();
+    void setExtendedProperty (QString name, QString extProperty);
+    QString extendedProperty ();
 
-    void setFeedLink(QString feedLink);
-    QString feedLink();
+    void setFeedLink (QString feedLink);
+    QString feedLink ();
 
-    void setGeoPt(QString geoPt);
-    QString geoPt();
+    void setIm (QString address, QString rel, QString protocol, QString primary);
+    QString im ();
 
-    void setIm(QString im);
-    QString im();
+    void setMoney (QString amount, QString currencyCode);
+    QString money ();
 
-    void setMoney(QString money);
-    QString money();
+    void setOrgDepartment (QString orgDept);
+    QString orgDepartment ();
 
-    void setOrgDepartment(QString orgDept);
-    QString orgDepartment();
+    void setOrgJobDescription (QString orgJobDesc);
+    QString orgJobDescription ();
 
-    void setOrgJobDescription(QString orgJobDesc);
-    QString orgJobDescription();
+    void setOrgName (QString orgName);
+    QString orgName ();
 
-    void setOrgName(QString orgName);
-    QString orgName();
+    void setOrgSymbol (QString orgSymbol);
+    QString orgSymbol ();
 
-    void setOrgSymbol(QString orgSymbol);
-    QString orgSymbol();
+    void setOrgTitle (QString orgTitle);
+    QString orgTitle ();
 
-    void setOrgTitle(QString orgTitle);
-    QString orgTitle();
+    void setOriginalEvent (QString origEvent);
+    QString originalEvent ();
 
-    void setOriginalEvent(QString origEvent);
-    QString originalEvent();
+    void setPhoneNumber (QString phoneNumber, QString rel, QString uri, QString primary=false);
+    QString phoneNumber ();
 
-    void setRating(QString rating);
-    QString rating();
+    void setRating (QString max, QString min, QString average,
+                    QString numRaters, QString rel, QString value);
+    QString rating ();
 
-    void setResourceId(QString resId);
-    QString resourceId();
+
+    void setPostalAddrAgent (QString agent);
+    QString postalAddrAgent ();
+
+    void setPostalAddrHousename (QString housename);
+    QString postalAddrHousename ();
+
+    void setPostalAddrStreet (QString street);
+    QString postalAddrStreet ();
+
+    void setPostalAddrPobox (QString pobox);
+    QString postalAddrPobox ();
+
+    void setPostalAddrNeighborhood (QString neighborhood);
+    QString postalAddrNeighborhood ();
+
+    void setPostalAddrCity (QString city);
+    QString postalAddrCity ();
+
+    void setPostalAddrSubregion (QString subregion);
+    QString postalAddrSubregion ();
+
+    void setPostalAddrRegion (QString region);
+    QString postalAddrRegion ();
+
+    void setPostalAddrPostCode (QString postCode);
+    QString postalAddrPostCode ();
+
+    void setPostalAddrCountry (QString country);
+    QString postalAddrCountry ();
+
+    void setPostalAddrFormatted (QString formattedAddr);
+    QString postalAddrFormatted ();
+
+    void setPostalAddrAttrs(QString rel, QString mailClass, QString usage, QString primary);
 
     typedef enum
     {

@@ -86,25 +86,23 @@ private:
     void handleEntryWebsite();
 
     // gd:xxx schema handler methods
-    void handleEntryName();
-    void handleEntryOrganization();
-    void handleEntryPhoneNumber();
     void handleEntryAdditionalName();
     void handleEntryComments();
-    void handleEntryCountry();
     void handleEntryDeleted();
+    void handleEntryCountry();
     void handleEntryEmail();
     void handleEntryEntryLink();
     void handleEntryExtendedProperty();
     void handleEntryFamilyName();
     void handleEntryFeedLink();
-    void handleEntryGeoPt();
-    void handleEntryGivenName();
     void handleEntryIm();
+    void handleEntryGivenName();
     void handleEntryMoney();
+    void handleEntryName();
+    void handleEntryOrganization();
     void handleEntryOriginalEvent();
+    void handleEntryPhoneNumber();
     void handleEntryRating();
-    void handleEntryResourceId();
     void handleEntryStructuredPostalAddress();
 
     QXmlStreamReader* mXml;

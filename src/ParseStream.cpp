@@ -87,7 +87,6 @@ ParseStream::initFunctionMap ()
     mContactFunctionMap.insert ("gd:extendedProperty", &ParseStream::handleEntryExtendedProperty);
     mContactFunctionMap.insert ("gd:familyName", &ParseStream::handleEntryFamilyName);
     mContactFunctionMap.insert ("gd:feedLink", &ParseStream::handleEntryFeedLink);
-    mContactFunctionMap.insert ("gd:geoPt", &ParseStream::handleEntryGeoPt);
     mContactFunctionMap.insert ("gd:givenName", &ParseStream::handleEntryGivenName);
     mContactFunctionMap.insert ("gd:im", &ParseStream::handleEntryIm);
     mContactFunctionMap.insert ("gd:money", &ParseStream::handleEntryMoney);
@@ -96,7 +95,6 @@ ParseStream::initFunctionMap ()
     mContactFunctionMap.insert ("gd:originalEvent", &ParseStream::handleEntryOriginalEvent);
     mContactFunctionMap.insert ("gd:phoneNumber", &ParseStream::handleEntryPhoneNumber);
     mContactFunctionMap.insert ("gd:rating", &ParseStream::handleEntryRating);
-    mContactFunctionMap.insert ("gd:resourceId", &ParseStream::handleEntryResourceId);
     mContactFunctionMap.insert ("gd:structuredPostalAddress", &ParseStream::handleEntryStructuredPostalAddress);
 
 }
@@ -442,6 +440,113 @@ ParseStream::handleEntryWebsite ()
 }
 
 void
+ParseStream::handleEntryAdditionalName ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:additionalName");
+
+    mContactEntry->setAdditionalName (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryComments ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:comments");
+
+    // Should the comment feed be supported? Think it is not required to
+    // perform additional parsing. Store the complete feed in db. Let the interested
+    // apps handle the making use of the feed part
+    mContactEntry->setComments (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryDeleted ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:deleted");
+
+    mContactEntry->setDeleted (true);
+}
+
+void
+ParseStream::handleEntryCountry ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:country");
+
+    mContactEntry->setCountry (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryEmail ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:entryLink");
+
+    // Store the complete entry link. Apps interested in using this field, will
+    // have to handle the entry link feed content
+    mContactEntry->setEntryLink (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryExtendedProperty ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:extendedProperty");
+
+    mContactEntry->setExtendedProperty (mXml->attributes ().value ("name").toString (),
+                                        mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryFamilyName ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:familyName");
+
+    mContactEntry->setFamilyName (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryFeedLink ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:feedLink");
+
+    // Store the complete feed link. Apps interested in using this field, will
+    // have to handle the entry link feed content
+    mContactEntry->setFeedLink (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryIm ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:im");
+
+    QString rel, protocol, primary;
+    if (mXml->attributes ().hasAttribute ("rel"))
+        rel = mXml->attributes ().value ("rel").toString ();
+    if (mXml->attributes ().hasAttribute ("protocol"))
+        protocol = mXml->attributes ().value ("protocol").toString ();
+    if (mXml->attributes ().hasAttribute ("primary"))
+        primary = mXml->attributes ().value ("primary").toString ();
+    mContactEntry->setIm (mXml->attributes ().value ("address").toString (),
+                          rel,
+                          protocol,
+                          primary);
+}
+
+void
+ParseStream::handleEntryGivenName ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:givenName");
+
+    mContactEntry->setGivenName (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryMoney ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:money");
+
+    mContactEntry->setMoney (mXml->attributes ().value ("amount").toString (),
+                             mXml->attributes ().value ("currencyCode").toString ());
+}
+
+void
 ParseStream::handleEntryName ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
@@ -463,6 +568,128 @@ ParseStream::handleEntryName ()
                 mContactEntry->setNameSuffix (mXml->readElementText ());
             else if (mXml->qualifiedName () == "gd:fullName")
                 mContactEntry->setFullName (mXml->readElementText ());
+        }
+        mXml->readNextStartElement ();
+    }
+}
+
+void
+ParseStream::handleEntryOrganization ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:organization");
+
+    while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
+             mXml->qualifiedName () == "gd:organization"))
+    {
+        if (mXml->tokenType () == QXmlStreamReader::StartElement)
+        {
+            if (mXml->qualifiedName () == "gd:orgDepartment")
+                mContactEntry->setOrgDepartment (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:orgJobDescription")
+                mContactEntry->setOrgJobDescription (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:orgName")
+                mContactEntry->setOrgName (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:orgSymbol")
+                mContactEntry->setOrgSymbol (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:orgTitle")
+                mContactEntry->setOrgTitle (mXml->readElementText ());
+        }
+        mXml->readNextStartElement ();
+    }
+}
+
+void
+ParseStream::handleEntryOriginalEvent ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:originalEvent");
+
+    mContactEntry->setOriginalEvent (mXml->readElementText ());
+}
+
+void
+ParseStream::handleEntryPhoneNumber ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:phoneNumber");
+
+    QString rel, uri, primary;
+    if (mXml->attributes ().hasAttribute ("rel"))
+        rel = mXml->attributes ().value ("rel").toString ();
+    if (mXml->attributes ().hasAttribute ("uri"))
+        uri = mXml->attributes ().value ("uri").toString ();
+    if (mXml->attributes ().hasAttribute ("primary"))
+        primary = mXml->attributes ().value ("primary").toString ();
+
+    mContactEntry->setPhoneNumber (mXml->readElementText (),
+                                   rel, uri, primary);
+}
+
+void
+ParseStream::handleEntryRating ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:rating");
+
+    QString average, numRaters, rel, value;
+    if (mXml->attributes ().hasAttribute ("average"))
+       average = mXml->attributes ().value ("average").toString ();
+    if (mXml->attributes ().hasAttribute ("numRaters"))
+       numRaters = mXml->attributes ().value ("numRaters").toString ();
+    if (mXml->attributes ().hasAttribute ("rel"))
+       rel = mXml->attributes ().value ("rel").toString ();
+    if (mXml->attributes ().hasAttribute ("value"))
+       value = mXml->attributes ().value ("value").toString ();
+
+    mContactEntry->setRating (mXml->attributes ().value ("max").toString (),
+                              mXml->attributes ().value ("min").toString (),
+                              average,
+                              numRaters,
+                              rel,
+                              value);
+}
+
+void
+ParseStream::handleEntryStructuredPostalAddress ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:structuredPostalAddress");
+
+    QString rel, mailClass, usage, primary;
+    if (mXml->attributes ().hasAttribute ("rel"))
+        rel = mXml->attributes ().value ("rel").toString ();
+    if (mXml->attributes ().hasAttribute ("mailClass"))
+        mailClass = mXml->attributes ().value ("mailClass").toString ();
+    if (mXml->attributes ().hasAttribute ("usage"))
+        usage = mXml->attributes ().value ("usage").toString ();
+    if (mXml->attributes ().hasAttribute ("primary"))
+        primary = mXml->attributes ().value ("primary").toString ();
+
+    mContactEntry->setPostalAddrAttrs (rel, mailClass, usage, primary);
+
+    while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
+             mXml->qualifiedName () == "gd:structuredPostalAddress"))
+    {
+        if (mXml->tokenType () == QXmlStreamReader::StartElement)
+        {
+            if (mXml->qualifiedName () == "gd:agent")
+                mContactEntry->setPostalAddrAgent (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:housename")
+                mContactEntry->setPostalAddrHousename (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:street")
+                mContactEntry->setPostalAddrStreet (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:pobox")
+                mContactEntry->setPostalAddrPobox (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:neighborhood")
+                mContactEntry->setPostalAddrNeighborhood (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:city")
+                mContactEntry->setPostalAddrCity (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:subregion")
+                mContactEntry->setPostalAddrSubregion (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:region")
+                mContactEntry->setPostalAddrRegion (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:postcode")
+                mContactEntry->setPostalAddrPostCode (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:country")
+                mContactEntry->setPostalAddrCountry (mXml->readElementText ());
+            else if (mXml->qualifiedName () == "gd:formattedAddress")
+                mContactEntry->setPostalAddrFormatted (mXml->readElementText ());
         }
         mXml->readNextStartElement ();
     }
