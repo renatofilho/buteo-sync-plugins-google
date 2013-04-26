@@ -53,6 +53,7 @@ ParseStream::initFunctionMap ()
     mAtomFunctionMap.insert ("entry", &ParseStream::handleAtomEntry);
 
     mContactFunctionMap.insert ("id", &ParseStream::handleEntryId);
+    mContactFunctionMap.insert ("title", &ParseStream::handleEntryTitle);
     mContactFunctionMap.insert ("gContact:billingInformation", &ParseStream::handleEntryBillingInformation);
     mContactFunctionMap.insert ("gContact:birthday", &ParseStream::handleEntryBirthday);
     mContactFunctionMap.insert ("gContact:calendarLink", &ParseStream::handleEntryCalendarLink);
@@ -181,6 +182,7 @@ ParseStream::handleAtomEntry ()
     while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
              mXml->name () == "entry"))
     {
+        mContactEntry = new GContactEntry (false);
         if (mXml->tokenType () == QXmlStreamReader::StartElement)
         {
             Handler handler = mContactFunctionMap.value (mXml->name ().toString ());
@@ -189,6 +191,7 @@ ParseStream::handleAtomEntry ()
 
             mXml->readNextStartElement ();
         }
+        mAtom->addEntry (mContactEntry);
     }
 }
 
@@ -197,6 +200,14 @@ ParseStream::handleEntryId ()
 {
     QString idUrl = mXml->readElementText ();
     mContactEntry->setId (idUrl.right (idUrl.lastIndexOf ('/')));
+}
+
+void
+ParseStream::handleEntryTitle ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "title");
+
+    mContactEntry->setFullName (mXml->readElementText ());
 }
 
 void
@@ -276,7 +287,7 @@ ParseStream::handleEntryExternalId ()
 
     rel = attrs.value ("rel").toString ();
     value = attrs.value ("value").toString ();
-    mContactEntry->setExternalId (value, rel, label);
+    mContactEntry->setExternalId (value, rel);
 }
 
 void
@@ -520,7 +531,10 @@ ParseStream::handleEntryIm ()
     if (mXml->attributes ().hasAttribute ("rel"))
         rel = mXml->attributes ().value ("rel").toString ();
     if (mXml->attributes ().hasAttribute ("protocol"))
-        protocol = mXml->attributes ().value ("protocol").toString ();
+    {
+        QString protocolUrl = mXml->attributes ().value ("protocol").toString ();
+        protocol = protocolUrl.right (protocolUrl.lastIndexOf ("#"));
+    }
     if (mXml->attributes ().hasAttribute ("primary"))
         primary = mXml->attributes ().value ("primary").toString ();
     mContactEntry->setIm (mXml->attributes ().value ("address").toString (),

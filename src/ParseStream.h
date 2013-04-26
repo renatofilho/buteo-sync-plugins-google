@@ -60,6 +60,7 @@ private:
 
     // gContact:xxx schema handler methods
     void handleEntryId();
+    void handleEntryTitle();
     void handleEntryBillingInformation();
     void handleEntryBirthday();
     void handleEntryCalendarLink();

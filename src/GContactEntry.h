@@ -53,7 +53,7 @@ public:
     void setNameSuffix (QString nameSuffix);
     QString getNameSuffix ();
 
-    void setGivenName (QString fullName);
+    void setGivenName (QString givenName);
     QString getGivenName ();
 
     void setEmail (QString address, QString label, QString rel, bool primary);
@@ -74,7 +74,7 @@ public:
     void setEvent (QString event, QString when);
     QString event ();
 
-    void setExternalId (QString externalId, QString rel, QString label=0);
+    void setExternalId (QString externalId, QString rel);
     QString externalId ();
 
     void setGender (QString gender);
@@ -174,13 +174,12 @@ public:
     void setOriginalEvent (QString origEvent);
     QString originalEvent ();
 
-    void setPhoneNumber (QString phoneNumber, QString rel, QString uri, QString primary=false);
+    void setPhoneNumber (QString phoneNumber, QString rel, QString uri, QString primary);
     QString phoneNumber ();
 
     void setRating (QString max, QString min, QString average,
                     QString numRaters, QString rel, QString value);
     QString rating ();
-
 
     void setPostalAddrAgent (QString agent);
     QString postalAddrAgent ();
@@ -217,56 +216,11 @@ public:
 
     void setPostalAddrAttrs(QString rel, QString mailClass, QString usage, QString primary);
 
-    typedef enum
-    {
-        AIM,
-        MSN,
-        YAHOO,
-        SKYPE,
-        QQ,
-        GOOGLE_TALK,
-        ICQ,
-        JABBER
-    } IM_PROTOCOL;
-
-    typedef enum
-    {
-        assistant,
-        callback,
-        car,
-        company_main,
-        isdn,
-        main,
-        fax,
-        home,
-        home_fax,
-        mobile,
-        other,
-        other_fax,
-        radio,
-        telex,
-        tty_tdd,
-        pager,
-        work,
-        work_fax,
-        work_mobile,
-        work_pager
-    } PHONENUMBER_TYPES;
-
 private:
 
-    QString mId;
-
-    QString mNote;
-
-    QString mGivenName;
-    QString mAdditionalName;
-    QString mFamilyName;
-    QString mNamePrefix;
-    QString mNameSuffix;
-    QString mFullName;
-
     bool mGenerateXmlFlag;
+
+    QContact* mContact;
 
 signals:
 
