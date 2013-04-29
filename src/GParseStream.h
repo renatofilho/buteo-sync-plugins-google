@@ -29,19 +29,17 @@
 #include <QXmlStreamReader>
 #include <QMap>
 
-#include "Atom.h"
+#include "GAtom.h"
 
-class ParseStream : public QObject
+class GParseStream : public QObject
 {
     Q_OBJECT
 public:
-    explicit ParseStream(QObject *parent = 0);
-
-    explicit ParseStream(QByteArray xmlStream);
+    explicit GParseStream(QByteArray xmlStream, QObject *parent = 0);
 
     void parse();
 
-    Atom* atom();
+    GAtom* atom();
 
 signals:
 
@@ -92,7 +90,6 @@ private:
     void handleEntryDeleted();
     void handleEntryCountry();
     void handleEntryEmail();
-    void handleEntryEntryLink();
     void handleEntryExtendedProperty();
     void handleEntryFamilyName();
     void handleEntryFeedLink();
@@ -108,13 +105,13 @@ private:
 
     QXmlStreamReader* mXml;
 
-    typedef void (ParseStream::*Handler)();
+    typedef void (GParseStream::*Handler)();
 
-    QMap<QString, ParseStream::Handler> mAtomFunctionMap;
+    QMap<QString, GParseStream::Handler> mAtomFunctionMap;
 
-    QMap<QString, ParseStream::Handler> mContactFunctionMap;
+    QMap<QString, GParseStream::Handler> mContactFunctionMap;
 
-    Atom* mAtom;
+    GAtom* mAtom;
 
     GContactEntry* mContactEntry;
 };

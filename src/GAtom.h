@@ -34,12 +34,12 @@
 
 #include "GContactEntry.h"
 
-class ATOMSHARED_EXPORT Atom : public QObject
+class ATOMSHARED_EXPORT GAtom : public QObject
 {
     Q_OBJECT
 
 public:
-    Atom(bool generateXmlFlag);
+    GAtom(bool generateXmlFlag);
 
     typedef enum
     {
@@ -60,7 +60,7 @@ public:
         totalResults,
         startIndex,
         itemsPerPage
-    } AtomFeed;
+    } GAtomFeed;
 
     typedef enum
     {
@@ -69,27 +69,29 @@ public:
         xhtml
     } TYPE;
 
-    Q_ENUMS (AtomFeed)
+    Q_ENUMS (GAtomFeed)
 
     void setGenerateXml(bool flag);
 
     void setAuthorName(QString authorName);
-    void setAuthorEmail(QString authorEmail);
     QString getAuthorName();
+
+    void setAuthorEmail(QString authorEmail);
     QString getAuthorEmail();
 
-    void setId(const QString id, const QString tag="id");
+    void setId(const QString id);
     QString getId();
 
-    void setUpdated(QString updated, const QString tag="updated");
+    void setUpdated(QString updated);
     QString getUpdated();
 
     void setCategorySchema (QString schema = "http://schemas.google.com/g/2005#kind");
-    void setCategoryTerm (QString term = "http://schemas.google.com/contact/2008#contact");
     QString getCategorySchema();
+
+    void setCategoryTerm (QString term = "http://schemas.google.com/contact/2008#contact");
     QString getCategoryTerm();
 
-    void setTitle(QString title, TYPE type = text);
+    void setTitle(QString title);
     QString getTitle();
 
     void setGenerator(QString name = "Contacts",
@@ -98,8 +100,6 @@ public:
     QString getGeneratorName();
     QString getGeneratorVersion();
     QString getGeneratorUri();
-
-    QString getValue(AtomFeed key);
 
     void setTotalResults(int totalResults);
     int getTotalResults();
@@ -114,6 +114,8 @@ public:
 
     void addEntry(GContactEntry* entry);
 
+    QList<GContactEntry *> *entries();
+
 private:
 
     QString mAuthorEmail;
@@ -122,9 +124,17 @@ private:
 
     QString mCategory;
 
+    QString mCategoryTerm;
+
+    QString mSchema;
+
     QString mContributor;
 
-    QString mGenerator;
+    QString mGeneratorName;
+
+    QString mGeneratorVersion;
+
+    QString mGeneratorUri;
 
     QString mIcon;
 

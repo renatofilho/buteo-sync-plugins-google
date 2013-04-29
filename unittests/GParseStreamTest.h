@@ -21,7 +21,30 @@
  *
  */
 
-#ifndef GCONTACTTAGS_H
-#define GCONTACTTAGS_H
+#ifndef PARSESTREAMTEST_H
+#define PARSESTREAMTEST_H
 
-#endif // GCONTACTTAGS_H
+#include <QObject>
+#include "GParseStream.h"
+
+class GParseStreamTest : public QObject
+{
+    Q_OBJECT
+public:
+    explicit GParseStreamTest(QObject *parent = 0);
+
+signals:
+
+private slots:
+    void initTestCase();
+
+    void testParse ();
+
+    void testAtom ();
+
+private:
+
+    GParseStream* mPs;
+};
+
+#endif // PARSESTREAMTEST_H

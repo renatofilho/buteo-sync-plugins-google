@@ -21,93 +21,86 @@
  *
  */
 
-#include "ParseStream.h"
+#include "GParseStream.h"
 
-#include "Atom.h"
+#include "GAtom.h"
 #include <LogMacros.h>
 
-ParseStream::ParseStream(QObject *parent) :
+GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
     QObject(parent)
 {
-    initFunctionMap ();
-}
-
-ParseStream::ParseStream(QByteArray xmlStream)
-{
     mXml = new QXmlStreamReader (xmlStream);
-    mAtom = new Atom (false);
+    mAtom = new GAtom (false);
 
     initFunctionMap ();
 }
 
 void
-ParseStream::initFunctionMap ()
+GParseStream::initFunctionMap ()
 {
     // Initialize the function map
-    mAtomFunctionMap.insert ("updated", &ParseStream::handleAtomUpdated);
-    mAtomFunctionMap.insert ("category", &ParseStream::handleAtomCategory);
-    mAtomFunctionMap.insert ("author", &ParseStream::handleAtomAuthor);
-    mAtomFunctionMap.insert ("totalResults", &ParseStream::handleAtomOpenSearch);
-    mAtomFunctionMap.insert ("startIndex", &ParseStream::handleAtomOpenSearch);
-    mAtomFunctionMap.insert ("itemsPerPage", &ParseStream::handleAtomOpenSearch);
-    mAtomFunctionMap.insert ("entry", &ParseStream::handleAtomEntry);
+    mAtomFunctionMap.insert ("updated", &GParseStream::handleAtomUpdated);
+    mAtomFunctionMap.insert ("category", &GParseStream::handleAtomCategory);
+    mAtomFunctionMap.insert ("author", &GParseStream::handleAtomAuthor);
+    mAtomFunctionMap.insert ("totalResults", &GParseStream::handleAtomOpenSearch);
+    mAtomFunctionMap.insert ("startIndex", &GParseStream::handleAtomOpenSearch);
+    mAtomFunctionMap.insert ("itemsPerPage", &GParseStream::handleAtomOpenSearch);
+    mAtomFunctionMap.insert ("entry", &GParseStream::handleAtomEntry);
 
-    mContactFunctionMap.insert ("id", &ParseStream::handleEntryId);
-    mContactFunctionMap.insert ("title", &ParseStream::handleEntryTitle);
-    mContactFunctionMap.insert ("gContact:billingInformation", &ParseStream::handleEntryBillingInformation);
-    mContactFunctionMap.insert ("gContact:birthday", &ParseStream::handleEntryBirthday);
-    mContactFunctionMap.insert ("gContact:calendarLink", &ParseStream::handleEntryCalendarLink);
-    mContactFunctionMap.insert ("gContact:directoryServer", &ParseStream::handleEntryDirectoryServer);
-    mContactFunctionMap.insert ("gContact:event", &ParseStream::handleEntryEvent);
-    mContactFunctionMap.insert ("gContact:externalId", &ParseStream::handleEntryExternalId);
-    mContactFunctionMap.insert ("gcontact::gender", &ParseStream::handleEntryGender);
-    mContactFunctionMap.insert ("gcontact:groupMembershipInfo", &ParseStream::handleEntryGroupMembershipInfo);
-    mContactFunctionMap.insert ("gContact:hobby", &ParseStream::handleEntryHobby);
-    mContactFunctionMap.insert ("gContact:initials", &ParseStream::handleEntryInitials);
-    mContactFunctionMap.insert ("gContact:jot", &ParseStream::handleEntryJot);
-    mContactFunctionMap.insert ("gContact:language", &ParseStream::handleEntryLanguage);
-    mContactFunctionMap.insert ("gContact:maidenName", &ParseStream::handleEntryMaidenName);
-    mContactFunctionMap.insert ("gContact:mileage", &ParseStream::handleEntryMileage);
-    mContactFunctionMap.insert ("gContact:nickname", &ParseStream::handleEntryNickname);
-    mContactFunctionMap.insert ("gContact:occupation", &ParseStream::handleEntryOccupation);
-    mContactFunctionMap.insert ("gContact:priority", &ParseStream::handleEntryPriority);
-    mContactFunctionMap.insert ("gContact:relation", &ParseStream::handleEntryRelation);
-    mContactFunctionMap.insert ("gContact:sensitivity", &ParseStream::handleEntrySensitivity);
-    mContactFunctionMap.insert ("gContact:shortName", &ParseStream::handleEntryShortname);
-    mContactFunctionMap.insert ("gContact:subject", &ParseStream::handleEntrySubject);
-    mContactFunctionMap.insert ("gContact:systemGroup", &ParseStream::handleEntrySystemGroup);
-    mContactFunctionMap.insert ("gContact:userDefinedField", &ParseStream::handleEntryUserDefinedField);
-    mContactFunctionMap.insert ("gContact:website", &ParseStream::handleEntryWebsite);
+    mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
+    mContactFunctionMap.insert ("title", &GParseStream::handleEntryTitle);
+    mContactFunctionMap.insert ("gContact:billingInformation", &GParseStream::handleEntryBillingInformation);
+    mContactFunctionMap.insert ("gContact:birthday", &GParseStream::handleEntryBirthday);
+    mContactFunctionMap.insert ("gContact:calendarLink", &GParseStream::handleEntryCalendarLink);
+    mContactFunctionMap.insert ("gContact:directoryServer", &GParseStream::handleEntryDirectoryServer);
+    mContactFunctionMap.insert ("gContact:event", &GParseStream::handleEntryEvent);
+    mContactFunctionMap.insert ("gContact:externalId", &GParseStream::handleEntryExternalId);
+    mContactFunctionMap.insert ("gcontact::gender", &GParseStream::handleEntryGender);
+    mContactFunctionMap.insert ("gcontact:groupMembershipInfo", &GParseStream::handleEntryGroupMembershipInfo);
+    mContactFunctionMap.insert ("gContact:hobby", &GParseStream::handleEntryHobby);
+    mContactFunctionMap.insert ("gContact:initials", &GParseStream::handleEntryInitials);
+    mContactFunctionMap.insert ("gContact:jot", &GParseStream::handleEntryJot);
+    mContactFunctionMap.insert ("gContact:language", &GParseStream::handleEntryLanguage);
+    mContactFunctionMap.insert ("gContact:maidenName", &GParseStream::handleEntryMaidenName);
+    mContactFunctionMap.insert ("gContact:mileage", &GParseStream::handleEntryMileage);
+    mContactFunctionMap.insert ("gContact:nickname", &GParseStream::handleEntryNickname);
+    mContactFunctionMap.insert ("gContact:occupation", &GParseStream::handleEntryOccupation);
+    mContactFunctionMap.insert ("gContact:priority", &GParseStream::handleEntryPriority);
+    mContactFunctionMap.insert ("gContact:relation", &GParseStream::handleEntryRelation);
+    mContactFunctionMap.insert ("gContact:sensitivity", &GParseStream::handleEntrySensitivity);
+    mContactFunctionMap.insert ("gContact:shortName", &GParseStream::handleEntryShortname);
+    mContactFunctionMap.insert ("gContact:subject", &GParseStream::handleEntrySubject);
+    mContactFunctionMap.insert ("gContact:systemGroup", &GParseStream::handleEntrySystemGroup);
+    mContactFunctionMap.insert ("gContact:userDefinedField", &GParseStream::handleEntryUserDefinedField);
+    mContactFunctionMap.insert ("gContact:website", &GParseStream::handleEntryWebsite);
 
-    mContactFunctionMap.insert ("gd:additionalName", &ParseStream::handleEntryAdditionalName);
-    mContactFunctionMap.insert ("gd:comments", &ParseStream::handleEntryComments);
-    mContactFunctionMap.insert ("gd:country", &ParseStream::handleEntryCountry);
-    mContactFunctionMap.insert ("gd:deleted", &ParseStream::handleEntryDeleted);
-    mContactFunctionMap.insert ("gd:email", &ParseStream::handleEntryEmail);
-    mContactFunctionMap.insert ("gd:entryLink", &ParseStream::handleEntryEntryLink);
-    mContactFunctionMap.insert ("gd:extendedProperty", &ParseStream::handleEntryExtendedProperty);
-    mContactFunctionMap.insert ("gd:familyName", &ParseStream::handleEntryFamilyName);
-    mContactFunctionMap.insert ("gd:feedLink", &ParseStream::handleEntryFeedLink);
-    mContactFunctionMap.insert ("gd:givenName", &ParseStream::handleEntryGivenName);
-    mContactFunctionMap.insert ("gd:im", &ParseStream::handleEntryIm);
-    mContactFunctionMap.insert ("gd:money", &ParseStream::handleEntryMoney);
-    mContactFunctionMap.insert ("gd:name", &ParseStream::handleEntryName);
-    mContactFunctionMap.insert ("gd:organization", &ParseStream::handleEntryOrganization);
-    mContactFunctionMap.insert ("gd:originalEvent", &ParseStream::handleEntryOriginalEvent);
-    mContactFunctionMap.insert ("gd:phoneNumber", &ParseStream::handleEntryPhoneNumber);
-    mContactFunctionMap.insert ("gd:rating", &ParseStream::handleEntryRating);
-    mContactFunctionMap.insert ("gd:structuredPostalAddress", &ParseStream::handleEntryStructuredPostalAddress);
-
+    mContactFunctionMap.insert ("gd:additionalName", &GParseStream::handleEntryAdditionalName);
+    mContactFunctionMap.insert ("gd:comments", &GParseStream::handleEntryComments);
+    mContactFunctionMap.insert ("gd:country", &GParseStream::handleEntryCountry);
+    mContactFunctionMap.insert ("gd:deleted", &GParseStream::handleEntryDeleted);
+    mContactFunctionMap.insert ("gd:email", &GParseStream::handleEntryEmail);
+    mContactFunctionMap.insert ("gd:extendedProperty", &GParseStream::handleEntryExtendedProperty);
+    mContactFunctionMap.insert ("gd:familyName", &GParseStream::handleEntryFamilyName);
+    mContactFunctionMap.insert ("gd:feedLink", &GParseStream::handleEntryFeedLink);
+    mContactFunctionMap.insert ("gd:givenName", &GParseStream::handleEntryGivenName);
+    mContactFunctionMap.insert ("gd:im", &GParseStream::handleEntryIm);
+    mContactFunctionMap.insert ("gd:money", &GParseStream::handleEntryMoney);
+    mContactFunctionMap.insert ("gd:name", &GParseStream::handleEntryName);
+    mContactFunctionMap.insert ("gd:organization", &GParseStream::handleEntryOrganization);
+    mContactFunctionMap.insert ("gd:originalEvent", &GParseStream::handleEntryOriginalEvent);
+    mContactFunctionMap.insert ("gd:phoneNumber", &GParseStream::handleEntryPhoneNumber);
+    mContactFunctionMap.insert ("gd:rating", &GParseStream::handleEntryRating);
+    mContactFunctionMap.insert ("gd:structuredPostalAddress", &GParseStream::handleEntryStructuredPostalAddress);
 }
 
-Atom*
-ParseStream::atom ()
+GAtom*
+GParseStream::atom ()
 {
     return mAtom;
 }
 
 void
-ParseStream::parse ()
+GParseStream::parse ()
 {
     while (!mXml->atEnd () && !mXml->hasError ())
     {
@@ -116,56 +109,54 @@ ParseStream::parse ()
             Handler handler = mAtomFunctionMap.value (mXml->name ().toString ());
             if (handler)
                 (*this.*handler) ();
-
-            if (mXml->isEndElement () && mXml->name () == "feed")
-            {
-                LOG_DEBUG("End of reading feed");
-            }
         }
     }
 }
 
 void
-ParseStream::handleAtomUpdated ()
+GParseStream::handleAtomUpdated ()
 {
-    mXml->readNext ();
-    mAtom->setUpdated (mXml->text ().toString ());
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "updated");
+
+    mAtom->setUpdated (mXml->readElementText ());
 }
 
 void
-ParseStream::handleAtomCategory ()
+GParseStream::handleAtomCategory ()
 {
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "category");
+
     QXmlStreamAttributes attributes = mXml->attributes ();
-    for (int i=0; i<attributes.size (); i++)
+    if (attributes.hasAttribute ("scheme"))
+        mAtom->setCategorySchema (attributes.value ("scheme").toString ());
+    else if (attributes.hasAttribute ("term"))
+        mAtom->setCategoryTerm (attributes.value ("term").toString ());
+}
+
+void
+GParseStream::handleAtomAuthor ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "author");
+
+    while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
+             mXml->qualifiedName () == "author"))
     {
-        QXmlStreamAttribute attr = mXml->attributes ().at (i);
-        if (attr.name () == "schema")
-            mAtom->setCategorySchema (attr.value ().toString ());
-        else if (attr.name () == "term")
-            mAtom->setCategoryTerm (attr.value ().toString ());
+        if (mXml->tokenType () == QXmlStreamReader::StartElement)
+        {
+            if (mXml->name () == "name")
+                mAtom->setAuthorName (mXml->readElementText ());
+            else if (mXml->name () == "email")
+                mAtom->setAuthorEmail (mXml->readElementText ());
+        }
+        mXml->readNextStartElement ();
     }
 }
 
 void
-ParseStream::handleAtomAuthor ()
+GParseStream::handleAtomOpenSearch ()
 {
-    mXml->readNextStartElement ();
-    if (mXml->name () == "name")
-    {
-        mAtom->setAuthorName (mXml->readElementText ());
-    }
-    mXml->readNextStartElement ();
-    mXml->readNextStartElement ();
-    if (mXml->name () == "email")
-    {
-        mAtom->setAuthorEmail (mXml->readElementText ());
-    }
+    Q_ASSERT(mXml->isStartElement () && mXml->prefix () == "openSearch");
 
-}
-
-void
-ParseStream::handleAtomOpenSearch ()
-{
     if (mXml->name() == "totalResults")
         mAtom->setTotalResults (mXml->readElementText ().toInt ());
     else if (mXml->name() == "startIndex")
@@ -175,35 +166,34 @@ ParseStream::handleAtomOpenSearch ()
 }
 
 void
-ParseStream::handleAtomEntry ()
+GParseStream::handleAtomEntry ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->name () == "entry");
 
-    while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
-             mXml->name () == "entry"))
+    mContactEntry = new GContactEntry (false);
+    while (!((mXml->tokenType () == QXmlStreamReader::EndElement) &&
+             (mXml->name () == "entry")))
     {
-        mContactEntry = new GContactEntry (false);
         if (mXml->tokenType () == QXmlStreamReader::StartElement)
         {
-            Handler handler = mContactFunctionMap.value (mXml->name ().toString ());
+            Handler handler = mContactFunctionMap.value (mXml->qualifiedName ().toString ());
             if (handler)
                 (*this.*handler) ();
-
-            mXml->readNextStartElement ();
         }
-        mAtom->addEntry (mContactEntry);
+        mXml->readNextStartElement ();
     }
+    mAtom->addEntry (mContactEntry);
 }
 
 void
-ParseStream::handleEntryId ()
+GParseStream::handleEntryId ()
 {
     QString idUrl = mXml->readElementText ();
     mContactEntry->setId (idUrl.right (idUrl.lastIndexOf ('/')));
 }
 
 void
-ParseStream::handleEntryTitle ()
+GParseStream::handleEntryTitle ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "title");
 
@@ -211,7 +201,7 @@ ParseStream::handleEntryTitle ()
 }
 
 void
-ParseStream::handleEntryBillingInformation ()
+GParseStream::handleEntryBillingInformation ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:billingInformation");
 
@@ -219,7 +209,7 @@ ParseStream::handleEntryBillingInformation ()
 }
 
 void
-ParseStream::handleEntryBirthday ()
+GParseStream::handleEntryBirthday ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:birthday");
 
@@ -227,7 +217,7 @@ ParseStream::handleEntryBirthday ()
 }
 
 void
-ParseStream::handleEntryCalendarLink ()
+GParseStream::handleEntryCalendarLink ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:calendarLink");
     QXmlStreamAttributes attrs = mXml->attributes ();
@@ -251,7 +241,7 @@ ParseStream::handleEntryCalendarLink ()
 }
 
 void
-ParseStream::handleEntryDirectoryServer ()
+GParseStream::handleEntryDirectoryServer ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:directoryServer");
 
@@ -259,7 +249,7 @@ ParseStream::handleEntryDirectoryServer ()
 }
 
 void
-ParseStream::handleEntryEvent ()
+GParseStream::handleEntryEvent ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:event");
 
@@ -276,7 +266,7 @@ ParseStream::handleEntryEvent ()
 }
 
 void
-ParseStream::handleEntryExternalId ()
+GParseStream::handleEntryExternalId ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:externalId");
 
@@ -291,7 +281,7 @@ ParseStream::handleEntryExternalId ()
 }
 
 void
-ParseStream::handleEntryGender ()
+GParseStream::handleEntryGender ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:gender");
 
@@ -299,7 +289,7 @@ ParseStream::handleEntryGender ()
 }
 
 void
-ParseStream::handleEntryGroupMembershipInfo ()
+GParseStream::handleEntryGroupMembershipInfo ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:groupMembershipInfo");
 
@@ -313,7 +303,7 @@ ParseStream::handleEntryGroupMembershipInfo ()
 }
 
 void
-ParseStream::handleEntryHobby ()
+GParseStream::handleEntryHobby ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:hobby");
 
@@ -321,7 +311,7 @@ ParseStream::handleEntryHobby ()
 }
 
 void
-ParseStream::handleEntryInitials ()
+GParseStream::handleEntryInitials ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:initials");
 
@@ -329,7 +319,7 @@ ParseStream::handleEntryInitials ()
 }
 
 void
-ParseStream::handleEntryJot ()
+GParseStream::handleEntryJot ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:jot");
 
@@ -337,7 +327,7 @@ ParseStream::handleEntryJot ()
 }
 
 void
-ParseStream::handleEntryLanguage ()
+GParseStream::handleEntryLanguage ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:language");
 
@@ -349,7 +339,7 @@ ParseStream::handleEntryLanguage ()
 }
 
 void
-ParseStream::handleEntryMaidenName ()
+GParseStream::handleEntryMaidenName ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:maidenName");
 
@@ -357,7 +347,7 @@ ParseStream::handleEntryMaidenName ()
 }
 
 void
-ParseStream::handleEntryMileage ()
+GParseStream::handleEntryMileage ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:mileage");
 
@@ -365,7 +355,7 @@ ParseStream::handleEntryMileage ()
 }
 
 void
-ParseStream::handleEntryNickname ()
+GParseStream::handleEntryNickname ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:nickname");
 
@@ -373,7 +363,7 @@ ParseStream::handleEntryNickname ()
 }
 
 void
-ParseStream::handleEntryOccupation ()
+GParseStream::handleEntryOccupation ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:occupation");
 
@@ -381,7 +371,7 @@ ParseStream::handleEntryOccupation ()
 }
 
 void
-ParseStream::handleEntryPriority ()
+GParseStream::handleEntryPriority ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:priority");
 
@@ -389,7 +379,7 @@ ParseStream::handleEntryPriority ()
 }
 
 void
-ParseStream::handleEntryRelation ()
+GParseStream::handleEntryRelation ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:relation");
 
@@ -401,7 +391,7 @@ ParseStream::handleEntryRelation ()
 }
 
 void
-ParseStream::handleEntrySensitivity ()
+GParseStream::handleEntrySensitivity ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:sensitivity");
 
@@ -409,7 +399,7 @@ ParseStream::handleEntrySensitivity ()
 }
 
 void
-ParseStream::handleEntryShortname ()
+GParseStream::handleEntryShortname ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:shortName");
 
@@ -417,7 +407,7 @@ ParseStream::handleEntryShortname ()
 }
 
 void
-ParseStream::handleEntrySubject ()
+GParseStream::handleEntrySubject ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:subject");
 
@@ -425,7 +415,7 @@ ParseStream::handleEntrySubject ()
 }
 
 void
-ParseStream::handleEntrySystemGroup ()
+GParseStream::handleEntrySystemGroup ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:systemGroup");
 
@@ -433,7 +423,7 @@ ParseStream::handleEntrySystemGroup ()
 }
 
 void
-ParseStream::handleEntryUserDefinedField ()
+GParseStream::handleEntryUserDefinedField ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:userDefinedField");
 
@@ -442,7 +432,7 @@ ParseStream::handleEntryUserDefinedField ()
 }
 
 void
-ParseStream::handleEntryWebsite ()
+GParseStream::handleEntryWebsite ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:website");
 
@@ -451,7 +441,7 @@ ParseStream::handleEntryWebsite ()
 }
 
 void
-ParseStream::handleEntryAdditionalName ()
+GParseStream::handleEntryAdditionalName ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:additionalName");
 
@@ -459,7 +449,7 @@ ParseStream::handleEntryAdditionalName ()
 }
 
 void
-ParseStream::handleEntryComments ()
+GParseStream::handleEntryComments ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:comments");
 
@@ -470,7 +460,7 @@ ParseStream::handleEntryComments ()
 }
 
 void
-ParseStream::handleEntryDeleted ()
+GParseStream::handleEntryDeleted ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:deleted");
 
@@ -478,7 +468,7 @@ ParseStream::handleEntryDeleted ()
 }
 
 void
-ParseStream::handleEntryCountry ()
+GParseStream::handleEntryCountry ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:country");
 
@@ -486,7 +476,7 @@ ParseStream::handleEntryCountry ()
 }
 
 void
-ParseStream::handleEntryEmail ()
+GParseStream::handleEntryEmail ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:entryLink");
 
@@ -496,7 +486,7 @@ ParseStream::handleEntryEmail ()
 }
 
 void
-ParseStream::handleEntryExtendedProperty ()
+GParseStream::handleEntryExtendedProperty ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:extendedProperty");
 
@@ -505,7 +495,7 @@ ParseStream::handleEntryExtendedProperty ()
 }
 
 void
-ParseStream::handleEntryFamilyName ()
+GParseStream::handleEntryFamilyName ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:familyName");
 
@@ -513,7 +503,7 @@ ParseStream::handleEntryFamilyName ()
 }
 
 void
-ParseStream::handleEntryFeedLink ()
+GParseStream::handleEntryFeedLink ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:feedLink");
 
@@ -523,7 +513,7 @@ ParseStream::handleEntryFeedLink ()
 }
 
 void
-ParseStream::handleEntryIm ()
+GParseStream::handleEntryIm ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:im");
 
@@ -544,7 +534,7 @@ ParseStream::handleEntryIm ()
 }
 
 void
-ParseStream::handleEntryGivenName ()
+GParseStream::handleEntryGivenName ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:givenName");
 
@@ -552,7 +542,7 @@ ParseStream::handleEntryGivenName ()
 }
 
 void
-ParseStream::handleEntryMoney ()
+GParseStream::handleEntryMoney ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:money");
 
@@ -561,7 +551,7 @@ ParseStream::handleEntryMoney ()
 }
 
 void
-ParseStream::handleEntryName ()
+GParseStream::handleEntryName ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
 
@@ -588,7 +578,7 @@ ParseStream::handleEntryName ()
 }
 
 void
-ParseStream::handleEntryOrganization ()
+GParseStream::handleEntryOrganization ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:organization");
 
@@ -613,7 +603,7 @@ ParseStream::handleEntryOrganization ()
 }
 
 void
-ParseStream::handleEntryOriginalEvent ()
+GParseStream::handleEntryOriginalEvent ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:originalEvent");
 
@@ -621,7 +611,7 @@ ParseStream::handleEntryOriginalEvent ()
 }
 
 void
-ParseStream::handleEntryPhoneNumber ()
+GParseStream::handleEntryPhoneNumber ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:phoneNumber");
 
@@ -638,7 +628,7 @@ ParseStream::handleEntryPhoneNumber ()
 }
 
 void
-ParseStream::handleEntryRating ()
+GParseStream::handleEntryRating ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:rating");
 
@@ -661,7 +651,7 @@ ParseStream::handleEntryRating ()
 }
 
 void
-ParseStream::handleEntryStructuredPostalAddress ()
+GParseStream::handleEntryStructuredPostalAddress ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:structuredPostalAddress");
 

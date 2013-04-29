@@ -33,17 +33,16 @@ SOURCES += GContactClient.cpp \
     GAuth.cpp \
     GTransport.cpp \
     GContactEntry.cpp \
-    Atom.cpp \
-    ParseStream.cpp
+    GParseStream.cpp \
+    GAtom.cpp
 
 HEADERS += GContactClient.h\
         buteo-gcontact-plugin_global.h \
     GAuth.h \
     GTransport.h \
-    GContactTags.h \
     GContactEntry.h \
-    Atom.h \
-    ParseStream.h
+    GParseStream.h \
+    GAtom.h
 
 unix:!symbian {
     maemo5 {

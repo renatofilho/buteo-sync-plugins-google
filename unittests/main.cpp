@@ -21,31 +21,15 @@
  *
  */
 
-#include "Atom.h"
+#include <QtTest/QtTest>
 
+#include "GAtomTest.h"
+#include "GParseStreamTest.h"
 
-Atom::Atom(bool generateXmlFlag) :
-    mGenerateXml(generateXmlFlag)
+int main(int argc, char** argv)
 {
-    mContactList = new QList<GContactEntry*>();
-}
+    GParseStreamTest parseStreamTest;
+    QTest::qExec (&parseStreamTest, argc, argv);
 
-void
-Atom::setGenerateXml (bool flag)
-{
-    mGenerateXml = flag;
-}
-
-void
-Atom::setAuthorEmail (QString authorEmail)
-{
-    mAuthorEmail = authorEmail;
-    if (mGenerateXml) {}
-        // TODO: Write to XML
-}
-
-void
-Atom::addEntry (GContactEntry *entry)
-{
-    mContactList->append (entry);
+    return 0;
 }

@@ -21,56 +21,15 @@
  *
  */
 
-#include "GContactClient.h"
-#include <buteosyncfw/LogMacros.h>
+#include "GAtomTest.h"
 
-GContactClient::GContactClient(const QString& aPluginName,
-        const Buteo::SyncProfile& aProfile,
-        Buteo::PluginCbInterface *aCbInterface) :
-    ClientPlugin(aPluginName, aProfile, aCbInterface) {
-    FUNCTION_CALL_TRACE;
-}
-
-GContactClient::~GContactClient ()
+GAtomTest::GAtomTest(QObject *parent) :
+    QObject(parent)
 {
-}
-
-bool
-GContactClient::init()
-{
-    return false;
-}
-
-bool
-GContactClient::uninit()
-{
-    return false;
-}
-
-bool
-GContactClient::startSync()
-{
-    return false;
 }
 
 void
-GContactClient::abortSync(Sync::SyncStatus aStatus)
+GAtomTest::testAuthorName ()
 {
-}
-
-Buteo::SyncResults
-GContactClient::getSyncResults() const
-{
-}
-
-bool
-GContactClient::cleanUp()
-{
-    return false;
-}
-
-void
-GContactClient::connectivityStateChanged( Sync::ConnectivityType aType,
-                                           bool aState )
-{
+    QVERIFY (0 == 0);
 }
