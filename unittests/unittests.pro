@@ -1,5 +1,6 @@
 TEMPLATE = app
 
+QT += network
 CONFIG += qtestlib mobility debug
 MOBILITY += contacts
 
@@ -11,11 +12,13 @@ LIBS += -L../src \
 SOURCES +=  \
     main.cpp \
     GAtomTest.cpp \
-    GParseStreamTest.cpp
+    GParseStreamTest.cpp \
+    GTransportTest.cpp
 
 HEADERS += \
     GAtomTest.h \
-    GParseStreamTest.h
+    GParseStreamTest.h \
+    GTransportTest.h
 
 QMAKE_CXXFLAGS = -Wall \
     -Wno-cast-align \

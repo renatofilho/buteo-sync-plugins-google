@@ -52,8 +52,22 @@ GTransport::GTransport(QObject *parent) :
 {
 }
 
+GTransport::GTransport (const QString url, QList<QPair<QByteArray, QByteArray> >* headers) :
+        iUrl(url), iHeaders(headers), iNetworkMgr(this),
+        iNetworkRequest(new QNetworkRequest), iNetworkReply(NULL)
+{
+    if (headers != NULL)
+        setHeaders();
+
+    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
+                     this, SLOT(finishedSlot(QNetworkReply*)));
+    iUrl.setUrl(url, QUrl::StrictMode);
+    encode(iUrl);
+}
+
 GTransport::GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers) :
-        iUrl(url), iHeaders(headers), iNetworkMgr(this), iNetworkRequest(NULL), iNetworkReply(NULL)
+        iUrl(url), iHeaders(headers), iNetworkMgr(this),
+        iNetworkRequest(new QNetworkRequest), iNetworkReply(NULL)
 {
     QBuffer *buffer = new QBuffer(this);
     buffer->setData(data);
@@ -116,9 +130,7 @@ void GTransport::encode(QUrl& url)
 void GTransport::request(const HTTP_REQUEST_TYPE type)
 {
     iNetworkReplyBody = "";
-    iNetworkRequest = new QNetworkRequest;
     iNetworkRequest->setUrl(iUrl);
-    setHeaders();
 
     switch (type)
     {
@@ -166,8 +178,8 @@ void GTransport::readyRead()
     {
         QByteArray bytes = iNetworkReply->readAll ();
         iNetworkReplyBody = iNetworkReplyBody + bytes;
-        emit readyToParse();
     }
+    emit finishedRequest ();
 }
 
 void GTransport::finishedSlot(QNetworkReply *reply)

@@ -21,19 +21,35 @@
  *
  */
 
-#include <QtTest/QtTest>
+#ifndef GTRANSPORTTEST_H
+#define GTRANSPORTTEST_H
 
-#include "GAtomTest.h"
-#include "GParseStreamTest.h"
-#include "GTransportTest.h"
+#include <QObject>
+#include <GTransport.h>
 
-int main(int argc, char** argv)
+class GTransportTest : public QObject
 {
-    QCoreApplication app( argc, argv );
-    GParseStreamTest parseStreamTest;
-    GTransportTest transportTest;
-    QTest::qExec (&transportTest, argc, argv);
+    Q_OBJECT
+public:
+    explicit GTransportTest(QObject *parent = 0);
 
-    app.exec ();
-    return 0;
-}
+   void testGetToken();
+
+signals:
+
+private slots:
+
+   void initTestCase();
+
+   void cleanupTestCase();
+
+   void testGET();
+
+   void processResponse();
+
+private:
+
+   GTransport* mTransport;
+};
+
+#endif // GTRANSPORTTEST_H

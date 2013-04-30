@@ -47,7 +47,9 @@ public:
 
     explicit GTransport(QObject *parent = 0);
 
-    explicit GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers);
+    GTransport(QString url, QList<QPair<QByteArray, QByteArray> > *headers = 0);
+
+    GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers = 0);
 
     virtual ~GTransport();
 
@@ -92,12 +94,9 @@ private:
     QNetworkReply::NetworkError				iNetworkError;
 
     int                                     mResponseCode;
-    //RESPONSE_CODE                           mResponseCode;
 signals:
 
     void finishedRequest();
-
-    void readyToParse();
 
 private slots:
 
