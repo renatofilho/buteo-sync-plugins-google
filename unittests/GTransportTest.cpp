@@ -25,6 +25,8 @@
 
 #include "GTransport.h"
 #include <QDebug>
+#include <QPair>
+#include <QList>
 
 GTransportTest::GTransportTest(QObject *parent) :
     QObject(parent)
@@ -39,7 +41,7 @@ GTransportTest::initTestCase ()
 void
 GTransportTest::testGET()
 {
-    QByteArray data("client_id=340286938476.apps.googleusercontent.com&scope=https://www.google.com/m8/feeds/ https://www.googleapis.com/auth/userinfo.profile");
+    QByteArray data = "client_id=340286938476.apps.googleusercontent.com&scope=https://www.google.com/m8/feeds/ https://www.googleapis.com/auth/userinfo.profile";
     QString url = "https://accounts.google.com/o/oauth2/device/code";
 
     mTransport = new GTransport (url, data, NULL);
@@ -47,15 +49,12 @@ GTransportTest::testGET()
     connect(mTransport, SIGNAL(finishedRequest()),
             this,  SLOT(processResponse()));
     mTransport->request (GTransport::POST);
-
-    delete mTransport;
-    mTransport = NULL;
 }
 
 void
 GTransportTest::testGetToken()
 {
-    QByteArray data = "client_id=340286938476.apps.googleusercontent.com&client_secret=cE6huV6DyPQCKXo5AOg5Balm&grant_type=http://oauth.net/grant_type/device/1.0&code=4/_RCNflE3Z13g3mAH4tlSS0e6w3-q";
+    QByteArray data = "client_id=340286938476.apps.googleusercontent.com&client_secret=cE6huV6DyPQCKXo5AOg5Balm&grant_type=http://oauth.net/grant_type/device/1.0&code=4/uEQy2Ew1ar8x0v3w_EYdMF8_JKlB";
     QString url = "https://accounts.google.com/o/oauth2/token";
 
     mTransport = new GTransport (url, data, NULL);
@@ -63,9 +62,24 @@ GTransportTest::testGetToken()
     connect(mTransport, SIGNAL(finishedRequest()),
             this,  SLOT(processResponse()));
     mTransport->request (GTransport::POST);
+}
 
-    delete mTransport;
-    mTransport = NULL;
+void
+GTransportTest::testGetContacts ()
+{
+    QList<QPair<QByteArray, QByteArray> > headers;
+    QByteArray gdataVersion("GData-Version");
+    QByteArray gdataVersionNo("3.0");
+    headers.append (qMakePair(gdataVersion, gdataVersionNo));
+    QByteArray authFirst("Authorization");
+    QByteArray authSecond("Bearer ya29.AHES6ZQSBqQ4XZmVGbGEn0xVMe4783Sr0WlRDX7ZDrLEL7kRn9UmmA");
+    headers.append (qMakePair(authFirst, authSecond));
+    QString url = "https://www.google.com/m8/feeds/contacts/default/full";
+
+    mTransport = new GTransport (url, &headers);
+    connect(mTransport, SIGNAL(finishedRequest()),
+            this,  SLOT(processResponse()));
+    mTransport->request (GTransport::GET);
 }
 
 void

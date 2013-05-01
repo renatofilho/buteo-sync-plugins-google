@@ -71,6 +71,8 @@ public:
         HTTP_PRECONDITION_FAILED = 412
     } RESPONSE_CODE;
 
+    static const QString GDATA_VERSION_HEADER;
+
 private:
 
     void encode(QUrl& url);

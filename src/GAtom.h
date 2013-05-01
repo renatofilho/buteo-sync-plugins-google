@@ -116,6 +116,12 @@ public:
 
     QList<GContactEntry *> *entries();
 
+    QList<GContactEntry*>* deletedEntries ();
+
+    QList<GContactEntry*>* addedEntries ();
+
+    QList<GContactEntry*>* modifiedEntries ();
+
 private:
 
     QString mAuthorEmail;
@@ -160,6 +166,11 @@ private:
 
     QList<GContactEntry*>* mContactList;
 
+    QList<GContactEntry*>* mDeletedContacts;
+
+    QList<GContactEntry*>* mModifiedContacts;
+
+    QList<GContactEntry*>* mAddedContacts;
     bool mGenerateXml;
 };
 

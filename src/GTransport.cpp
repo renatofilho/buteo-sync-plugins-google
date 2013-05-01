@@ -24,12 +24,13 @@
 #include "GTransport.h"
 
 #include <QBuffer>
+#include <QDebug>
 
 const int MAX_RESULTS = 10;
 const QString SCOPE_URL("https://www.google.com/m8/feeds/");
 const QString GCONTACT_URL(SCOPE_URL + "/contacts/default/");
 
-const QString GDATA_VERSION_HEADER("GData-Version: 3.0");
+const QString GTransport::GDATA_VERSION_HEADER = QString("GData-Version: 3.0");
 const QString DELETE_OVERRIDE_HEADER("X-HTTP-Method-Override: DELETE");
 const QString ETAG_HEADER("If-Match: ");
 
@@ -53,7 +54,7 @@ GTransport::GTransport(QObject *parent) :
 }
 
 GTransport::GTransport (const QString url, QList<QPair<QByteArray, QByteArray> >* headers) :
-        iUrl(url), iHeaders(headers), iNetworkMgr(this),
+        iUrl(url), iHeaders(headers), iNetworkMgr(this), iPostData(NULL),
         iNetworkRequest(new QNetworkRequest), iNetworkReply(NULL)
 {
     if (headers != NULL)
@@ -63,6 +64,7 @@ GTransport::GTransport (const QString url, QList<QPair<QByteArray, QByteArray> >
                      this, SLOT(finishedSlot(QNetworkReply*)));
     iUrl.setUrl(url, QUrl::StrictMode);
     encode(iUrl);
+    iNetworkRequest->setUrl (iUrl);
 }
 
 GTransport::GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers) :
@@ -74,14 +76,14 @@ GTransport::GTransport(const QString url, QByteArray data, QList<QPair<QByteArra
     iPostData = buffer;
 
     if (headers != NULL)
-    {
         setHeaders();
-    }
 
     QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
                      this, SLOT(finishedSlot(QNetworkReply*)));
+
     iUrl.setUrl(url, QUrl::StrictMode);
     encode(iUrl);
+    iNetworkRequest->setUrl (iUrl);
 }
 
 GTransport::~GTransport()
@@ -130,7 +132,6 @@ void GTransport::encode(QUrl& url)
 void GTransport::request(const HTTP_REQUEST_TYPE type)
 {
     iNetworkReplyBody = "";
-    iNetworkRequest->setUrl(iUrl);
 
     switch (type)
     {
@@ -197,6 +198,9 @@ void GTransport::finishedSlot(QNetworkReply *reply)
 
     emit finishedRequest();
 
-    delete iPostData;
-    iPostData = NULL;
+    if (iPostData != NULL)
+    {
+        delete iPostData;
+        iPostData = NULL;
+    }
 }

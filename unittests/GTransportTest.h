@@ -33,6 +33,8 @@ class GTransportTest : public QObject
 public:
     explicit GTransportTest(QObject *parent = 0);
 
+   void testGET();
+
    void testGetToken();
 
 signals:
@@ -43,9 +45,9 @@ private slots:
 
    void cleanupTestCase();
 
-   void testGET();
-
    void processResponse();
+
+   void testGetContacts();
 
 private:
 

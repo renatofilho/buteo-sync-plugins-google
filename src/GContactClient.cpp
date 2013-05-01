@@ -38,6 +38,7 @@ GContactClient::~GContactClient ()
 bool
 GContactClient::init()
 {
+    // TODO: Perform some initialization tasks
     return false;
 }
 
@@ -50,6 +51,19 @@ GContactClient::uninit()
 bool
 GContactClient::startSync()
 {
+    /**
+     1. If no previous sync, go for slow-sync. Fetch all contacts
+        from server
+     2. Check if previous sync happened (from SyncLog). If yes,
+        fetch the time of last sync
+     3. Using the last sync time, retrieve all contacts from server
+        that were added/modified/deleted
+     4. Fetch all added/modified/deleted items from device
+     5. Check for conflicts. Take the default policy as "server-wins"
+     6. Save the list from the server to device
+     7. Push "client changes" - "conflicting items" to the server
+     8. Save the sync log
+     */
     return false;
 }
 

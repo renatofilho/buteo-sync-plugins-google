@@ -202,3 +202,21 @@ GAtom::entries()
 {
     return mContactList;
 }
+
+QList<GContactEntry *>*
+GAtom::deletedEntries ()
+{
+    return mDeletedContacts;
+}
+
+QList<GContactEntry *>*
+GAtom::addedEntries ()
+{
+    return mAddedContacts;
+}
+
+QList<GContactEntry *>*
+GAtom::modifiedEntries ()
+{
+    return mModifiedContacts;
+}
