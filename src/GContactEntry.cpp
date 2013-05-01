@@ -54,6 +54,17 @@ GContactEntry::setId (QString id)
 }
 
 void
+GContactEntry::setEtag (QString etag)
+{
+    // TODO: Custom detail
+}
+
+QString
+GContactEntry::etag ()
+{
+}
+
+void
 GContactEntry::setFullName (QString fullName)
 {
    // TODO: Custom tag

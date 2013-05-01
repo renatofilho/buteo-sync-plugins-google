@@ -171,6 +171,9 @@ GParseStream::handleAtomEntry ()
     Q_ASSERT(mXml->isStartElement () && mXml->name () == "entry");
 
     mContactEntry = new GContactEntry (false);
+    // Store the etag value of the entry
+    mContactEntry->setEtag (mXml->attributes ().value ("gd:etag").toString ());
+
     while (!((mXml->tokenType () == QXmlStreamReader::EndElement) &&
              (mXml->name () == "entry")))
     {

@@ -38,6 +38,9 @@ public:
 
     void setId (QString id);
 
+    void setEtag (QString etag);
+    QString etag ();
+
     void setFullName (QString fullName);
     QString getFullName ();
 
