@@ -127,6 +127,12 @@ private:
 
     void generateResults( bool aSuccessful );
 
+    /**
+     * \brief Method to determine when this session should
+     *        be slow-sync or fast-sync
+     */
+    QDateTime lastSyncTime ();
+
     Buteo::SyncProfile::SyncDirection mSyncDirection;
 
     Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;

@@ -31,6 +31,7 @@
 #include <buteosyncfw/PluginCbInterface.h>
 #include <buteosyncfw/LogMacros.h>
 #include <buteosyncfw/ProfileEngineDefs.h>
+#include <buteosyncfw/ProfileManager.h>
 
 extern "C" GContactClient* createPlugin(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
@@ -58,6 +59,8 @@ bool
 GContactClient::init() {
     FUNCTION_CALL_TRACE;
 
+    //TODO: Initialize mParser
+
     if (initTransport()) {
         return true;
     } else {
@@ -66,7 +69,6 @@ GContactClient::init() {
 
         return false;
     }
-
 }
 
 bool
@@ -422,7 +424,6 @@ GContactClient::initHttpTransport() {
 
             mTransport->setProxy (proxyHost, proxyPort);
 
-            LOG_DEBUG("Using proxy");
             LOG_DEBUG("Proxy host:" << proxyHost);
             LOG_DEBUG("Proxy port:" << proxyPort);
         } else {
@@ -495,4 +496,12 @@ void GContactClient::generateResults( bool aSuccessful )
                       "RM:" << targetResults.remoteItems().modified);
         }
     }
+}
+
+QDateTime
+GContactClient::lastSyncTime ()
+{
+    Buteo::ProfileManager pm;
+    Buteo::SyncProfile* sp = pm.syncProfile (iProfile.name ());
+    return sp->lastSyncTime ();
 }

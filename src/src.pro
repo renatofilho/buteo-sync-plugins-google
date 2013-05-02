@@ -34,7 +34,8 @@ SOURCES += GContactClient.cpp \
     GTransport.cpp \
     GContactEntry.cpp \
     GParseStream.cpp \
-    GAtom.cpp
+    GAtom.cpp \
+    GContactsBackend.cpp
 
 HEADERS += GContactClient.h\
         buteo-gcontact-plugin_global.h \
@@ -42,7 +43,8 @@ HEADERS += GContactClient.h\
     GTransport.h \
     GContactEntry.h \
     GParseStream.h \
-    GAtom.h
+    GAtom.h \
+    GContactsBackend.h
 
 unix:!symbian {
     maemo5 {

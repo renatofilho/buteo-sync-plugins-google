@@ -99,13 +99,13 @@ private:
 
     QNetworkAccessManager					iNetworkMgr;
 
+    QIODevice								*iPostData;
+
     QNetworkRequest							*iNetworkRequest;
 
     QNetworkReply							*iNetworkReply;
 
     QByteArray								iNetworkReplyBody;
-
-    QIODevice								*iPostData;
 
     QNetworkReply::NetworkError				iNetworkError;
 

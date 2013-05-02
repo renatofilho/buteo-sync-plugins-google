@@ -40,9 +40,8 @@
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
 GContactEntry::GContactEntry(bool generateXmlFlag, QObject *parent) :
-    mGenerateXmlFlag(generateXmlFlag), QObject(parent)
+    QObject (parent), mGenerateXmlFlag(generateXmlFlag), mContact (new QContact ())
 {
-    mContact = new QContact ();
 }
 
 void
