@@ -47,13 +47,27 @@ public:
 
     explicit GTransport(QObject *parent = 0);
 
+    /*! \brief Constructor to be used along with setUrl()
+      Same object can be used any number of time for
+      network request
+     */
+    GTransport(QList<QPair<QByteArray, QByteArray> > *headers);
+
     GTransport(QString url, QList<QPair<QByteArray, QByteArray> > *headers = 0);
 
     GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers = 0);
 
     virtual ~GTransport();
 
-    void setHeaders();
+    void setUrl (QString url);
+
+    void setData (QByteArray data);
+
+    void setHeaders ();
+
+    void setAuthToken (QString token);
+
+    void setProxy (QString proxyHost, QString proxyPort);
 
     void request(const HTTP_REQUEST_TYPE type);
 
@@ -96,6 +110,9 @@ private:
     QNetworkReply::NetworkError				iNetworkError;
 
     int                                     mResponseCode;
+
+    QString                                 mAuthToken;
+
 signals:
 
     void finishedRequest();

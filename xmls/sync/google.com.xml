@@ -2,28 +2,24 @@
 
 <profile name="google.com" type="sync" >
 
-    <key name="Remote database" value="https://m.google.com/syncml" />
+    <key name="Remote database" value="https://www.google.com/m8/feeds/contacts/default/full"/>
     <key name="Username" value="enter username" />
     <key name="Password" value="enter passwd" />
-
     <key name="destinationtype" value="online"/>
+    <key value="true" name="enabled"/>
+    <key value="true" name="hidden"/>
+    <key value="false" name="use_accounts"/>
 
-    <profile name="gdata" type="client" >
-    </profile>
-    <profile name="hcontacts" type="storage" >
-    	<key name="Local URI" value="./contacts" />
-		<key name="Target URI" value="contacts" />
-    </profile>
+  <profile type="client" name="gdata">
+    <key value="two-way" name="Sync Direction"/>
+    <key value="gdata" name="Sync Protocol"/>
+    <key value="HTTP" name="Sync Transport"/>
+    <key value="prefer remote" name="conflictpolicy" />
+  </profile>
 
-    <key name="enabled" value="true" />
-    <key name="displayname" value="Google" />
-    <key name="hidden" value="true" />
+  <profile name="hcontacts" type="storage" >
+    <key name="Local URI" value="./contacts" />
+    <key name="Target URI" value="contacts" />
+  </profile>    
 
-    <profile type="service" name="google.com" >
-    </profile>
-
-    <profile name="hcontacts" type="storage" >
-	<key name="enabled" value="true" />
-    </profile>
-    
 </profile>

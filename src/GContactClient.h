@@ -27,6 +27,9 @@
 #include "buteo-gcontact-plugin_global.h"
 #include <ClientPlugin.h>
 #include "GTransport.h"
+#include "GParseStream.h"
+
+#include <buteosyncfw/SyncResults.h>
 
 class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : Buteo::ClientPlugin
 {
@@ -74,22 +77,47 @@ public slots:
     virtual void connectivityStateChanged( Sync::ConnectivityType aType,
                                            bool aState );
 
+signals:
+    void stateChanged (Sync::SyncProgressDetail progress);
+
+    void itemProcessed (Sync::TransferType type,
+                        Sync::TransferDatabase db,
+                        int committedItems);
+
+    void syncFinished (Sync::SyncStatus);
+
 protected slots:
 
+    void receiveStateChanged (Sync::SyncProgressDetail);
+
+    void receiveItemProcessed (Sync::TransferType,
+                               Sync::TransferDatabase transferDb,
+                               QString database,
+                               int committedItems);
+
+    void receiveSyncFinished (Sync::SyncStatus);
 
 private:
 
-    bool initAgent();
+    bool initConfig ();
 
-    void closeAgent();
+    void closeConfig ();
 
     bool initTransport();
 
     void closeTransport();
 
-    bool initConfig();
+    bool start ();
 
-    void closeConfig();
+    bool abort (Sync::SyncStatus status);
+
+    Buteo::SyncProfile::SyncDirection syncDirection();
+
+    Buteo::SyncProfile::ConflictResolutionPolicy conflictResolutionPolicy();
+
+    void addProcessedItem (Sync::TransferType modificationType,
+                           Sync::TransferDatabase database,
+                           QString modifiedDatabase);
 
     /**
      * \brief Subroutine for http transport initiation
@@ -99,17 +127,19 @@ private:
 
     void generateResults( bool aSuccessful );
 
-#ifndef QT_NO_DEBUG
-    // helper function for debugging
-    // does nothing in release mode
-    QString toText( const DataSync::SyncState& aState );
-#endif //#ifndef QT_NO_DEBUG
+    Buteo::SyncProfile::SyncDirection mSyncDirection;
 
-    GTransport*                 iTransport;
+    Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;
 
-    Buteo::SyncResults          iResults;
+    GParseStream*               mParser;
 
-    quint32                     iCommittedItems;
+    GTransport*                 mTransport;
+
+    Buteo::SyncResults          mResults;
+
+    quint32                     mCommittedItems;
+
+    QMap<QString, Buteo::DatabaseResults> mItemResults;
 
 };
 
@@ -129,6 +159,5 @@ extern "C" GContactClient* createPlugin( const QString& aPluginName,
  * @param aServer SyncML client plugin instance to destroy
  */
 extern "C" void destroyPlugin( GContactClient *aClient );
-
 
 #endif // GCONTACTCLIENT_H

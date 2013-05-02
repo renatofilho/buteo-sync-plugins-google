@@ -25,6 +25,7 @@
 
 #include <QBuffer>
 #include <QDebug>
+#include <QNetworkProxy>
 
 const int MAX_RESULTS = 10;
 const QString SCOPE_URL("https://www.google.com/m8/feeds/");
@@ -51,6 +52,19 @@ const QString BATCH_TAG("batch");
 GTransport::GTransport(QObject *parent) :
     QObject(parent)
 {
+}
+
+GTransport::GTransport (QList<QPair<QByteArray, QByteArray> >* headers) :
+        iHeaders(headers), iNetworkMgr(this), iPostData(NULL),
+        iNetworkRequest(new QNetworkRequest), iNetworkReply(NULL)
+{
+    if (headers != NULL)
+        setHeaders();
+
+    iNetworkMgr.setProxy (QNetworkProxy (QNetworkProxy::NoProxy));
+
+    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
+                     this, SLOT(finishedSlot(QNetworkReply*)));
 }
 
 GTransport::GTransport (const QString url, QList<QPair<QByteArray, QByteArray> >* headers) :
@@ -107,6 +121,23 @@ GTransport::~GTransport()
     }
 }
 
+void
+GTransport::setUrl (QString url)
+{
+    iUrl.setUrl(url, QUrl::StrictMode);
+    encode(iUrl);
+    if (iNetworkRequest)
+        iNetworkRequest->setUrl (iUrl);
+}
+
+void
+GTransport::setData (QByteArray data)
+{
+    QBuffer *buffer = new QBuffer (this);
+    buffer->setData (data);
+    iPostData = buffer;
+}
+
 void GTransport::setHeaders()
 {
     for (int i=0; i < iHeaders->size(); i++)
@@ -114,6 +145,23 @@ void GTransport::setHeaders()
         QPair<QByteArray, QByteArray> headerPair = iHeaders->at(i);
         iNetworkRequest->setRawHeader(headerPair.first, headerPair.second);
     }
+}
+
+void
+GTransport::setAuthToken (QString token)
+{
+    mAuthToken = token;
+}
+
+void
+GTransport::setProxy (QString proxyHost, QString proxyPort)
+{
+    QNetworkProxy proxy = iNetworkMgr.proxy ();
+    proxy.setType (QNetworkProxy::HttpProxy);
+    proxy.setHostName (proxyHost);
+    proxy.setPort (proxyPort.toInt ());
+
+    iNetworkMgr.setProxy (proxy);
 }
 
 void GTransport::encode(QUrl& url)
