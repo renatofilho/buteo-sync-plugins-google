@@ -44,7 +44,8 @@ HEADERS += GContactClient.h\
     GContactEntry.h \
     GParseStream.h \
     GAtom.h \
-    GContactsBackend.h
+    GContactsBackend.h \
+    GContactDetail.h
 
 unix:!symbian {
     maemo5 {

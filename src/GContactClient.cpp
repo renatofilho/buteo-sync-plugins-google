@@ -26,6 +26,7 @@
 
 #include <QLibrary>
 #include <QtNetwork>
+#include <QDateTime>
 
 #include <buteosyncfw/SyncCommonDefs.h>
 #include <buteosyncfw/PluginCbInterface.h>
@@ -104,6 +105,13 @@ GContactClient::startSync()
     {
         return false;
     }
+
+    // Transport request finished signal
+    connect (mTransport, SIGNAL (finishedRequest()),
+             this, SLOT (processNetworkResponse ()));
+
+    connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
+             this, SLOT (networkError (QNetworkReply::NetworkError)));
 
     // syncStateChanged to signal changes from CONNECTING, RECEIVING
     // SENDING, DISCONNECTING, CLOSED
@@ -339,9 +347,37 @@ GContactClient::initTransport()
 {
     FUNCTION_CALL_TRACE;
 
-    LOG_DEBUG("Initiating transport...");
+    LOG_DEBUG("Creating HTTP transport");
 
-    return initHttpTransport ();
+    QString remoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
+    bool success = false;
+
+    if (!remoteURI.isEmpty()) {
+
+        mTransport = new GTransport ();
+
+        LOG_DEBUG("Setting remote URI to" << remoteURI);
+        mTransport->setUrl (remoteURI);
+
+        QString proxyHost = iProfile.key(Buteo::KEY_HTTP_PROXY_HOST);
+        if (!proxyHost.isEmpty()) {
+
+            QString proxyPort = iProfile.key(Buteo::KEY_HTTP_PROXY_PORT);
+
+            mTransport->setProxy (proxyHost, proxyPort);
+
+            LOG_DEBUG("Proxy host:" << proxyHost);
+            LOG_DEBUG("Proxy port:" << proxyPort);
+        } else {
+            LOG_DEBUG("Not using proxy");
+        }
+
+        success = true;
+    } else {
+        LOG_DEBUG("Could not find 'Remote database' property");
+    }
+
+    return success;
 }
 
 void GContactClient::closeTransport() {
@@ -393,7 +429,8 @@ Buteo::SyncResults GContactClient::getSyncResults() const {
     return mResults;
 }
 
-void GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
+void
+GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
         bool aState) {
     FUNCTION_CALL_TRACE;
 
@@ -401,41 +438,22 @@ void GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
             << aState);
 }
 
-bool
-GContactClient::initHttpTransport() {
-    FUNCTION_CALL_TRACE;
-
-    LOG_DEBUG("Creating HTTP transport");
-
-    QString remoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
-    bool success = false;
-
-    if (!remoteURI.isEmpty()) {
-
-        mTransport = new GTransport ();
-
-        LOG_DEBUG("Setting remote URI to" << remoteURI);
-        mTransport->setUrl (remoteURI);
-
-        QString proxyHost = iProfile.key(Buteo::KEY_HTTP_PROXY_HOST);
-        if (!proxyHost.isEmpty()) {
-
-            QString proxyPort = iProfile.key(Buteo::KEY_HTTP_PROXY_PORT);
-
-            mTransport->setProxy (proxyHost, proxyPort);
-
-            LOG_DEBUG("Proxy host:" << proxyHost);
-            LOG_DEBUG("Proxy port:" << proxyPort);
-        } else {
-            LOG_DEBUG("Not using proxy");
+void
+GContactClient::processNetworkResponse ()
+{
+    const QNetworkReply* reply = mTransport->reply ();
+    if (reply)
+    {
+        int responseCode = reply->attribute (QNetworkRequest::HttpStatusCodeAttribute).toInt ();
+        if (responseCode >= 200 && responseCode <= 300)
+        {
+            mParser->setParseData (mTransport->replyBody ());
+            mParser->parse ();
+        } else
+        {
+            // TODO: Set the error code in the SyncResults and stop sync
         }
-
-        success = true;
-    } else {
-        LOG_DEBUG("Could not find 'Remote database' property");
     }
-
-    return success;
 }
 
 Buteo::SyncProfile::SyncDirection
@@ -498,10 +516,86 @@ void GContactClient::generateResults( bool aSuccessful )
     }
 }
 
+void
+GContactClient::remoteContacts (QList<QContact> &remoteContacts)
+{
+    /**
+     o Get last sync time
+     o Get etag value from local file system (this is a soft etag)
+     o Connect finishedRequest to parseResults & network error slots
+     o Use mTransport to perform network fetch
+    */
+    QDateTime syncTime = lastSyncTime ();
+    if (!syncTime.isNull ())
+        mTransport->setUpdatedMin (syncTime);
+
+    // FIXME: Fetching contacts using etag value as described in Google
+    // data API does not seem to work
+    // https://developers.google.com/gdata/docs/2.0/reference
+    // The etag value has to be handled later
+
+    QString token = authToken ();
+    mTransport->setAuthToken (token);
+
+    connect (mTransport, SIGNAL (finishedRequest ()),
+             this, SLOT (networkRequestFinished ()));
+
+    connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
+             this, SLOT (networkError (QNetworkReply::NetworkError)));
+
+    mTransport->request (GTransport::GET);
+}
+
+void
+GContactClient::localContacts (QList<QContact>& localContacts)
+{
+    /**
+     o Get last sync time
+     o Fetch added/modified/deleted contact ids
+     */
+
+    QDateTime syncTime = lastSyncTime ();
+    mLocalAddedContacts =
+            mContactBackend->getAllNewContactIds (syncTime);
+
+    mLocalModifiedContacts =
+            mContactBackend->getAllModifiedContactIds (syncTime);
+
+    mLocalDeletedContacts =
+            mContactBackend->getAllDeletedContactIds (syncTime);
+}
+
+const QString
+GContactClient::authToken ()
+{
+    // TODO: Fetch the auth token from Accounts & SSO
+    return "";
+}
+
 QDateTime
 GContactClient::lastSyncTime ()
 {
+    Q_ASSERT (iProfile);
+
     Buteo::ProfileManager pm;
     Buteo::SyncProfile* sp = pm.syncProfile (iProfile.name ());
     return sp->lastSyncTime ();
+}
+
+void
+GContactClient::networkRequestFinished ()
+{
+    // TODO: Read the data from the request and take appropriate
+    // action
+    // o Error - if network error, set the sync results with the code
+    // o Call uninit
+    // o Stop sync
+    // o If success, invoke the mParser->parse () and connect
+    // to the parse complete signal
+}
+
+void
+GContactClient::networkError (QNetworkReply::NetworkError error)
+{
+    // TODO: Handle the error and close the sync requests
 }

@@ -26,6 +26,12 @@
 #include "GAtom.h"
 #include <LogMacros.h>
 
+GParseStream::GParseStream (QObject* parent) :
+                            mXml (NULL), mAtom (NULL)
+{
+    initFunctionMap ();
+}
+
 GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
     QObject(parent)
 {
@@ -33,6 +39,22 @@ GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
     mAtom = new GAtom (false);
 
     initFunctionMap ();
+}
+
+GParseStream::~GParseStream ()
+{
+    delete mAtom;
+    mAtom = NULL;
+
+    delete mXml;
+    mXml = NULL;
+}
+
+void
+GParseStream::setParseData (const QByteArray data)
+{
+    mXml = new QXmlStreamReader (data);
+    mAtom = new GAtom (false);
 }
 
 void

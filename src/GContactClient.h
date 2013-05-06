@@ -28,8 +28,13 @@
 #include <ClientPlugin.h>
 #include "GTransport.h"
 #include "GParseStream.h"
+#include "GContactsBackend.h"
+
+#include <QList>
+#include <QPair>
 
 #include <buteosyncfw/SyncResults.h>
+#include <buteosyncfw/SyncCommonDefs.h>
 
 class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : Buteo::ClientPlugin
 {
@@ -77,6 +82,8 @@ public slots:
     virtual void connectivityStateChanged( Sync::ConnectivityType aType,
                                            bool aState );
 
+    void processNetworkResponse ();
+
 signals:
     void stateChanged (Sync::SyncProgressDetail progress);
 
@@ -96,6 +103,10 @@ protected slots:
                                int committedItems);
 
     void receiveSyncFinished (Sync::SyncStatus);
+
+    void networkRequestFinished ();
+
+    void networkError (QNetworkReply::NetworkError error);
 
 private:
 
@@ -127,6 +138,12 @@ private:
 
     void generateResults( bool aSuccessful );
 
+    void remoteContacts (QList<QContact>& remoteContacts);
+
+    void localContacts (QList<QContact>& localContacts);
+
+    const QString authToken ();
+
     /**
      * \brief Method to determine when this session should
      *        be slow-sync or fast-sync
@@ -136,6 +153,8 @@ private:
     Buteo::SyncProfile::SyncDirection mSyncDirection;
 
     Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;
+
+    GContactsBackend*           mContactBackend;
 
     GParseStream*               mParser;
 
@@ -147,6 +166,13 @@ private:
 
     QMap<QString, Buteo::DatabaseResults> mItemResults;
 
+    QList<QPair<QContactLocalId, QString> > mLocalAddedContacts;
+    QList<QPair<QContactLocalId, QString> > mLocalModifiedContacts;
+    QList<QPair<QContactLocalId, QString> > mLocalDeletedContacts;
+
+    QStringList mRemoteAddedContacts;
+    QStringList mRemoteModifiedContacts;
+    QStringList mRemoteDeletedContacts;
 };
 
 /*! \brief Creates SyncML client plugin

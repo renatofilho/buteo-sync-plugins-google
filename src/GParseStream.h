@@ -35,13 +35,21 @@ class GParseStream : public QObject
 {
     Q_OBJECT
 public:
-    explicit GParseStream(QByteArray xmlStream, QObject *parent = 0);
+    explicit GParseStream (QObject* parent = 0);
+
+    explicit GParseStream (QByteArray xmlStream, QObject *parent = 0);
+
+    ~GParseStream ();
+
+    void setParseData (const QByteArray data);
 
     void parse();
 
     GAtom* atom();
 
 signals:
+
+    void parseDone (bool);
 
 public slots:
 

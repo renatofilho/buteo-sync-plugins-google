@@ -23,8 +23,9 @@
 #ifndef CONTACTSBACKEND_H_
 #define CONTACTSBACKEND_H_
 
-#include <qcontactmanager.h>
-#include <qcontact.h>
+#include <QContactManager>
+#include <QContactFetchRequest>
+#include <QContact>
 #include <qcontactchangelogfilter.h>
 #include <qcontactid.h>
 #include <QStringList>
@@ -76,14 +77,14 @@ public:
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QList<QContactLocalId> getAllNewContactIds(const QDateTime& aTimeStamp);
+    QList<QPair<QContactLocalId, QString> > getAllNewContactIds(const QDateTime& aTimeStamp);
 
     /*!
      * \brief Return all modified contact ids in a QList of QStrings
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QList<QContactLocalId> getAllModifiedContactIds(const QDateTime& aTimeStamp);
+    QList<QPair<QContactLocalId, QString> > getAllModifiedContactIds(const QDateTime& aTimeStamp);
 
 
     /*!
@@ -91,7 +92,7 @@ public:
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QList<QContactLocalId> getAllDeletedContactIds(const QDateTime& aTimeStamp);
+    QList<QPair<QContactLocalId, QString> > getAllDeletedContactIds(const QDateTime& aTimeStamp);
 
     /*!
      * \brief Get contact data for a given gontact ID as a QContact object
@@ -125,7 +126,7 @@ public:
      * @param aStatusMap Returned status data
      * @return Errors
      */
-    bool addContacts( const QStringList &aContactDataList,
+    bool addContacts( QList<QContact>& aContactList,
                       QMap<int, GContactsStatus> &aStatusMap );
 
     // Functions for modifying contacts
@@ -136,7 +137,7 @@ public:
      * @param contactdata Contact data
      * @return Error
      */
-    QContactManager::Error modifyContact(const QString &id, const QString &contactdata);
+    QContactManager::Error modifyContact(const QString &id, QContact &contact);
 
     /*!
      * \brief Batch modification
@@ -144,7 +145,7 @@ public:
      * @param aContactsIdList Contact IDs
      * @return Errors
      */
-    QMap<int, GContactsStatus> modifyContacts(const QStringList &aContactDataList,
+    QMap<int, GContactsStatus> modifyContacts(QList<QContact> &aContactList,
                                              const QStringList &aContactsIdList);
 
     /*!
@@ -182,6 +183,14 @@ public:
      */
     QList<QDateTime> getCreationTimes( const QList<QContactLocalId>& aContactIds );
 
+signals:
+
+    void requestFetchDone ();
+
+private slots:
+
+    void fetchDone ();
+
 private: // functions
 
     /*!
@@ -192,7 +201,7 @@ private: // functions
      */
     void getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
                                 const QDateTime &aTimeStamp,
-                                QList<QContactLocalId> &aIdList);
+                                QList<QPair<QContactLocalId, QString> > &aIdList);
 
     /*!
      * \brief Constructs and returns the filter for accessing only contacts allowed to be synchronized
@@ -208,10 +217,6 @@ private: // data
     // if there is more than one Manager we need to have a list of Managers
     QContactManager                *iMgr;      ///< A pointer to contact manager
 };
-
-
-
-
 
 #endif /* CONTACTSBACKEND_H_ */
 

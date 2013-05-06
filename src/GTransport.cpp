@@ -26,14 +26,16 @@
 #include <QBuffer>
 #include <QDebug>
 #include <QNetworkProxy>
+#include <QDateTime>
 
 const int MAX_RESULTS = 10;
 const QString SCOPE_URL("https://www.google.com/m8/feeds/");
 const QString GCONTACT_URL(SCOPE_URL + "/contacts/default/");
 
-const QString GTransport::GDATA_VERSION_HEADER = QString("GData-Version: 3.0");
-const QString DELETE_OVERRIDE_HEADER("X-HTTP-Method-Override: DELETE");
-const QString ETAG_HEADER("If-Match: ");
+const QString GDATA_VERSION_HEADER = QString("GData-Version: 3.0");
+const QString G_DELETE_OVERRIDE_HEADER("X-HTTP-Method-Override: DELETE");
+const QString G_ETAG_HEADER("If-Match: ");
+const QString G_AUTH_HEADER ("Authorization: ");
 
 /* Query parameters */
 const QString QUERY_TAG("q");
@@ -65,6 +67,7 @@ GTransport::GTransport (QList<QPair<QByteArray, QByteArray> >* headers) :
 
     QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
                      this, SLOT(finishedSlot(QNetworkReply*)));
+
 }
 
 GTransport::GTransport (const QString url, QList<QPair<QByteArray, QByteArray> >* headers) :
@@ -76,6 +79,7 @@ GTransport::GTransport (const QString url, QList<QPair<QByteArray, QByteArray> >
 
     QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
                      this, SLOT(finishedSlot(QNetworkReply*)));
+
     iUrl.setUrl(url, QUrl::StrictMode);
     encode(iUrl);
     iNetworkRequest->setUrl (iUrl);
@@ -126,8 +130,10 @@ GTransport::setUrl (QString url)
 {
     iUrl.setUrl(url, QUrl::StrictMode);
     encode(iUrl);
+
     if (iNetworkRequest)
         iNetworkRequest->setUrl (iUrl);
+
 }
 
 void
@@ -148,9 +154,18 @@ void GTransport::setHeaders()
 }
 
 void
-GTransport::setAuthToken (QString token)
+GTransport::addHeader (const QPair<QByteArray, QByteArray> header)
+{
+    iNetworkRequest->setRawHeader (header.first, header.second);
+}
+
+void
+GTransport::setAuthToken (const QString token)
 {
     mAuthToken = token;
+
+    QByteArray header1 = QString(G_AUTH_HEADER + "Bearer ").toAscii ();
+    addHeader (QPair<QByteArray, QByteArray>(header1, token.toAscii ()));
 }
 
 void
@@ -177,7 +192,8 @@ void GTransport::encode(QUrl& url)
     }
 }
 
-void GTransport::request(const HTTP_REQUEST_TYPE type)
+void
+GTransport::request(const HTTP_REQUEST_TYPE type)
 {
     iNetworkReplyBody = "";
 
@@ -209,17 +225,20 @@ void GTransport::request(const HTTP_REQUEST_TYPE type)
     iNetworkError = iNetworkReply->error();
 }
 
-const QNetworkReply *GTransport::reply() const
+const
+QNetworkReply *GTransport::reply() const
 {
     return iNetworkReply;
 }
 
-const QByteArray GTransport::replyBody() const
+const
+QByteArray GTransport::replyBody() const
 {
     return iNetworkReplyBody;
 }
 
-void GTransport::readyRead()
+void
+GTransport::readyRead()
 {
     mResponseCode = iNetworkReply->attribute (
                 QNetworkRequest::HttpStatusCodeAttribute).toInt ();
@@ -231,7 +250,8 @@ void GTransport::readyRead()
     emit finishedRequest ();
 }
 
-void GTransport::finishedSlot(QNetworkReply *reply)
+void
+GTransport::finishedSlot(QNetworkReply *reply)
 {
     QVariant statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
 
@@ -251,4 +271,12 @@ void GTransport::finishedSlot(QNetworkReply *reply)
         delete iPostData;
         iPostData = NULL;
     }
+}
+
+void
+GTransport::setUpdatedMin (const QDateTime datetime)
+{
+    mUpdatedMin = datetime;
+
+    iUrl.addQueryItem (UPDATED_MIN_TAG, mUpdatedMin.toString ());
 }

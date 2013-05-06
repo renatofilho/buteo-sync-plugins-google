@@ -26,11 +26,12 @@
 #include <QContactLocalIdFilter>
 #include <QContactSyncTarget>
 #include <QContactDetailFilter>
+#include <QContactGuid>
 #include <QBuffer>
 #include <QSet>
 
 GContactsBackend::GContactsBackend(QObject* parent) :
-                    QObject (parent), iMgr(NULL)
+                    QObject (parent), iMgr(new QContactManager())
 {
     FUNCTION_CALL_TRACE;
 }
@@ -38,73 +39,44 @@ GContactsBackend::GContactsBackend(QObject* parent) :
 GContactsBackend::~GContactsBackend()
 {
     FUNCTION_CALL_TRACE;
-}
-
-bool GContactsBackend::init()
-{
-    FUNCTION_CALL_TRACE;
-
-    bool initStatus = false;
-    QStringList availableManagers = QContactManager::availableManagers();
-
-    if(availableManagers.contains(QLatin1String("tracker"))) {
-        // hardcode to tracker
-        LOG_DEBUG("connecting to storage tracker");
-        QMap<QString,QString> params;
-        params.insert(QLatin1String("contact-types"), QContactType::TypeContact);
-        iMgr = new QContactManager(QLatin1String("tracker"), params);
-
-        if(iMgr != NULL){
-            initStatus = true;
-
-            if (!iMgr->hasFeature(QContactManager::ChangeLogs)) {
-                LOG_CRITICAL( "Contacts manager does not support timestamps" );
-            }
-            else {
-                LOG_DEBUG( "Contacts manager supports timestamps" );
-            }
-        }
-        else {
-            LOG_WARNING("Failed to connect to storage manager");
-        }
-    }
-
-    return initStatus;
-}
-
-bool GContactsBackend::uninit()
-{
-    FUNCTION_CALL_TRACE;
 
     delete iMgr;
     iMgr = NULL;
+}
+
+bool
+GContactsBackend::init()
+{
+    FUNCTION_CALL_TRACE;
 
     return true;
 }
 
-
-
-QList<QContactLocalId> GContactsBackend::getAllContactIds()
+bool
+GContactsBackend::uninit()
 {
     FUNCTION_CALL_TRACE;
-    QList<QContactLocalId> contactIDs;
 
-    if (iMgr != NULL) {
-        contactIDs = iMgr->contactIds(getSyncTargetFilter());
-    } else {
-        LOG_WARNING("Contacts backend not available");
-    }
-
-    return contactIDs;
+    return true;
 }
 
-QList<QContactLocalId> GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
+QList<QContactLocalId>
+GContactsBackend::getAllContactIds()
+{
+    FUNCTION_CALL_TRACE;
+    Q_ASSERT (iMgr);
+
+    return iMgr->contactIds (getSyncTargetFilter ());
+}
+
+QList<QPair<QContactLocalId, QString> >
+GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Retrieve New Contacts Since " << aTimeStamp);
 
-    QList<QContactLocalId> idList;
+    QList<QPair<QContactLocalId, QString> > idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventAdded;
 
@@ -113,14 +85,15 @@ QList<QContactLocalId> GContactsBackend::getAllNewContactIds(const QDateTime &aT
     return idList;
 }
 
-QList<QContactLocalId> GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
+QList<QPair<QContactLocalId, QString> >
+GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
 {
 
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Retrieve Modified Contacts Since " << aTimeStamp);
 
-    QList<QContactLocalId> idList;
+    QList<QPair<QContactLocalId, QString> > idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventChanged;
 
@@ -129,13 +102,14 @@ QList<QContactLocalId> GContactsBackend::getAllModifiedContactIds(const QDateTim
     return idList;
 }
 
-QList<QContactLocalId> GContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
+QList<QPair<QContactLocalId, QString> >
+GContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Retrieve Deleted Contacts Since " << aTimeStamp);
 
-    QList<QContactLocalId> idList;
+    QList<QPair<QContactLocalId, QString> > idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventRemoved;
 
@@ -144,20 +118,18 @@ QList<QContactLocalId> GContactsBackend::getAllDeletedContactIds(const QDateTime
     return idList;
 }
 
-bool GContactsBackend::addContacts( const QStringList& aContactDataList,
-                                   QMap<int, GContactsStatus>& aStatusMap )
+bool
+GContactsBackend::addContacts( QList<QContact>& aContactList,
+                               QMap<int, GContactsStatus>& aStatusMap )
 {
     FUNCTION_CALL_TRACE;
 
     Q_ASSERT( iMgr );
 
-    //QList<QContact> contactList = convertVCardListToQContactList(aContactDataList);
-    // FIXME:
-    QList<QContact> contactList;
     GContactsStatus status;
     QMap<int, QContactManager::Error> errorMap;
 
-    bool retVal = iMgr->saveContacts(&contactList, &errorMap);
+    bool retVal = iMgr->saveContacts (&aContactList, &errorMap);
 
     if (!retVal)
     {
@@ -167,9 +139,9 @@ bool GContactsBackend::addContacts( const QStringList& aContactDataList,
     // QContactManager will populate errorMap only for errors, but we use this as a status map,
     // so populate NoError if there's no error.
     // TODO QContactManager populates indices from the qContactList, but we populate keys, is this OK?
-    for (int i = 0; i < contactList.size(); i++)
+    for (int i = 0; i < aContactList.size(); i++)
     {
-        QContactLocalId contactId = contactList.at(i).id().localId();
+        QContactLocalId contactId = aContactList.at(i).id().localId();
         if (!errorMap.contains(i))
         {
             status.id = (int)contactId;
@@ -187,173 +159,153 @@ bool GContactsBackend::addContacts( const QStringList& aContactDataList,
     }
 
     return retVal;
-
 }
 
-QContactManager::Error GContactsBackend::modifyContact(const QString &aID, const QString &aContact)
+QContactManager::Error
+GContactsBackend::modifyContact(const QString &aID,
+                                QContact &aContact)
 {
     FUNCTION_CALL_TRACE;
+
+    Q_ASSERT (iMgr);
 
     LOG_DEBUG("Modifying a Contact with ID" << aID);
 
     QContactManager::Error modificationStatus = QContactManager::UnspecifiedError;
 
-    if (iMgr == NULL) {
-        LOG_WARNING("Contacts backend not available");
-    }
-    else {
-        QContact oldContactData;
-        getContact(aID.toUInt(), oldContactData);
-        QStringList contactStringList;
-        contactStringList.append(aContact);
-        //QContact newContactData = convertVCardListToQContactList(contactStringList).first();
-        QContact newContactData;
+    QContact oldContactData;
+    getContact(aID.toUInt(), oldContactData);
 
-        newContactData.setId(oldContactData.id());
-        oldContactData = newContactData;
+    aContact.setId(oldContactData.id());
+    oldContactData = aContact;
 
-        bool modificationOk = iMgr->saveContact(&oldContactData);
-        modificationStatus = iMgr->error();
+    bool modificationOk = iMgr->saveContact(&oldContactData);
+    modificationStatus = iMgr->error();
 
-        if(!modificationOk) {
-            // either contact exists or something wrong with one of the detailed definitions
-            LOG_WARNING("Contact Modification Failed");
-        } // no else
-    }
+    if(!modificationOk) {
+        // either contact exists or something wrong with one of the detailed definitions
+        LOG_WARNING("Contact Modification Failed");
+    } // no else
 
     return modificationStatus;
 }
 
-QMap<int,GContactsStatus> GContactsBackend::modifyContacts(
-    const QStringList &aVCardDataList, const QStringList &aContactIdList)
+QMap<int,GContactsStatus>
+GContactsBackend::modifyContacts( QList<QContact> &aContactList,
+                                  const QStringList &aContactIdList)
 {
     FUNCTION_CALL_TRACE;
 
+    Q_ASSERT (iMgr);
     GContactsStatus status;
 
     QMap<int,QContactManager::Error> errors;
     QMap<int,GContactsStatus> statusMap;
 
-    if (iMgr == NULL) {
-        for (int i=0; i < aVCardDataList.size(); i++) {
-            errors.insert(i, QContactManager::UnspecifiedError);
-        }
+    for (int i = 0; i < aContactList.size(); i++) {
+        LOG_DEBUG("Id of the contact to be replaced" << aContactIdList.at(i));
+        QContactLocalId managerLocalIdOfItemBeingModified = aContactIdList.at(i).toUInt();
 
-        LOG_WARNING("Contacts backend not available");
+        QContactId uniqueContactItemID;
+        uniqueContactItemID.setLocalId(managerLocalIdOfItemBeingModified);
+        aContactList[i].setId(uniqueContactItemID);
+
+        LOG_DEBUG("Replacing item's ID " << aContactList.at(i).localId());
     }
-    else if (aVCardDataList.size() == aContactIdList.size()) {
 
-        //QList<QContact> qContactList = convertVCardListToQContactList(aVCardDataList);
-        QList<QContact> qContactList;
+    if(iMgr->saveContacts(&aContactList , &errors)) {
+        LOG_DEBUG("Batch Modification of Contacts Succeeded");
+    }
+    else {
+        LOG_DEBUG("Batch Modification of Contacts Failed");
+    }
 
-        for (int i = 0; i < qContactList.size(); i++) {
-            LOG_DEBUG("Id of the contact to be replaced" << aContactIdList.at(i));
-            QContactLocalId managerLocalIdOfItemBeingModified = aContactIdList.at(i).toUInt();
-
-            QContactId uniqueContactItemID;
-            uniqueContactItemID.setLocalId(managerLocalIdOfItemBeingModified);
-            qContactList[i].setId(uniqueContactItemID);
-
-            LOG_DEBUG("Replacing item's ID " << qContactList.at(i).localId());
-        }
-
-        if(iMgr->saveContacts(&qContactList , &errors)) {
-            LOG_DEBUG("Batch Modification of Contacts Succeeded");
-        }
-        else {
-            LOG_DEBUG("Batch Modification of Contacts Failed");
-        }
-
-        // QContactManager will populate errorMap only for errors, but we use this as a status map,
+    // QContactManager will populate errorMap only for errors, but we use this as a status map,
     // so populate NoError if there's no error.
-    // TODO QContactManager populates indices from the qContactList, but we populate keys, is this OK?
-    for (int i = 0; i < qContactList.size(); i++) {
-            QContactLocalId contactId = qContactList.at(i).id().localId();
-            if( !errors.contains(i) )
-            {
-                LOG_DEBUG("No error for contact with id " << contactId << " and index " << i);
-                status.id = (int)contactId;
-                status.errorCode = QContactManager::NoError;
-                statusMap.insert(i, status);
-            }
-            else
-            {
-                LOG_DEBUG("contact with id " << contactId << " and index " << i <<" is in error");
-                QContactManager::Error errorCode = errors.value(i);
-                status.id = (int)contactId;
-                status.errorCode = errorCode;
-                statusMap.insert(i, status);
-            }
+    // TODO QContactManager populates indices from the aContactList, but we populate keys, is this OK?
+    for (int i = 0; i < aContactList.size(); i++) {
+        QContactLocalId contactId = aContactList.at(i).id().localId();
+        if( !errors.contains(i) )
+        {
+            LOG_DEBUG("No error for contact with id " << contactId << " and index " << i);
+            status.id = (int)contactId;
+            status.errorCode = QContactManager::NoError;
+            statusMap.insert(i, status);
+        }
+        else
+        {
+            LOG_DEBUG("contact with id " << contactId << " and index " << i <<" is in error");
+            QContactManager::Error errorCode = errors.value(i);
+            status.id = (int)contactId;
+            status.errorCode = errorCode;
+            statusMap.insert(i, status);
         }
     }
 
     return statusMap;
 }
 
-QMap<int , GContactsStatus> GContactsBackend::deleteContacts(const QStringList &aContactIDList)
+QMap<int, GContactsStatus>
+GContactsBackend::deleteContacts(const QStringList &aContactIDList)
 {
     FUNCTION_CALL_TRACE;
 
+    Q_ASSERT (iMgr);
     GContactsStatus status;
-    QMap<int , QContactManager::Error> errors;
-    QMap<int , GContactsStatus> statusMap;
+    QMap<int, QContactManager::Error> errors;
+    QMap<int, GContactsStatus> statusMap;
 
-    if (iMgr == NULL) {
-        for (int i=0; i < aContactIDList.size(); i++) {
-            errors.insert(i, QContactManager::UnspecifiedError);
-        }
+    QList<QContactLocalId> qContactIdList;
+    foreach (QString id, aContactIDList )
+    {
+        qContactIdList.append(QContactLocalId(id.toUInt()));
+    }
 
-        LOG_WARNING("Contacts backend not available");
+    if(iMgr->removeContacts(qContactIdList , &errors)) {
+        LOG_DEBUG("Successfully Removed all contacts ");
     }
     else {
-        QList<QContactLocalId> qContactIdList;
-    foreach (QString id, aContactIDList ) {
-        qContactIdList.append(QContactLocalId(id.toUInt()));
-        }
+        LOG_WARNING("Failed Removing Contacts");
+    }
 
-        if(iMgr->removeContacts(qContactIdList , &errors)) {
-            LOG_DEBUG("Successfully Removed all contacts ");
-        }
-        else {
-            LOG_WARNING("Failed Removing Contacts");
-        }
-
-        // QContactManager will populate errorMap only for errors, but we use this as a status map,
+    // QContactManager will populate errorMap only for errors, but we use this as a status map,
     // so populate NoError if there's no error.
     // TODO QContactManager populates indices from the qContactList, but we populate keys, is this OK?
     for (int i = 0; i < qContactIdList.size(); i++) {
-            QContactLocalId contactId = qContactIdList.value(i);
-            if( !errors.contains(i) )
-            {
-                LOG_DEBUG("No error for contact with id " << contactId << " and index " << i);
-                status.id = (int)contactId;
-                status.errorCode = QContactManager::NoError;
-                statusMap.insert(i, status);
-            }
-            else
-            {
-                LOG_DEBUG("contact with id " << contactId << " and index " << i <<" is in error");
-                QContactManager::Error errorCode = errors.value(i);
-                status.id = (int)contactId;
-                status.errorCode = errorCode;
-                statusMap.insert(i, status);
-            }
+        QContactLocalId contactId = qContactIdList.value(i);
+        if( !errors.contains(i) )
+        {
+            LOG_DEBUG("No error for contact with id " << contactId << " and index " << i);
+            status.id = (int)contactId;
+            status.errorCode = QContactManager::NoError;
+            statusMap.insert(i, status);
+        }
+        else
+        {
+            LOG_DEBUG("contact with id " << contactId << " and index " << i <<" is in error");
+            QContactManager::Error errorCode = errors.value(i);
+            status.id = (int)contactId;
+            status.errorCode = errorCode;
+            statusMap.insert(i, status);
         }
     }
 
     return statusMap;
 }
 
-void GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
+void
+GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
         const QDateTime& aTimeStamp,
-        QList<QContactLocalId>& aIdList)
+        QList<QPair<QContactLocalId, QString> >& aIdList)
 {
     FUNCTION_CALL_TRACE;
+
+    QList<QContactLocalId> localIdList;
 
     QContactChangeLogFilter filter(aEventType);
     filter.setSince(aTimeStamp);
 
-    aIdList = iMgr->contactIds(filter & getSyncTargetFilter());
+    localIdList = iMgr->contactIds(filter & getSyncTargetFilter());
 
     // Filter out ids for items that were added after the specified time.
     if (aEventType != QContactChangeLogFilter::EventAdded)
@@ -362,15 +314,15 @@ void GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::Eve
         QList<QContactLocalId> addedList = iMgr->contactIds(filter & getSyncTargetFilter());
         foreach (const QContactLocalId &id, addedList)
         {
-            aIdList.removeAll(id);
+            localIdList.removeAll(id);
         }
     }
 
     // This is a defensive procedure to prevent duplicate items being sent.
     // QSet does not allow duplicates, thus transforming QList to QSet and back
     // again will remove any duplicate items in the original QList.
-    int originalIdCount = aIdList.size();
-    QSet<QContactLocalId> idSet = aIdList.toSet();
+    int originalIdCount = localIdList.size();
+    QSet<QContactLocalId> idSet = localIdList.toSet();
     int idCountAfterDupRemoval = idSet.size();
 
     LOG_DEBUG("Item IDs found (returned / incl. duplicates): " << idCountAfterDupRemoval << "/" << originalIdCount);
@@ -380,26 +332,34 @@ void GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::Eve
         LOG_WARNING("Duplicate item IDs have been removed");
     } // no else
 
-    aIdList = idSet.toList();
+    localIdList = idSet.toList();
+
+    QContactFetchHint guidHint;
+    guidHint.setDetailDefinitionsHint (QStringList (QContactGuid::DefinitionName));
+
+    QList<QContact> contacts = iMgr->contacts(localIdList, guidHint);
+
+    for (int i=0; i<contacts.size (); i++)
+    {
+        aIdList.append (QPair<QContactLocalId, QString> (contacts.at (i).localId (),
+                               contacts.at (i).detail<QContactGuid>().value (QContactGuid::FieldGuid)));
+    }
 }
 
-QDateTime GContactsBackend::lastModificationTime(const QContactLocalId &aContactId)
+QDateTime
+GContactsBackend::lastModificationTime(const QContactLocalId &aContactId)
 {
     FUNCTION_CALL_TRACE;
 
+    Q_ASSERT (iMgr);
     QDateTime lastModificationTime = QDateTime::fromTime_t(0);
 
-    if (iMgr == NULL) {
-        LOG_WARNING("Contacts backend not available");
-    }
-    else {
-        QContact contact;
-        getContact(aContactId, contact);
-        QContactTimestamp contactTimestamps;
-        QString definitionName = contactTimestamps.definitionName();
-        contactTimestamps = (QContactTimestamp)contact.detail(definitionName);
-        lastModificationTime = contactTimestamps.lastModified();
-    }
+    QContact contact;
+    getContact(aContactId, contact);
+    QContactTimestamp contactTimestamps;
+    QString definitionName = contactTimestamps.definitionName();
+    contactTimestamps = (QContactTimestamp)contact.detail(definitionName);
+    lastModificationTime = contactTimestamps.lastModified();
 
     return lastModificationTime;
 }
@@ -407,7 +367,9 @@ QDateTime GContactsBackend::lastModificationTime(const QContactLocalId &aContact
 /*!
     \fn GContactsBackend::getContact(QContactLocalId aContactId)
  */
-void GContactsBackend::getContact(const QContactLocalId& aContactId, QContact& aContact)
+void
+GContactsBackend::getContact(const QContactLocalId& aContactId,
+                             QContact& aContact)
 {
     FUNCTION_CALL_TRACE;
 
@@ -420,41 +382,27 @@ void GContactsBackend::getContact(const QContactLocalId& aContactId, QContact& a
     if (!returnedContacts.isEmpty()) {
         aContact = returnedContacts.first();
     }
-
 }
 
 /*!
     \fn GContactsBackend::getContacts(QContactLocalId aContactId)
  */
-void GContactsBackend::getContacts(const QList<QContactLocalId>& aContactIds,
-                                  QList<QContact>& aContacts)
+void
+GContactsBackend::getContacts(const QList<QContactLocalId>& aContactIds,
+                              QList<QContact>& aContacts)
 {
     FUNCTION_CALL_TRACE;
+
+    Q_ASSERT (iMgr);
 
     QContactLocalIdFilter contactFilter;
     contactFilter.setIds(aContactIds);
 
-    if (iMgr != NULL) {
-        aContacts = iMgr->contacts(contactFilter);
-    }
+    aContacts = iMgr->contacts(contactFilter);
 }
 
-void GContactsBackend::getContacts(const QList<QContactLocalId>&  aIdsList,
-                                  QMap<QContactLocalId,QString>& aDataMap)
-{
-    FUNCTION_CALL_TRACE;
-
-    QList<QContact> returnedContacts;
-
-    // As this is an overloaded convenience function, these two functions
-    // are utilized to get contacts from the backend and to convert them
-    // to vcard format.
-    getContacts(aIdsList, returnedContacts);
-    //aDataMap = convertQContactListToVCardList(returnedContacts);
-
-}
-
-QDateTime GContactsBackend::getCreationTime( const QContact& aContact )
+QDateTime
+GContactsBackend::getCreationTime( const QContact& aContact )
 {
     FUNCTION_CALL_TRACE;
 
@@ -463,14 +411,16 @@ QDateTime GContactsBackend::getCreationTime( const QContact& aContact )
     return contactTimestamp.created();
 }
 
-QList<QDateTime> GContactsBackend::getCreationTimes( const QList<QContactLocalId>& aContactIds )
+QList<QDateTime>
+GContactsBackend::getCreationTimes( const QList<QContactLocalId>& aContactIds )
 {
     FUNCTION_CALL_TRACE;
 
     Q_ASSERT( iMgr );
 
-    /* Retrieve QContacts from backend based on id's in aContactsIds. Since we're only interested
-     * in timestamps, set up fetch hint accordingly to speed up the operation.
+    /* Retrieve QContacts from backend based on id's in aContactsIds.
+     * Since we're only interested in timestamps, set up fetch hint
+     * accordingly to speed up the operation.
      */
     QList<QDateTime> creationTimes;
     QList<QContact> contacts;
@@ -536,7 +486,9 @@ QList<QDateTime> GContactsBackend::getCreationTimes( const QList<QContactLocalId
     return creationTimes;
 }
 
-QContactFilter GContactsBackend::getSyncTargetFilter() const {
+QContactFilter
+GContactsBackend::getSyncTargetFilter() const
+{
     // user enterred contacts, i.e. all other contacts that are not sourcing
     // from restricted backends or instant messaging service
     QContactDetailFilter detailFilterDefaultSyncTarget;
@@ -547,4 +499,10 @@ QContactFilter GContactsBackend::getSyncTargetFilter() const {
 
     // return the union
     return detailFilterDefaultSyncTarget;
+}
+
+void
+GContactsBackend::fetchDone ()
+{
+    emit requestFetchDone ();
 }

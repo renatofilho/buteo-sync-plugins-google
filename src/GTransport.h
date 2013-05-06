@@ -26,6 +26,7 @@
 
 #include <QObject>
 #include <QList>
+#include <QDateTime>
 #include <QPair>
 #include <QUrl>
 #include <QNetworkAccessManager>
@@ -65,7 +66,9 @@ public:
 
     void setHeaders ();
 
-    void setAuthToken (QString token);
+    void addHeader (const QPair<QByteArray, QByteArray> header);
+
+    void setAuthToken (const QString token);
 
     void setProxy (QString proxyHost, QString proxyPort);
 
@@ -74,6 +77,8 @@ public:
     const QNetworkReply* reply() const;
 
     const QByteArray replyBody() const;
+
+    void setUpdatedMin (const QDateTime datetime);
 
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
@@ -113,9 +118,11 @@ private:
 
     QString                                 mAuthToken;
 
+    QDateTime                               mUpdatedMin;
+
 signals:
 
-    void finishedRequest();
+    void finishedRequest ();
 
 private slots:
 
