@@ -144,11 +144,13 @@ private:
 
     const QString authToken ();
 
+    void remoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts);
+
     /**
      * \brief Method to determine when this session should
      *        be slow-sync or fast-sync
      */
-    QDateTime lastSyncTime ();
+    const QDateTime lastSyncTime ();
 
     Buteo::SyncProfile::SyncDirection mSyncDirection;
 
@@ -170,9 +172,9 @@ private:
     QList<QPair<QContactLocalId, QString> > mLocalModifiedContacts;
     QList<QPair<QContactLocalId, QString> > mLocalDeletedContacts;
 
-    QStringList mRemoteAddedContacts;
-    QStringList mRemoteModifiedContacts;
-    QStringList mRemoteDeletedContacts;
+    QList<GContactEntry*> mRemoteAddedContacts;
+    QList<GContactEntry*> mRemoteModifiedContacts;
+    QList<GContactEntry*> mRemoteDeletedContacts;
 };
 
 /*! \brief Creates SyncML client plugin

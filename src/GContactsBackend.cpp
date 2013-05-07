@@ -506,3 +506,20 @@ GContactsBackend::fetchDone ()
 {
     emit requestFetchDone ();
 }
+
+bool
+GContactsBackend::entryExists (const QString entryGuid)
+{
+    QContactFetchHint hint;
+    hint.setDetailDefinitionsHint (QStringList(QContactGuid::DefinitionName));
+
+    QContactDetailFilter guidFilter;
+    guidFilter.setDetailDefinitionName (QContactGuid::DefinitionName);
+    guidFilter.setValue (entryGuid);
+    guidFilter.setMatchFlags (QContactFilter::MatchExactly);
+
+    if (iMgr->contacts (guidFilter, QList<QContactSortOrder>(), hint).size () == 0)
+        return false;
+    else
+        return true;
+}

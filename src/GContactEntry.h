@@ -37,6 +37,7 @@ public:
     explicit GContactEntry (bool generateXmlFlag, QObject *parent = 0);
 
     void setId (QString id);
+    QString id ();
 
     void setEtag (QString etag);
     QString etag ();
@@ -223,7 +224,11 @@ private:
 
     bool mGenerateXmlFlag;
 
+    QString mId;
+
     QContact* mContact;
+
+    bool mDeleted;
 
 signals:
 

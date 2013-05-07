@@ -50,6 +50,14 @@ GContactEntry::setId (QString id)
     QContactGuid contactGuid;
     contactGuid.setGuid (id);
     mContact->saveDetail (&contactGuid);
+
+    mId = id;
+}
+
+QString
+GContactEntry::id ()
+{
+    return mId;
 }
 
 void
@@ -454,12 +462,13 @@ GContactEntry::country ()
 void
 GContactEntry::setDeleted (bool deleted)
 {
-    // TODO: Handle deleted entry
+    mDeleted = true;
 }
 
 bool
 GContactEntry::deleted ()
 {
+    return mDeleted;
 }
 
 void
@@ -757,4 +766,3 @@ void
 GContactEntry::setPostalAddrAttrs(QString rel, QString mailClass, QString usage, QString primary)
 {
 }
-

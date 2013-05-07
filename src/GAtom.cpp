@@ -27,7 +27,6 @@
 GAtom::GAtom(bool generateXmlFlag) :
     mGenerateXml(generateXmlFlag)
 {
-    mContactList = new QList<GContactEntry*>();
 }
 
 void
@@ -194,29 +193,11 @@ GAtom::toString()
 void
 GAtom::addEntry (GContactEntry *entry)
 {
-    mContactList->append (entry);
+    mContactList.append (entry);
 }
 
-QList<GContactEntry *>*
+QList<GContactEntry*>
 GAtom::entries()
 {
     return mContactList;
-}
-
-QList<GContactEntry *>*
-GAtom::deletedEntries ()
-{
-    return mDeletedContacts;
-}
-
-QList<GContactEntry *>*
-GAtom::addedEntries ()
-{
-    return mAddedContacts;
-}
-
-QList<GContactEntry *>*
-GAtom::modifiedEntries ()
-{
-    return mModifiedContacts;
 }

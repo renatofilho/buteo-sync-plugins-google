@@ -114,13 +114,7 @@ public:
 
     void addEntry(GContactEntry* entry);
 
-    QList<GContactEntry *> *entries();
-
-    QList<GContactEntry*>* deletedEntries ();
-
-    QList<GContactEntry*>* addedEntries ();
-
-    QList<GContactEntry*>* modifiedEntries ();
+    QList<GContactEntry*> entries();
 
 private:
 
@@ -164,13 +158,8 @@ private:
 
     int mItemsPerPage;
 
-    QList<GContactEntry*>* mContactList;
+    QList<GContactEntry*> mContactList;
 
-    QList<GContactEntry*>* mDeletedContacts;
-
-    QList<GContactEntry*>* mModifiedContacts;
-
-    QList<GContactEntry*>* mAddedContacts;
     bool mGenerateXml;
 };
 

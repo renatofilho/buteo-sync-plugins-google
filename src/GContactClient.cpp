@@ -27,6 +27,8 @@
 #include <QLibrary>
 #include <QtNetwork>
 #include <QDateTime>
+#include <QContactGuid>
+#include <QContactDetailFilter>
 
 #include <buteosyncfw/SyncCommonDefs.h>
 #include <buteosyncfw/PluginCbInterface.h>
@@ -563,6 +565,7 @@ GContactClient::localContacts (QList<QContact>& localContacts)
 
     mLocalDeletedContacts =
             mContactBackend->getAllDeletedContactIds (syncTime);
+
 }
 
 const QString
@@ -572,7 +575,7 @@ GContactClient::authToken ()
     return "";
 }
 
-QDateTime
+const QDateTime
 GContactClient::lastSyncTime ()
 {
     Q_ASSERT (iProfile);
@@ -592,10 +595,39 @@ GContactClient::networkRequestFinished ()
     // o Stop sync
     // o If success, invoke the mParser->parse () and connect
     // to the parse complete signal
+
+    const QNetworkReply* reply = mTransport->reply ();
+    if (reply)
+    {
+        QByteArray data = mTransport->replyBody ();
+        mParser->setParseData (data);
+
+        // Get the atom object
+        GAtom* atom = mParser->atom ();
+        QList<GContactEntry*> remoteContacts = atom->entries ();
+
+        // Filter added/modified/deleted entries from the list
+        remoteAddedModifiedDeletedContacts (remoteContacts);
+    }
 }
 
 void
 GContactClient::networkError (QNetworkReply::NetworkError error)
 {
     // TODO: Handle the error and close the sync requests
+}
+
+void
+GContactClient::remoteAddedModifiedDeletedContacts (const QList<GContactEntry *> remoteContacts)
+{
+    for (int i=0; i<remoteContacts.size (); i++)
+    {
+        if (remoteContacts.at (i)->deleted ())
+            mRemoteDeletedContacts.append (remoteContacts.at (i));
+
+        if (mContactBackend->entryExists (remoteContacts.at (i)->id ()))
+            mRemoteModifiedContacts.append (remoteContacts.at (i));
+        else
+            mRemoteAddedContacts.append (remoteContacts.at (i));
+    }
 }

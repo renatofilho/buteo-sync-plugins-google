@@ -183,6 +183,8 @@ public:
      */
     QList<QDateTime> getCreationTimes( const QList<QContactLocalId>& aContactIds );
 
+    bool entryExists (const QString guid);
+
 signals:
 
     void requestFetchDone ();
