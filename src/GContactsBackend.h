@@ -185,6 +185,10 @@ public:
 
     bool entryExists (const QString guid);
 
+    const QStringList localIds (const QStringList guid);
+
+    const QList<QPair<QContactLocalId, QString> > guids (const QList<QContactLocalId> localIdList);
+
 signals:
 
     void requestFetchDone ();

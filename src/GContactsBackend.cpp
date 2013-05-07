@@ -523,3 +523,40 @@ GContactsBackend::entryExists (const QString entryGuid)
     else
         return true;
 }
+
+const QStringList GContactsBackend::localIds(const QStringList guidList)
+{
+    QContactFetchHint hint;
+    hint.setDetailDefinitionsHint (QStringList(QContactGuid::DefinitionName));
+
+    QContactDetailFilter guidFilter;
+    guidFilter.setDetailDefinitionName (QContactGuid::DefinitionName);
+    guidFilter.setMatchFlags (QContactFilter::MatchExactly);
+
+    QStringList localIdList;
+    for (int i=0; i<guidList.size (); i++)
+    {
+        guidFilter.setValue (guidList.at (i));
+        QList<QContact> tempContacts =
+                iMgr->contacts (guidFilter, QList<QContactSortOrder>(), hint);
+        if (tempContacts.size () > 0)
+            localIdList.append (QString::number (tempContacts.at (0).localId ()));
+    }
+
+    return localIdList;
+}
+
+const QList<QPair<QContactLocalId, QString> >
+GContactsBackend::guids (const QList<QContactLocalId> localIdList)
+{
+    QContactFetchHint hint;
+    hint.setDetailDefinitionsHint (QStringList (QContactGuid::DefinitionName));
+
+    QList<QPair<QContactLocalId, QString> > idPair;
+    for (int i=0; i<localIdList.size (); i++)
+    {
+        QString guid = iMgr->contact (localIdList.at (i), hint).detail<QContactGuid>().value (QContactGuid::FieldGuid);
+        idPair.append (QPair<QContactLocalId, QString>(localIdList.at (i), guid));
+    }
+    return idPair;
+}

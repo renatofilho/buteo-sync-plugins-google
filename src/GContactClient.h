@@ -39,7 +39,7 @@
 class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : Buteo::ClientPlugin
 {
 public:
-    Q_OBJECT;
+    Q_OBJECT
 public:
 
     /*! \brief Constructor
@@ -138,19 +138,33 @@ private:
 
     void generateResults( bool aSuccessful );
 
-    void remoteContacts (QList<QContact>& remoteContacts);
+    void fetchRemoteContacts ();
 
-    void localContacts (QList<QContact>& localContacts);
+    void changedLocalContactIds ();
+
+    void allLocalContactIds ();
 
     const QString authToken ();
-
-    void remoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts);
 
     /**
      * \brief Method to determine when this session should
      *        be slow-sync or fast-sync
      */
     const QDateTime lastSyncTime ();
+
+    void remoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts);
+
+    void storeToRemote (QList<QContact> deviceContacts);
+
+    void storeToLocal (QList<QContact> serverContacts);
+
+    void storeToLocal ();
+
+    QList<QContact> toQContacts (const QList<GContactEntry*> gContactList);
+
+    void resolveConflicts ();
+
+    bool                        mSlowSync;
 
     Buteo::SyncProfile::SyncDirection mSyncDirection;
 
@@ -168,6 +182,7 @@ private:
 
     QMap<QString, Buteo::DatabaseResults> mItemResults;
 
+    QList<QContactLocalId>                  mAllLocalContacts;
     QList<QPair<QContactLocalId, QString> > mLocalAddedContacts;
     QList<QPair<QContactLocalId, QString> > mLocalModifiedContacts;
     QList<QPair<QContactLocalId, QString> > mLocalDeletedContacts;
@@ -175,6 +190,13 @@ private:
     QList<GContactEntry*> mRemoteAddedContacts;
     QList<GContactEntry*> mRemoteModifiedContacts;
     QList<GContactEntry*> mRemoteDeletedContacts;
+
+    enum TRANS_TYPE
+    {
+        ADD = 0,
+        MODIFY,
+        DELETE
+    };
 };
 
 /*! \brief Creates SyncML client plugin

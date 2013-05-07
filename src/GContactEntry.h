@@ -220,13 +220,15 @@ public:
 
     void setPostalAddrAttrs(QString rel, QString mailClass, QString usage, QString primary);
 
+    QContact qContact ();
+
 private:
 
     bool mGenerateXmlFlag;
 
     QString mId;
 
-    QContact* mContact;
+    QContact mQContact;
 
     bool mDeleted;
 

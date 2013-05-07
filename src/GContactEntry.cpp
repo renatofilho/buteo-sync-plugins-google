@@ -40,7 +40,7 @@
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
 GContactEntry::GContactEntry(bool generateXmlFlag, QObject *parent) :
-    QObject (parent), mGenerateXmlFlag(generateXmlFlag), mContact (new QContact ())
+    QObject (parent), mGenerateXmlFlag(generateXmlFlag)
 {
 }
 
@@ -49,7 +49,7 @@ GContactEntry::setId (QString id)
 {
     QContactGuid contactGuid;
     contactGuid.setGuid (id);
-    mContact->saveDetail (&contactGuid);
+    mQContact.saveDetail (&contactGuid);
 
     mId = id;
 }
@@ -100,7 +100,7 @@ GContactEntry::setFamilyName (QString familyName)
 {
     QContactName name;
     name.setLastName (familyName);
-    mContact->saveDetail (&name);
+    mQContact.saveDetail (&name);
 }
 
 QString
@@ -113,7 +113,7 @@ GContactEntry::setNamePrefix (QString namePrefix)
 {
     QContactName name;
     name.setPrefix (namePrefix);
-    mContact->saveDetail (&name);
+    mQContact.saveDetail (&name);
 }
 
 QString
@@ -126,7 +126,7 @@ GContactEntry::setNameSuffix (QString nameSuffix)
 {
     QContactName name;
     name.setSuffix (nameSuffix);
-    mContact->saveDetail (&name);
+    mQContact.saveDetail (&name);
 }
 
 QString
@@ -139,7 +139,7 @@ GContactEntry::setGivenName (QString givenName)
 {
     QContactName name;
     name.setFirstName (givenName);
-    mContact->saveDetail (&name);
+    mQContact.saveDetail (&name);
 }
 
 QString
@@ -152,7 +152,7 @@ GContactEntry::setEmail (QString address, QString label, QString rel, bool prima
 {
     QContactEmailAddress email;
     email.setEmailAddress (address);
-    mContact->saveDetail (&email);
+    mQContact.saveDetail (&email);
 }
 
 QString
@@ -177,7 +177,7 @@ GContactEntry::setBirthday (QString birthday)
     QContactBirthday bday;
 
     bday.setDate (QDate::fromString (birthday, "yyyy-mm-dd"));
-    mContact->saveDetail (&bday);
+    mQContact.saveDetail (&bday);
 }
 
 QString
@@ -234,7 +234,7 @@ GContactEntry::setGender (QString gender)
 {
     QContactGender contactGender;
     contactGender.setGender (gender);
-    mContact->saveDetail (&contactGender);
+    mQContact.saveDetail (&contactGender);
 }
 
 QString
@@ -258,7 +258,7 @@ GContactEntry::setHobby (QString hobby)
 {
     QContactHobby contactHobby;
     contactHobby.setHobby (hobby);
-    mContact->saveDetail (&contactHobby);
+    mQContact.saveDetail (&contactHobby);
 }
 
 QString
@@ -326,7 +326,7 @@ GContactEntry::setNickname (QString nickname)
 {
     QContactNickname nick;
     nick.setNickname (nickname);
-    mContact->saveDetail (&nick);
+    mQContact.saveDetail (&nick);
 }
 
 QString
@@ -440,7 +440,7 @@ GContactEntry::setComments (QString comments)
 {
     QContactNote note;
     note.setNote (comments);
-    mContact->saveDetail (&note);
+    mQContact.saveDetail (&note);
 }
 
 QString
@@ -512,7 +512,7 @@ GContactEntry::setIm (QString address, QString rel, QString protocol, QString pr
     imAccount.setProtocol (protocol);
     imAccount.setServiceProvider (protocol);  // FIXME: How is protocol different from service provider?
 
-    mContact->saveDetail (&imAccount);
+    mQContact.saveDetail (&imAccount);
 }
 
 QString
@@ -539,7 +539,7 @@ GContactEntry::setOrgDepartment (QString orgDept)
     deptList << orgDept;
     org.setDepartment (deptList);
 
-    mContact->saveDetail (&org);
+    mQContact.saveDetail (&org);
 }
 
 QString
@@ -553,7 +553,7 @@ GContactEntry::setOrgJobDescription (QString orgJobDesc)
     QContactOrganization org;
     org.setRole (orgJobDesc);
 
-    mContact->saveDetail (&org);
+    mQContact.saveDetail (&org);
 }
 
 QString
@@ -567,7 +567,7 @@ GContactEntry::setOrgName (QString orgName)
     QContactOrganization org;
     org.setName (orgName);
 
-    mContact->saveDetail (&org);
+    mQContact.saveDetail (&org);
 }
 
 QString
@@ -592,7 +592,7 @@ GContactEntry::setOrgTitle (QString orgTitle)
     QContactOrganization org;
     org.setTitle (orgTitle);
 
-    mContact->saveDetail (&org);
+    mQContact.saveDetail (&org);
 }
 
 QString
@@ -619,7 +619,7 @@ GContactEntry::setPhoneNumber (QString phoneNumber, QString rel, QString uri, QS
     number.setSubTypes (rel);
 
     //TODO: Handle primary and uri fields
-    mContact->saveDetail (&number);
+    mQContact.saveDetail (&number);
 }
 
 QString
@@ -765,4 +765,9 @@ GContactEntry::postalAddrFormatted ()
 void
 GContactEntry::setPostalAddrAttrs(QString rel, QString mailClass, QString usage, QString primary)
 {
+}
+
+QContact GContactEntry::qContact()
+{
+    return mQContact;
 }

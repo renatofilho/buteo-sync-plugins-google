@@ -49,7 +49,7 @@ extern "C" void destroyPlugin(GContactClient *aClient) {
 GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
-    ClientPlugin(aPluginName, aProfile, aCbInterface), mParser(0),
+    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true), mParser(0),
             mTransport(0), mCommittedItems(0) {
     FUNCTION_CALL_TRACE;
 }
@@ -61,6 +61,11 @@ GContactClient::~GContactClient() {
 bool
 GContactClient::init() {
     FUNCTION_CALL_TRACE;
+
+    if (lastSyncTime ().isNull ())
+        mSlowSync = true;
+    else
+        mSlowSync = false;
 
     //TODO: Initialize mParser
 
@@ -158,6 +163,33 @@ GContactClient::abortSync (Sync::SyncStatus aStatus)
 bool
 GContactClient::start ()
 {
+    QList<QContact> deviceContacts;
+    switch (mSyncDirection)
+    {
+    case Buteo::SyncProfile::SYNC_DIRECTION_TWO_WAY:
+        if (mSlowSync)
+            allLocalContactIds ();
+        else
+            changedLocalContactIds ();
+
+        fetchRemoteContacts ();
+
+        storeToRemote (deviceContacts);
+
+        break;
+    case Buteo::SyncProfile::SYNC_DIRECTION_FROM_REMOTE:
+        // Not required
+        break;
+    case Buteo::SyncProfile::SYNC_DIRECTION_TO_REMOTE:
+        // Not required
+        break;
+    case Buteo::SyncProfile::SYNC_DIRECTION_UNDEFINED:
+        // Not required
+    default:
+        // throw configuration error
+        break;
+    };
+
     return true;
 }
 
@@ -415,7 +447,6 @@ GContactClient::initConfig () {
     mConflictResPolicy = conflictResolutionPolicy ();
 
     return true;
-
 }
 
 void GContactClient::closeConfig() {
@@ -478,7 +509,8 @@ GContactClient::conflictResolutionPolicy () {
     return crPolicy;
 }
 
-void GContactClient::generateResults( bool aSuccessful )
+void
+GContactClient::generateResults( bool aSuccessful )
 {
     FUNCTION_CALL_TRACE;
 
@@ -519,7 +551,7 @@ void GContactClient::generateResults( bool aSuccessful )
 }
 
 void
-GContactClient::remoteContacts (QList<QContact> &remoteContacts)
+GContactClient::fetchRemoteContacts ()
 {
     /**
      o Get last sync time
@@ -549,7 +581,7 @@ GContactClient::remoteContacts (QList<QContact> &remoteContacts)
 }
 
 void
-GContactClient::localContacts (QList<QContact>& localContacts)
+GContactClient::changedLocalContactIds ()
 {
     /**
      o Get last sync time
@@ -566,6 +598,12 @@ GContactClient::localContacts (QList<QContact>& localContacts)
     mLocalDeletedContacts =
             mContactBackend->getAllDeletedContactIds (syncTime);
 
+}
+
+void
+GContactClient::allLocalContactIds ()
+{
+    mAllLocalContacts = mContactBackend->getAllContactIds ();
 }
 
 const QString
@@ -588,8 +626,6 @@ GContactClient::lastSyncTime ()
 void
 GContactClient::networkRequestFinished ()
 {
-    // TODO: Read the data from the request and take appropriate
-    // action
     // o Error - if network error, set the sync results with the code
     // o Call uninit
     // o Stop sync
@@ -602,12 +638,32 @@ GContactClient::networkRequestFinished ()
         QByteArray data = mTransport->replyBody ();
         mParser->setParseData (data);
 
+        mParser->parse ();
+
         // Get the atom object
         GAtom* atom = mParser->atom ();
-        QList<GContactEntry*> remoteContacts = atom->entries ();
+        if (atom)
+        {
+            QList<GContactEntry*> remoteContacts = atom->entries ();
+            if (remoteContacts.size () > 0)
+            {
+                QList<QContact> remoteQContacts = toQContacts (remoteContacts);
+                if (mSlowSync == true)
+                {
+                    storeToLocal (remoteQContacts);
+                } else
+                {
+                    // Filter added/modified/deleted entries from the list
+                    remoteAddedModifiedDeletedContacts (remoteContacts);
 
-        // Filter added/modified/deleted entries from the list
-        remoteAddedModifiedDeletedContacts (remoteContacts);
+                    // Resolve conflicts
+                    resolveConflicts ();
+
+                    // Store the rest of the contacts to device
+                    storeToLocal ();
+                }
+            }
+        }
     }
 }
 
@@ -623,11 +679,110 @@ GContactClient::remoteAddedModifiedDeletedContacts (const QList<GContactEntry *>
     for (int i=0; i<remoteContacts.size (); i++)
     {
         if (remoteContacts.at (i)->deleted ())
+        {
             mRemoteDeletedContacts.append (remoteContacts.at (i));
+        }
 
         if (mContactBackend->entryExists (remoteContacts.at (i)->id ()))
             mRemoteModifiedContacts.append (remoteContacts.at (i));
         else
             mRemoteAddedContacts.append (remoteContacts.at (i));
     }
+}
+
+void
+GContactClient::storeToRemote (QList<QContact> deviceContacts)
+{
+    // TODO: Use GContactEntry and GAtom to set the local values
+    // and then use GTransport to PUT the contacts to server
+    // Have the necessary signals/slots to handle the network
+    // communication
+}
+
+void
+GContactClient::storeToLocal (QList<QContact> serverContacts)
+{
+    QMap<int, GContactsStatus> statusMap;
+
+    if (mContactBackend->addContacts (serverContacts, statusMap))
+    {
+        // TODO: Saving succeeded. Update sync results
+    } else
+    {
+        // TODO: Saving failed. Update sync results and probably stop sync
+    }
+}
+
+void
+GContactClient::storeToLocal ()
+{
+    if (mRemoteAddedContacts.size () > 0)
+    {
+        QList<QContact> addedContacts = toQContacts (mRemoteAddedContacts);
+        QMap<int, GContactsStatus> addedStatusMap;
+        if (mContactBackend->addContacts (addedContacts, addedStatusMap))
+        {
+        } else
+        {
+        }
+    }
+
+    if (mRemoteModifiedContacts.size () > 0)
+    {
+        QList<QContact> modifiedContacts = toQContacts (mRemoteModifiedContacts);
+
+        QStringList modifiedIdsList;
+        for (int i=0; i<modifiedContacts.size (); i++)
+            modifiedIdsList << QString (modifiedContacts.at (i).localId ());
+
+        QMap<int, GContactsStatus> modifiedStatusMap =
+        mContactBackend->modifyContacts (modifiedContacts, modifiedIdsList);
+
+        if (modifiedStatusMap.size () > 0)
+        {
+        } else
+        {
+        }
+    }
+
+    if (mRemoteDeletedContacts.size () > 0)
+    {
+        QStringList guidList;
+        for (int i=0; i<mRemoteDeletedContacts.size (); i++)
+            guidList << mRemoteDeletedContacts.at (i)->id ();
+
+        QStringList localIdList = mContactBackend->localIds (guidList);
+
+        QMap<int, GContactsStatus> deletedStatusMap =
+                mContactBackend->deleteContacts (localIdList);
+        if (deletedStatusMap.size () > 0)
+        {
+        } else
+        {
+        }
+    }
+}
+
+QList<QContact>
+GContactClient::toQContacts (const QList<GContactEntry*> gContactList)
+{
+    QList<QContact> qContactList;
+
+    for (int i=0; i<gContactList.size (); i++)
+    {
+        qContactList.append (gContactList.at (i)->qContact ());
+    }
+    return qContactList;
+}
+
+void
+GContactClient::resolveConflicts ()
+{
+    // TODO: Handle conflicts. The steps:
+    // o Compare the list of local modified/deleted contacts with
+    //   the list of remote modified/deleted contacts
+    // o Create a new list (a map maybe) that has the contacts to
+    //   be modified/deleted using the conflict resolution policy
+    //   (server-wins, client-wins, add-new)
+    // o Return the list
 }
