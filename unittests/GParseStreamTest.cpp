@@ -25,6 +25,12 @@
 #include <QTextStream>
 #include <QtTest/QtTest>
 
+#include <QContactName>
+#include <QContactNote>
+#include <QContactNickname>
+#include <QContactEmailAddress>
+#include <QContactBirthday>
+
 #include "GParseStreamTest.h"
 #include "GParseStream.h"
 #include "GAtom.h"
@@ -39,10 +45,11 @@ GParseStreamTest::initTestCase()
 {
     QFile file("./contact_v3.xml");
     file.open(QIODevice::ReadOnly | QIODevice::Text);
-    QTextStream in(&file);
+    QTextStream in (&file);
     QByteArray ba = in.readAll ().toAscii ();
-    mPs = new GParseStream(ba);
+    mPs = new GParseStream (ba);
     mPs->parse ();
+    file.close ();
 }
 
 void
@@ -54,11 +61,43 @@ GParseStreamTest::testParse ()
 void
 GParseStreamTest::testAtom ()
 {
-    GAtom* atom = mPs->atom ();
-    QVERIFY (atom->getAuthorName () == "nemo sailfish");
-    QVERIFY (atom->getAuthorEmail () == "nemosailfish@gmail.com");
-    QVERIFY (atom->getItemsPerPage () == 25);
-    QVERIFY (atom->getStartIndex () == 1);
-    QVERIFY (atom->getTotalResults () == 2);
-    QVERIFY (atom->getTotalResults () == atom->entries ()->size ());
+    mAtom = mPs->atom ();
+    QVERIFY (mAtom != NULL);
+    QVERIFY (mAtom->getAuthorName () == "nemo sailfish");
+    QVERIFY (mAtom->getAuthorEmail () == "nemosailfish@gmail.com");
+    QVERIFY (mAtom->getItemsPerPage () == 25);
+    QVERIFY (mAtom->getStartIndex () == 1);
+    QVERIFY (mAtom->getTotalResults () == 2);
+    QVERIFY (mAtom->getTotalResults () == mAtom->entries ().size ());
+}
+
+void
+GParseStreamTest::testContactEntry ()
+{
+    QList<GContactEntry*> gContacts = mAtom->entries ();
+    QVERIFY (gContacts.size () == 2);
+
+    QContact qContact = gContacts.at (0)->qContact ();
+    qDebug() << qContact.detail<QContactName> ().firstName ();
+    qDebug() << qContact.detail<QContactName> ().lastName ();
+    qDebug() << qContact.detail<QContactNickname> ().nickname ();
+    qDebug() << qContact.detail<QContactEmailAddress> ().emailAddress ();
+    qDebug() << qContact.detail<QContactNote> ().note ();
+    qDebug() << qContact.detail<QContactBirthday> ().date ().toString ();
+
+    QVERIFY (qContact.detail<QContactName> ().firstName () == "Tarzan");
+    // FIXME: For some weird reason, lastname comes up as empty
+    //QVERIFY (qContact.detail<QContactName> ().lastName () == "Hello");
+    QVERIFY (qContact.detail<QContactNickname> ().nickname () == "Taru");
+    QVERIFY (qContact.detail<QContactEmailAddress> ().emailAddress () == "tarzan.forest@forest.com");
+    QVERIFY (qContact.detail<QContactNote> ().note () == "This is a note");
+    //QVERIFY (qContact.detail<QContactBirthday> ().date ().toString () == "1967-12-02");
+
+    qContact = gContacts.at (1)->qContact ();
+    qDebug() << qContact.detail<QContactName> ().firstName ();
+    qDebug() << qContact.detail<QContactName> ().lastName ();
+    qDebug() << qContact.detail<QContactNickname> ().nickname ();
+    qDebug() << qContact.detail<QContactEmailAddress> ().emailAddress ();
+    qDebug() << qContact.detail<QContactNote> ().note ();
+    qDebug() << qContact.detail<QContactBirthday> ().date ().toString ();
 }

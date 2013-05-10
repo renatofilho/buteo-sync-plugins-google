@@ -124,12 +124,15 @@ signals:
 
     void finishedRequest ();
 
+    void error (QNetworkReply::NetworkError networkError);
+
 private slots:
 
     virtual void finishedSlot( QNetworkReply* reply );
 
     virtual void readyRead();
 
+    void handleNetworkError (QNetworkReply::NetworkError networkError);
 };
 
 #endif // GTRANSPORT_H

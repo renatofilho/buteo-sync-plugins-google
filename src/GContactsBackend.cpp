@@ -501,12 +501,6 @@ GContactsBackend::getSyncTargetFilter() const
     return detailFilterDefaultSyncTarget;
 }
 
-void
-GContactsBackend::fetchDone ()
-{
-    emit requestFetchDone ();
-}
-
 bool
 GContactsBackend::entryExists (const QString entryGuid)
 {

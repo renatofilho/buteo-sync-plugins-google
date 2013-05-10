@@ -8,13 +8,13 @@ QT       += network sql xml
 
 QT       -= gui
 
-TARGET = buteo-gcontact-plugin
+TARGET = googlecontacts-client
 TEMPLATE = lib
 
 $$PKG_CONFIG_PATH = $$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/
 
-CONFIG += link_pkgconfig plugin mobility
-PKGCONFIG += buteosyncfw QJson
+CONFIG += link_pkgconfig plugin mobility debug
+PKGCONFIG += buteosyncfw
 
 MOBILITY += contacts
 
@@ -47,11 +47,12 @@ HEADERS += GContactClient.h\
     GContactsBackend.h \
     GContactDetail.h
 
-unix:!symbian {
-    maemo5 {
-        target.path = /opt/usr/lib
-    } else {
-        target.path = /usr/lib/buteo-plugins
-    }
-    INSTALLS += target
-}
+target.path = /usr/lib/buteo-plugins
+
+sync.path = /etc/buteo/profiles/sync
+sync.files = xmls/sync/*
+
+client.path = /etc/buteo/profiles/client
+client.files = xmls/client/*
+
+INSTALLS += target sync client

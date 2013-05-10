@@ -42,9 +42,12 @@ private slots:
 
     void testAtom ();
 
+    void testContactEntry ();
 private:
 
     GParseStream* mPs;
+
+    GAtom* mAtom;
 };
 
 #endif // PARSESTREAMTEST_H

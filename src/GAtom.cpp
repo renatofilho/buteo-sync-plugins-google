@@ -22,22 +22,28 @@
  */
 
 #include "GAtom.h"
-
+#include <LogMacros.h>
 
 GAtom::GAtom(bool generateXmlFlag) :
     mGenerateXml(generateXmlFlag)
 {
+    FUNCTION_CALL_TRACE;
+
 }
 
 void
 GAtom::setGenerateXml (bool flag)
 {
+    FUNCTION_CALL_TRACE;
+
     mGenerateXml = flag;
 }
 
 void
 GAtom::setAuthorEmail (QString authorEmail)
 {
+    FUNCTION_CALL_TRACE;
+
     mAuthorEmail = authorEmail;
     if (mGenerateXml) {}
         // TODO: Write to XML

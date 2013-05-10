@@ -21,21 +21,27 @@
  *
  */
 
-#include <QtTest/QtTest>
-
-#include "GAtomTest.h"
-#include "GParseStreamTest.h"
-#include "GTransportTest.h"
 #include "GContactsBackendTest.h"
+#include "GContactsBackend.h"
+#include <QDebug>
+#include <iostream>
 
-int main(int argc, char** argv)
+GContactsBackendTest::GContactsBackendTest(QObject *parent) :
+    QObject(parent)
 {
-    QCoreApplication app( argc, argv );
-    GParseStreamTest parseStreamTest;
-    GTransportTest transportTest;
-    GContactsBackendTest contactsBackendTest;
+}
 
-    QTest::qExec (&parseStreamTest, argc, argv);
+void
+GContactsBackendTest::testAllLocalContactIds ()
+{
+    GContactsBackend* contactsBackend = new GContactsBackend ();
+    QList<QContactLocalId> localIds = contactsBackend->getAllContactIds ();
+    std::cout << "What is this" << localIds.size ();
+    for (int i=0; i<localIds.size (); i++)
+        std::cout << localIds.at(i) << "\n";
+}
 
-    return 0;
+void
+GContactsBackendTest::testChangedLocalContactIds ()
+{
 }

@@ -21,21 +21,19 @@
  *
  */
 
-#include <QtTest/QtTest>
+#ifndef GCONTACTCLIENTTEST_H
+#define GCONTACTCLIENTTEST_H
 
-#include "GAtomTest.h"
-#include "GParseStreamTest.h"
-#include "GTransportTest.h"
-#include "GContactsBackendTest.h"
+#include <QObject>
 
-int main(int argc, char** argv)
+class GContactClientTest : public QObject
 {
-    QCoreApplication app( argc, argv );
-    GParseStreamTest parseStreamTest;
-    GTransportTest transportTest;
-    GContactsBackendTest contactsBackendTest;
+    Q_OBJECT
+public:
+    explicit GContactClientTest(QObject *parent = 0);
 
-    QTest::qExec (&parseStreamTest, argc, argv);
+private slots:
 
-    return 0;
-}
+};
+
+#endif // GCONTACTCLIENTTEST_H

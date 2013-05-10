@@ -65,6 +65,7 @@ private:
     void handleAtomEntry();
 
     // gContact:xxx schema handler methods
+    void handleEntryContent();
     void handleEntryId();
     void handleEntryTitle();
     void handleEntryBillingInformation();
@@ -99,10 +100,8 @@ private:
     void handleEntryCountry();
     void handleEntryEmail();
     void handleEntryExtendedProperty();
-    void handleEntryFamilyName();
     void handleEntryFeedLink();
     void handleEntryIm();
-    void handleEntryGivenName();
     void handleEntryMoney();
     void handleEntryName();
     void handleEntryOrganization();

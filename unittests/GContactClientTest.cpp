@@ -21,21 +21,9 @@
  *
  */
 
-#include <QtTest/QtTest>
+#include "GContactClientTest.h"
 
-#include "GAtomTest.h"
-#include "GParseStreamTest.h"
-#include "GTransportTest.h"
-#include "GContactsBackendTest.h"
-
-int main(int argc, char** argv)
+GContactClientTest::GContactClientTest(QObject *parent) :
+    QObject(parent)
 {
-    QCoreApplication app( argc, argv );
-    GParseStreamTest parseStreamTest;
-    GTransportTest transportTest;
-    GContactsBackendTest contactsBackendTest;
-
-    QTest::qExec (&parseStreamTest, argc, argv);
-
-    return 0;
 }

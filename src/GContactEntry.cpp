@@ -23,6 +23,7 @@
 
 #include "GContactEntry.h"
 #include <QDateTime>
+#include <QDebug>
 
 #include <QtContacts/QContact>
 #include <QtContacts/QContactGuid>
@@ -39,8 +40,8 @@
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
-GContactEntry::GContactEntry(bool generateXmlFlag, QObject *parent) :
-    QObject (parent), mGenerateXmlFlag(generateXmlFlag)
+GContactEntry::GContactEntry(bool generateXmlFlag) :
+    mGenerateXmlFlag(generateXmlFlag)
 {
 }
 
@@ -100,7 +101,8 @@ GContactEntry::setFamilyName (QString familyName)
 {
     QContactName name;
     name.setLastName (familyName);
-    mQContact.saveDetail (&name);
+    qDebug() << mQContact.saveDetail (&name);
+    qDebug() << "Family name set:" << name.lastName ();
 }
 
 QString
@@ -140,6 +142,7 @@ GContactEntry::setGivenName (QString givenName)
     QContactName name;
     name.setFirstName (givenName);
     mQContact.saveDetail (&name);
+    qDebug() << "Given name set:" << name.firstName ();
 }
 
 QString
@@ -148,11 +151,12 @@ GContactEntry::getGivenName ()
 }
 
 void
-GContactEntry::setEmail (QString address, QString label, QString rel, bool primary)
+GContactEntry::setEmail (QString address, QString rel, QString primary)
 {
     QContactEmailAddress email;
     email.setEmailAddress (address);
     mQContact.saveDetail (&email);
+    qDebug() << "Email set:" << email.emailAddress ();
 }
 
 QString
@@ -174,11 +178,32 @@ billingInformation ()
 void
 GContactEntry::setBirthday (QString birthday)
 {
+    qDebug() << birthday;
     QContactBirthday bday;
 
-    bday.setDate (QDate::fromString (birthday, "yyyy-mm-dd"));
-    mQContact.saveDetail (&bday);
+    bday.setDate (QDate::fromString (birthday, "yyyy-dd-mm"));
+    qDebug() << mQContact.saveDetail (&bday);
+    qDebug() << bday.date ().toString() << "DT";
 }
+
+
+/*
+void
+GContactEntry::setBirthday (QString birthday)
+{
+    qDebug() << birthday;
+    QContactBirthday bday;
+
+    QDate bdayDate = QDate::fromString( birthday, "yyyy-mm-dd");
+    qDebug() << bdayDate.toString() << "D"; // does this show the correct date?
+    bday.setDate (bdayDate);
+    mQContact.saveDetail (&bday);
+    qDebug() << bday.date().toString() << "DT"; // does it still match here?
+    qDebug() << mQContact.detail<QContactBirthday>().date() << "CDT"; // does it match here, or not?
+}
+*/
+
+
 
 QString
 GContactEntry::birthday ()
@@ -472,17 +497,6 @@ GContactEntry::deleted ()
 }
 
 void
-GContactEntry::setEntryLink (QString link)
-{
-    // TODO: Custom field
-}
-
-QString
-GContactEntry::entryLink ()
-{
-}
-
-void
 GContactEntry::setExtendedProperty (QString name, QString extProperty)
 {
     // TODO: Custom field
@@ -767,7 +781,8 @@ GContactEntry::setPostalAddrAttrs(QString rel, QString mailClass, QString usage,
 {
 }
 
-QContact GContactEntry::qContact()
+QContact
+GContactEntry::qContact()
 {
     return mQContact;
 }

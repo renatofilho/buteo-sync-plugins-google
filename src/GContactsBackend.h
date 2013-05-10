@@ -189,14 +189,6 @@ public:
 
     const QList<QPair<QContactLocalId, QString> > guids (const QList<QContactLocalId> localIdList);
 
-signals:
-
-    void requestFetchDone ();
-
-private slots:
-
-    void fetchDone ();
-
 private: // functions
 
     /*!

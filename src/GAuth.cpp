@@ -27,6 +27,9 @@
 #include <QVariantMap>
 #include <LogMacros.h>
 
+#include <QTextStream>
+#include <QFile>
+
 /* Values obtained after registering with Google */
 const QString CODE_TAG            	("code");
 const QString CLIENT_ID_TAG	        ("client_id");
@@ -52,6 +55,13 @@ GAuth::GAuth(QObject *parent) :
 const QString GAuth::token()
 {
     LOG_DEBUG("Token:" << iToken);
+    // FIXME: Read the token from file until accounts&sso
+    // integration is done
+    QFile file ("/tmp/access_token.txt");
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+    QTextStream in (&file);
+    iToken = in.readAll ();
+    file.close ();
     return iToken;
 }
 
@@ -108,6 +118,7 @@ void GAuth::processTokenResponse(const QByteArray tokenJSON)
     }
     */
 
+    /*
     QJson::Parser parser;
     bool ok;
     QVariantMap result = parser.parse(tokenJSON, &ok).toMap();
@@ -115,6 +126,7 @@ void GAuth::processTokenResponse(const QByteArray tokenJSON)
         iToken = result["access_token"].toString();
     else
         iToken = QString("");
+        */
 }
 
 void GAuth::deviceAuth()
@@ -157,6 +169,7 @@ void GAuth::processDeviceCode(const QByteArray deviceCodeJSON)
      }
     */
 
+    /*
     QJson::Parser parser;
     bool ok;
 
@@ -169,4 +182,5 @@ void GAuth::processDeviceCode(const QByteArray deviceCodeJSON)
     LOG_DEBUG("Verification url:" << result["verification_url"].toString() <<
               ", user_code:" << result["user_code"].toString() <<
               ",device_code" << result["device_code"].toString());
+    */
 }

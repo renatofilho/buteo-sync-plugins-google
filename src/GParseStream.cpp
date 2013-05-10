@@ -29,12 +29,16 @@
 GParseStream::GParseStream (QObject* parent) :
                             mXml (NULL), mAtom (NULL)
 {
+    FUNCTION_CALL_TRACE;
+
     initFunctionMap ();
 }
 
 GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
     QObject(parent)
 {
+    FUNCTION_CALL_TRACE;
+
     mXml = new QXmlStreamReader (xmlStream);
     mAtom = new GAtom (false);
 
@@ -43,6 +47,8 @@ GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
 
 GParseStream::~GParseStream ()
 {
+    FUNCTION_CALL_TRACE;
+
     delete mAtom;
     mAtom = NULL;
 
@@ -53,6 +59,8 @@ GParseStream::~GParseStream ()
 void
 GParseStream::setParseData (const QByteArray data)
 {
+    FUNCTION_CALL_TRACE;
+
     mXml = new QXmlStreamReader (data);
     mAtom = new GAtom (false);
 }
@@ -60,6 +68,8 @@ GParseStream::setParseData (const QByteArray data)
 void
 GParseStream::initFunctionMap ()
 {
+    FUNCTION_CALL_TRACE;
+
     // Initialize the function map
     mAtomFunctionMap.insert ("updated", &GParseStream::handleAtomUpdated);
     mAtomFunctionMap.insert ("category", &GParseStream::handleAtomCategory);
@@ -70,6 +80,7 @@ GParseStream::initFunctionMap ()
     mAtomFunctionMap.insert ("entry", &GParseStream::handleAtomEntry);
 
     mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
+    mContactFunctionMap.insert ("content", &GParseStream::handleEntryContent);
     mContactFunctionMap.insert ("title", &GParseStream::handleEntryTitle);
     mContactFunctionMap.insert ("gContact:billingInformation", &GParseStream::handleEntryBillingInformation);
     mContactFunctionMap.insert ("gContact:birthday", &GParseStream::handleEntryBirthday);
@@ -102,9 +113,7 @@ GParseStream::initFunctionMap ()
     mContactFunctionMap.insert ("gd:deleted", &GParseStream::handleEntryDeleted);
     mContactFunctionMap.insert ("gd:email", &GParseStream::handleEntryEmail);
     mContactFunctionMap.insert ("gd:extendedProperty", &GParseStream::handleEntryExtendedProperty);
-    mContactFunctionMap.insert ("gd:familyName", &GParseStream::handleEntryFamilyName);
     mContactFunctionMap.insert ("gd:feedLink", &GParseStream::handleEntryFeedLink);
-    mContactFunctionMap.insert ("gd:givenName", &GParseStream::handleEntryGivenName);
     mContactFunctionMap.insert ("gd:im", &GParseStream::handleEntryIm);
     mContactFunctionMap.insert ("gd:money", &GParseStream::handleEntryMoney);
     mContactFunctionMap.insert ("gd:name", &GParseStream::handleEntryName);
@@ -118,12 +127,16 @@ GParseStream::initFunctionMap ()
 GAtom*
 GParseStream::atom ()
 {
+    FUNCTION_CALL_TRACE;
+
     return mAtom;
 }
 
 void
 GParseStream::parse ()
 {
+    FUNCTION_CALL_TRACE;
+
     while (!mXml->atEnd () && !mXml->hasError ())
     {
         if (mXml->readNextStartElement ())
@@ -190,9 +203,12 @@ GParseStream::handleAtomOpenSearch ()
 void
 GParseStream::handleAtomEntry ()
 {
+    FUNCTION_CALL_TRACE;
+
     Q_ASSERT(mXml->isStartElement () && mXml->name () == "entry");
 
     mContactEntry = new GContactEntry (false);
+    Q_CHECK_PTR (mContactEntry);
     // Store the etag value of the entry
     mContactEntry->setEtag (mXml->attributes ().value ("gd:etag").toString ());
 
@@ -215,6 +231,13 @@ GParseStream::handleEntryId ()
 {
     QString idUrl = mXml->readElementText ();
     mContactEntry->setId (idUrl.right (idUrl.lastIndexOf ('/')));
+}
+
+void
+GParseStream::handleEntryContent ()
+{
+    QString content = mXml->readElementText ();
+    mContactEntry->setComments (content);
 }
 
 void
@@ -503,11 +526,11 @@ GParseStream::handleEntryCountry ()
 void
 GParseStream::handleEntryEmail ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:entryLink");
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:email");
 
-    // Store the complete entry link. Apps interested in using this field, will
-    // have to handle the entry link feed content
-    mContactEntry->setEntryLink (mXml->readElementText ());
+    mContactEntry->setEmail (mXml->attributes ().value ("address").toString (),
+                             mXml->attributes ().value ("rel").toString (),
+                             mXml->attributes ().value ("primary").toString ());
 }
 
 void
@@ -517,14 +540,6 @@ GParseStream::handleEntryExtendedProperty ()
 
     mContactEntry->setExtendedProperty (mXml->attributes ().value ("name").toString (),
                                         mXml->readElementText ());
-}
-
-void
-GParseStream::handleEntryFamilyName ()
-{
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:familyName");
-
-    mContactEntry->setFamilyName (mXml->readElementText ());
 }
 
 void
@@ -559,14 +574,6 @@ GParseStream::handleEntryIm ()
 }
 
 void
-GParseStream::handleEntryGivenName ()
-{
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:givenName");
-
-    mContactEntry->setGivenName (mXml->readElementText ());
-}
-
-void
 GParseStream::handleEntryMoney ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:money");
@@ -578,13 +585,14 @@ GParseStream::handleEntryMoney ()
 void
 GParseStream::handleEntryName ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
+    //Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
 
     while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
              mXml->qualifiedName () == "gd:name"))
     {
         if (mXml->tokenType () == QXmlStreamReader::StartElement)
         {
+    qDebug() << mXml->qualifiedName ();
             if (mXml->qualifiedName () == "gd:givenName")
                 mContactEntry->setGivenName (mXml->readElementText ());
             else if (mXml->qualifiedName () == "gd:additionalName")

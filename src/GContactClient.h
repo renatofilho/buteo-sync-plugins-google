@@ -29,6 +29,7 @@
 #include "GTransport.h"
 #include "GParseStream.h"
 #include "GContactsBackend.h"
+#include "GAuth.h"
 
 #include <QList>
 #include <QPair>
@@ -85,6 +86,7 @@ public slots:
     void processNetworkResponse ();
 
 signals:
+
     void stateChanged (Sync::SyncProgressDetail progress);
 
     void itemProcessed (Sync::TransferType type,
@@ -164,6 +166,8 @@ private:
 
     void resolveConflicts ();
 
+    GAuth*                     mGoogleAuth;
+
     bool                        mSlowSync;
 
     Buteo::SyncProfile::SyncDirection mSyncDirection;
@@ -197,6 +201,11 @@ private:
         MODIFY,
         DELETE
     };
+
+#ifndef QT_NO_DEBUG
+    friend class GContactClientTest;
+#endif
+
 };
 
 /*! \brief Creates SyncML client plugin

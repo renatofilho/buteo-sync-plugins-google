@@ -29,12 +29,11 @@
 
 QTM_USE_NAMESPACE
 
-class GContactEntry : public QObject
+class GContactEntry
 {
-    Q_OBJECT
 public:
 
-    explicit GContactEntry (bool generateXmlFlag, QObject *parent = 0);
+    explicit GContactEntry (bool generateXmlFlag);
 
     void setId (QString id);
     QString id ();
@@ -60,7 +59,7 @@ public:
     void setGivenName (QString givenName);
     QString getGivenName ();
 
-    void setEmail (QString address, QString label, QString rel, bool primary);
+    void setEmail (QString address, QString rel, QString primary);
     QString email ();
 
     void setBillingInformation (QString billingInfo);
@@ -145,9 +144,6 @@ public:
     void setDeleted (bool deleted);
     bool deleted ();
 
-    void setEntryLink (QString link);
-    QString entryLink ();
-
     void setExtendedProperty (QString name, QString extProperty);
     QString extendedProperty ();
 
@@ -231,11 +227,6 @@ private:
     QContact mQContact;
 
     bool mDeleted;
-
-signals:
-
-public slots:
-
 };
 
 #endif // GCONTACT_H

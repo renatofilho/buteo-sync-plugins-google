@@ -26,17 +26,14 @@
 
 #include "atom_global.h"
 
-#include <QObject>
-#include <QMetaObject>
 #include <QMetaEnum>
 #include <QMap>
 #include <QList>
 
 #include "GContactEntry.h"
 
-class ATOMSHARED_EXPORT GAtom : public QObject
+class GAtom
 {
-    Q_OBJECT
 
 public:
     GAtom(bool generateXmlFlag);
@@ -68,8 +65,6 @@ public:
         html,
         xhtml
     } TYPE;
-
-    Q_ENUMS (GAtomFeed)
 
     void setGenerateXml(bool flag);
 
