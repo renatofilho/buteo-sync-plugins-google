@@ -60,7 +60,7 @@ public:
 
     virtual ~GTransport();
 
-    void setUrl (QString url);
+    void setUrl (const QString url);
 
     void setData (QByteArray data);
 

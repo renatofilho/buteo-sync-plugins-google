@@ -130,7 +130,8 @@ GContactClient::startSync()
     connect(this, SIGNAL(syncFinished(Sync::SyncStatus)),
             this, SLOT(receiveSyncFinished(Sync::SyncStatus)));
 
-    return this->start ();
+    QTimer::singleShot (0, this, SLOT (start ()));
+    return true;
 }
 
 void

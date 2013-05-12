@@ -110,6 +110,8 @@ protected slots:
 
     void networkError (QNetworkReply::NetworkError error);
 
+    bool start ();
+
 private:
 
     bool initConfig ();
@@ -119,8 +121,6 @@ private:
     bool initTransport();
 
     void closeTransport();
-
-    bool start ();
 
     bool abort (Sync::SyncStatus status);
 

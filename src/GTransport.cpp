@@ -33,11 +33,11 @@ const int MAX_RESULTS = 10;
 const QString SCOPE_URL("https://www.google.com/m8/feeds/");
 const QString GCONTACT_URL(SCOPE_URL + "/contacts/default/");
 
-const QString GDATA_VERSION_TAG = QString("GData-Version: ");
+const QString GDATA_VERSION_TAG = QString("GData-Version ");
 const QString GDATA_VERSION = QString("3.0");
 const QString G_DELETE_OVERRIDE_HEADER("X-HTTP-Method-Override: DELETE");
-const QString G_ETAG_HEADER("If-Match: ");
-const QString G_AUTH_HEADER ("Authorization: ");
+const QString G_ETAG_HEADER("If-Match ");
+const QString G_AUTH_HEADER ("Authorization ");
 
 /* Query parameters */
 const QString QUERY_TAG("q");
@@ -146,15 +146,14 @@ GTransport::~GTransport()
 }
 
 void
-GTransport::setUrl (QString url)
+GTransport::setUrl (const QString url)
 {
     FUNCTION_CALL_TRACE;
 
     iUrl.setUrl(url, QUrl::StrictMode);
     encode(iUrl);
 
-    if (iNetworkRequest)
-        iNetworkRequest->setUrl (iUrl);
+    iNetworkRequest->setUrl (iUrl);
 
 }
 
@@ -194,8 +193,8 @@ GTransport::setAuthToken (const QString token)
 
     mAuthToken = token;
 
-    QByteArray header1 = QString(G_AUTH_HEADER + "Bearer ").toAscii ();
-    addHeader (QPair<QByteArray, QByteArray>(header1, token.toAscii ()));
+    QByteArray header1 = QString(G_AUTH_HEADER).toAscii ();
+    addHeader (QPair<QByteArray, QByteArray>(header1, ("Bearer " + token).toAscii ()));
 }
 
 void
@@ -235,10 +234,16 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
 
     iNetworkReplyBody = "";
 
+    LOG_DEBUG("++URL:" << iNetworkRequest->url ().toString ());
+            addHeader (QPair<QByteArray,QByteArray>(GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ()));
+            QList<QByteArray> headers = iNetworkRequest->rawHeaderList ();
+            for (int i=0; i<headers.size (); i++) {
+                QByteArray value = iNetworkRequest->rawHeader (headers.at(i));
+                LOG_DEBUG ("HHH" << headers.at (i) << ":" << value);
+            }
     switch (type)
     {
         case GET:
-            addHeader (QPair<QByteArray,QByteArray>(GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ()));
             iNetworkReply = iNetworkMgr.get(*iNetworkRequest);
         break;
         case POST:
@@ -287,6 +292,7 @@ GTransport::readyRead()
 
     mResponseCode = iNetworkReply->attribute (
                 QNetworkRequest::HttpStatusCodeAttribute).toInt ();
+    LOG_DEBUG ("++RESPONSE CODE:" << mResponseCode);
     if (mResponseCode >= 200 && mResponseCode <= 300)
     {
         QByteArray bytes = iNetworkReply->readAll ();
