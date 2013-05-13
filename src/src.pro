@@ -11,7 +11,7 @@ QT       -= gui
 TARGET = googlecontacts-client
 TEMPLATE = lib
 
-$$PKG_CONFIG_PATH = $$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/
+#$$PKG_CONFIG_PATH = $$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/
 
 CONFIG += link_pkgconfig plugin mobility debug
 PKGCONFIG += buteosyncfw
@@ -35,7 +35,8 @@ SOURCES += GContactClient.cpp \
     GContactEntry.cpp \
     GParseStream.cpp \
     GAtom.cpp \
-    GContactsBackend.cpp
+    GContactsBackend.cpp \
+    GContactCustomDetail.cpp
 
 HEADERS += GContactClient.h\
         buteo-gcontact-plugin_global.h \
@@ -45,7 +46,8 @@ HEADERS += GContactClient.h\
     GParseStream.h \
     GAtom.h \
     GContactsBackend.h \
-    GContactDetail.h
+    GContactDetail.h \
+    GContactCustomDetail.h
 
 target.path = /usr/lib/buteo-plugins
 

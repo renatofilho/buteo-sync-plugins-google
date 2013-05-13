@@ -7,7 +7,7 @@ MOBILITY += contacts
 INCLUDEPATH += ../src
 
 LIBS += -L../src \
-        -lbuteo-gcontact-client
+        -lgooglecontacts-client
 
 SOURCES +=  \
     main.cpp \

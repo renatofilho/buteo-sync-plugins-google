@@ -22,6 +22,7 @@
  */
 
 #include "GContactEntry.h"
+#include "GContactCustomDetail.h"
 #include <QDateTime>
 #include <QDebug>
 
@@ -37,6 +38,8 @@
 #include <QtContacts/QContactOnlineAccount>
 #include <QtContacts/QContactOrganization>
 #include <QtContacts/QContactPhoneNumber>
+#include <QContactAddress>
+#include <QContactSyncTarget>
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
@@ -62,9 +65,12 @@ GContactEntry::id ()
 }
 
 void
-GContactEntry::setEtag (QString etag)
+GContactEntry::setEtag (const QString etag)
 {
-    // TODO: Custom detail
+    GContactCustomDetail etagDetail;
+    etagDetail.setETag (etag);
+
+    mQContact.saveDetail (&etagDetail);
 }
 
 QString
@@ -73,9 +79,8 @@ GContactEntry::etag ()
 }
 
 void
-GContactEntry::setFullName (QString fullName)
+GContactEntry::setFullName (const QString fullName)
 {
-   // TODO: Custom tag
 }
 
 QString
@@ -83,12 +88,14 @@ GContactEntry::getFullName ()
 {
     // TODO: Custom tag. Is it necessary to handle this, since
     // name is already part of gd:name
+    // This has to go to QContactName as a schema change tag
 }
 
 void
-GContactEntry::setAdditionalName (QString additionalName)
+GContactEntry::setAdditionalName (const QString additionalName)
 {
     // TODO: Custom tag.
+    // This has to go to QContactName as a schema change tag
 }
 
 QString
@@ -97,7 +104,7 @@ GContactEntry::getAdditionalName ()
 }
 
 void
-GContactEntry::setFamilyName (QString familyName)
+GContactEntry::setFamilyName (const QString familyName)
 {
     QContactName name;
     name.setLastName (familyName);
@@ -111,7 +118,7 @@ GContactEntry::getFamilyName ()
 }
 
 void
-GContactEntry::setNamePrefix (QString namePrefix)
+GContactEntry::setNamePrefix (const QString namePrefix)
 {
     QContactName name;
     name.setPrefix (namePrefix);
@@ -124,7 +131,7 @@ GContactEntry::getNamePrefix ()
 }
 
 void
-GContactEntry::setNameSuffix (QString nameSuffix)
+GContactEntry::setNameSuffix (const QString nameSuffix)
 {
     QContactName name;
     name.setSuffix (nameSuffix);
@@ -137,7 +144,7 @@ GContactEntry::getNameSuffix ()
 }
 
 void
-GContactEntry::setGivenName (QString givenName)
+GContactEntry::setGivenName (const QString givenName)
 {
     QContactName name;
     name.setFirstName (givenName);
@@ -151,7 +158,8 @@ GContactEntry::getGivenName ()
 }
 
 void
-GContactEntry::setEmail (QString address, QString rel, QString primary)
+GContactEntry::setEmail (const QString address, const QString rel,
+                         const QString primary)
 {
     QContactEmailAddress email;
     email.setEmailAddress (address);
@@ -165,9 +173,12 @@ GContactEntry::email ()
 }
 
 void
-GContactEntry::setBillingInformation (QString billingInfo)
+GContactEntry::setBillingInformation (const QString billingInfo)
 {
-    // TODO: Custom field
+    GContactCustomDetail billing;
+    billing.setBillingInformation (billingInfo);
+
+    mQContact.saveDetail (&billing);
 }
 
 QString
@@ -176,7 +187,7 @@ billingInformation ()
 }
 
 void
-GContactEntry::setBirthday (QString birthday)
+GContactEntry::setBirthday (const QString birthday)
 {
     qDebug() << birthday;
     QContactBirthday bday;
@@ -203,17 +214,19 @@ GContactEntry::setBirthday (QString birthday)
 }
 */
 
-
-
 QString
 GContactEntry::birthday ()
 {
 }
 
 void
-GContactEntry::setCalendarLink (QString href, QString label, QString rel, QString primary)
+GContactEntry::setCalendarLink (const QString href,
+                                const QString rel, const QString primary)
 {
-    // TODO: custom field
+    GContactCustomDetail calendarLink;
+    calendarLink.setCalendarLink (href);
+
+    mQContact.saveDetail (&calendarLink);
 }
 
 QString
@@ -222,9 +235,12 @@ GContactEntry::calendarLink ()
 }
 
 void
-GContactEntry::setDirectoryServer (QString dirServer)
+GContactEntry::setDirectoryServer (const QString dirServer)
 {
-    // TODO: Custom field
+    GContactCustomDetail dirServerDetail;
+    dirServerDetail.setDirectoryServer (dirServer);
+
+    mQContact.saveDetail (&dirServerDetail);
 }
 
 QString
@@ -233,9 +249,12 @@ GContactEntry::directoryServer ()
 }
 
 void
-GContactEntry::setEvent (QString event, QString when)
+GContactEntry::setEvent (const QString event, const QString when)
 {
-    // TODO: Custom field
+    GContactCustomDetail eventDetail;
+    eventDetail.setEvent (event);
+
+    mQContact.saveDetail (&eventDetail);
 }
 
 QString
@@ -244,9 +263,13 @@ GContactEntry::event ()
 }
 
 void
-GContactEntry::setExternalId (QString externalId, QString rel)
+GContactEntry::setExternalId (const QString externalId,
+                              const QString rel)
 {
-    // TODO: Custom field
+    GContactCustomDetail externalIdDetail;
+    externalIdDetail.setExternalId (externalId);
+
+    mQContact.saveDetail (&externalIdDetail);
 }
 
 QString
@@ -255,7 +278,7 @@ GContactEntry::externalId ()
 }
 
 void
-GContactEntry::setGender (QString gender)
+GContactEntry::setGender (const QString gender)
 {
     QContactGender contactGender;
     contactGender.setGender (gender);
@@ -268,9 +291,13 @@ GContactEntry::gender ()
 }
 
 void
-GContactEntry::setGroupMembershipInfo (QString membershipInfo, QString deleted)
+GContactEntry::setGroupMembershipInfo (const QString membershipInfo,
+                                       const QString deleted)
 {
-    // TODO: Handle groups
+    GContactCustomDetail membershipDetail;
+    membershipDetail.setGroupMembershipInfo (membershipInfo);
+
+    mQContact.saveDetail (&membershipDetail);
 }
 
 QString
@@ -279,7 +306,7 @@ GContactEntry::groupMembershipInfo ()
 }
 
 void
-GContactEntry::setHobby (QString hobby)
+GContactEntry::setHobby (const QString hobby)
 {
     QContactHobby contactHobby;
     contactHobby.setHobby (hobby);
@@ -292,9 +319,12 @@ GContactEntry::hobby ()
 }
 
 void
-GContactEntry::setInitials (QString initials)
+GContactEntry::setInitials (const QString initials)
 {
-    // TODO: Custom field
+    GContactCustomDetail initialsDetail;
+    initialsDetail.setInitials (initials);
+
+    mQContact.saveDetail (&initialsDetail);
 }
 
 QString
@@ -303,9 +333,12 @@ GContactEntry::initials ()
 }
 
 void
-GContactEntry::setJot (QString jot, QString jotType)
+GContactEntry::setJot (const QString jot, const QString jotType)
 {
-    // TODO: Custom field
+    GContactCustomDetail jotDetail;
+    jotDetail.setJot (jot);
+
+    mQContact.saveDetail (&jotDetail);
 }
 
 QString
@@ -314,9 +347,12 @@ GContactEntry::jot ()
 }
 
 void
-GContactEntry::setLanguage (QString language)
+GContactEntry::setLanguage (const QString language)
 {
-    // TODO: Custom field
+    GContactCustomDetail languageDetail;
+    languageDetail.setLanguage (language);
+
+    mQContact.saveDetail (&languageDetail);
 }
 
 QString
@@ -325,9 +361,10 @@ GContactEntry::language ()
 }
 
 void
-GContactEntry::setMaidenName (QString maidenName)
+GContactEntry::setMaidenName (const QString maidenName)
 {
     // TODO: Custom field
+    // This should be part QContactName
 }
 
 QString
@@ -336,9 +373,12 @@ GContactEntry::maidenName ()
 }
 
 void
-GContactEntry::setMileage (QString mileage)
+GContactEntry::setMileage (const QString mileage)
 {
-    // TODO: Custom field
+    GContactCustomDetail mileageDetail;
+    mileageDetail.setMileage (mileage);
+
+    mQContact.saveDetail (&mileageDetail);
 }
 
 QString
@@ -347,7 +387,7 @@ GContactEntry::mileage ()
 }
 
 void
-GContactEntry::setNickname (QString nickname)
+GContactEntry::setNickname (const QString nickname)
 {
     QContactNickname nick;
     nick.setNickname (nickname);
@@ -360,9 +400,12 @@ GContactEntry::nickname ()
 }
 
 void
-GContactEntry::setOccupation (QString occupation)
+GContactEntry::setOccupation (const QString occupation)
 {
-    // TODO: Custom field
+    GContactCustomDetail occupationDetail;
+    occupationDetail.setOccupation (occupation);
+
+    mQContact.saveDetail (&occupationDetail);
 }
 
 QString
@@ -371,9 +414,12 @@ GContactEntry::occupation ()
 }
 
 void
-GContactEntry::setPriority (QString priority)
+GContactEntry::setPriority (const QString priority)
 {
-    // TODO: Custom field
+    GContactCustomDetail priorityDetail;
+    priorityDetail.setPriority (priority);
+
+    mQContact.saveDetail (&priorityDetail);
 }
 
 QString
@@ -382,7 +428,8 @@ GContactEntry::priority ()
 }
 
 void
-GContactEntry::setRelation (QString relativeName, QString relation)
+GContactEntry::setRelation (const QString relativeName,
+                            const QString relation)
 {
     // TODO: Custom fiel. Support available for children and spouse
     // Create a if() condition to handle this
@@ -394,9 +441,12 @@ GContactEntry::relation ()
 }
 
 void
-GContactEntry::setSensitivity (QString sensitivity)
+GContactEntry::setSensitivity (const QString sensitivity)
 {
-    // TODO: Custom field
+    GContactCustomDetail sensitivityDetail;
+    sensitivityDetail.setSensitivity (sensitivity);
+
+    mQContact.saveDetail (&sensitivityDetail);
 }
 
 QString
@@ -405,7 +455,7 @@ GContactEntry::sensitivity ()
 }
 
 void
-GContactEntry::setShortname (QString shortname)
+GContactEntry::setShortname (const QString shortname)
 {
     // TODO: Custom field
 }
@@ -416,9 +466,12 @@ GContactEntry::shortname ()
 }
 
 void
-GContactEntry::setSubject (QString subject)
+GContactEntry::setSubject (const QString subject)
 {
-    // TODO: Custom field
+    GContactCustomDetail subjectDetail;
+    subjectDetail.setSubject (subject);
+
+    mQContact.saveDetail (&subjectDetail);
 }
 
 QString
@@ -427,9 +480,12 @@ GContactEntry::subject ()
 }
 
 void
-GContactEntry::setSystemGroup (QString systemGroup)
+GContactEntry::setSystemGroup (const QString systemGroup)
 {
-    // TODO: Custom field
+    GContactCustomDetail systemGroupDetail;
+    systemGroupDetail.setSystemGroup (systemGroup);
+
+    mQContact.saveDetail (&systemGroupDetail);
 }
 
 QString
@@ -438,9 +494,11 @@ GContactEntry::systemGroup ()
 }
 
 void
-GContactEntry::setUserDefinedField (QString key, QString value)
+GContactEntry::setUserDefinedField (const QString key,
+                                    const QString value)
 {
     // TODO: Custom field
+    // How should this be handled?
 }
 
 QString
@@ -449,9 +507,13 @@ GContactEntry::userDefinedField ()
 }
 
 void
-GContactEntry::setWebsite (QString website, QString rel, QString primary)
+GContactEntry::setWebsite (const QString website, const QString rel,
+                           const QString primary)
 {
-    // TODO: Custom field
+    GContactCustomDetail websiteDetail;
+    websiteDetail.setWebsite (website);
+
+    mQContact.saveDetail (&websiteDetail);
 }
 
 QString
@@ -461,7 +523,7 @@ GContactEntry::website ()
 
 // gd:xxx schema handler methods
 void
-GContactEntry::setComments (QString comments)
+GContactEntry::setComments (const QString comments)
 {
     QContactNote note;
     note.setNote (comments);
@@ -474,9 +536,12 @@ GContactEntry::comments ()
 }
 
 void
-GContactEntry::setCountry (QString country)
+GContactEntry::setCountry (const QString country)
 {
-    // TODO: Custom field
+    GContactCustomDetail countryDetail;
+    countryDetail.setCountry (country);
+
+    mQContact.saveDetail (&countryDetail);
 }
 
 QString
@@ -485,7 +550,7 @@ GContactEntry::country ()
 }
 
 void
-GContactEntry::setDeleted (bool deleted)
+GContactEntry::setDeleted (const bool deleted)
 {
     mDeleted = true;
 }
@@ -497,9 +562,11 @@ GContactEntry::deleted ()
 }
 
 void
-GContactEntry::setExtendedProperty (QString name, QString extProperty)
+GContactEntry::setExtendedProperty (const QString name,
+                                    const QString extProperty)
 {
     // TODO: Custom field
+    // How should this be handled?
 }
 
 QString
@@ -508,9 +575,12 @@ GContactEntry::extendedProperty ()
 }
 
 void
-GContactEntry::setFeedLink (QString feedLink)
+GContactEntry::setFeedLink (const QString feedLink)
 {
-    // TODO: Custom field
+    GContactCustomDetail feedlinkDetail;
+    feedlinkDetail.setFeedLink (feedLink);
+
+    mQContact.saveDetail (&feedlinkDetail);
 }
 
 QString
@@ -519,7 +589,8 @@ GContactEntry::feedLink ()
 }
 
 void
-GContactEntry::setIm (QString address, QString rel, QString protocol, QString primary)
+GContactEntry::setIm (const QString address, const QString rel,
+                      const QString protocol, const QString primary)
 {
     QContactOnlineAccount imAccount;
     imAccount.setAccountUri (address);
@@ -535,8 +606,12 @@ GContactEntry::im ()
 }
 
 void
-GContactEntry::setMoney (QString amount, QString currencyCode)
+GContactEntry::setMoney (const QString amount, const QString currencyCode)
 {
+    GContactCustomDetail moneyDetail;
+    moneyDetail.setMoney (amount);
+
+    mQContact.saveDetail (&moneyDetail);
 }
 
 QString
@@ -546,7 +621,7 @@ GContactEntry::money ()
 }
 
 void
-GContactEntry::setOrgDepartment (QString orgDept)
+GContactEntry::setOrgDepartment (const QString orgDept)
 {
     QContactOrganization org;
     QStringList deptList;
@@ -562,7 +637,7 @@ GContactEntry::orgDepartment ()
 }
 
 void
-GContactEntry::setOrgJobDescription (QString orgJobDesc)
+GContactEntry::setOrgJobDescription (const QString orgJobDesc)
 {
     QContactOrganization org;
     org.setRole (orgJobDesc);
@@ -576,7 +651,7 @@ GContactEntry::orgJobDescription ()
 }
 
 void
-GContactEntry::setOrgName (QString orgName)
+GContactEntry::setOrgName (const QString orgName)
 {
     QContactOrganization org;
     org.setName (orgName);
@@ -590,9 +665,10 @@ GContactEntry::orgName ()
 }
 
 void
-GContactEntry::setOrgSymbol (QString orgSymbol)
+GContactEntry::setOrgSymbol (const QString orgSymbol)
 {
     //TODO: Custom field
+    // Should be part of Organization detail
 }
 
 QString
@@ -601,7 +677,7 @@ GContactEntry::orgSymbol ()
 }
 
 void
-GContactEntry::setOrgTitle (QString orgTitle)
+GContactEntry::setOrgTitle (const QString orgTitle)
 {
     QContactOrganization org;
     org.setTitle (orgTitle);
@@ -615,7 +691,7 @@ GContactEntry::orgTitle ()
 }
 
 void
-GContactEntry::setOriginalEvent (QString origEvent)
+GContactEntry::setOriginalEvent (const QString origEvent)
 {
     //TODO: Custom field
 }
@@ -626,7 +702,8 @@ GContactEntry::originalEvent ()
 }
 
 void
-GContactEntry::setPhoneNumber (QString phoneNumber, QString rel, QString uri, QString primary=false)
+GContactEntry::setPhoneNumber (const QString phoneNumber, const QString rel,
+                               const QString uri, const QString primary=false)
 {
     QContactPhoneNumber number;
     number.setNumber (phoneNumber);
@@ -642,8 +719,8 @@ GContactEntry::phoneNumber ()
 }
 
 void
-GContactEntry::setRating (QString max, QString min, QString average,
-                    QString numRaters, QString rel, QString value)
+GContactEntry::setRating (const QString max, const QString min, const QString average,
+                    const QString numRaters, const QString rel, const QString value)
 {
     //TODO: Custom field
 }
@@ -654,7 +731,7 @@ GContactEntry::rating ()
 }
 
 void
-GContactEntry::setPostalAddrAgent (QString agent)
+GContactEntry::setPostalAddrAgent (const QString agent)
 {
     //TODO: Custom field
 }
@@ -666,9 +743,12 @@ GContactEntry::postalAddrAgent ()
 }
 
 void
-GContactEntry::setPostalAddrHousename (QString housename)
+GContactEntry::setPostalAddrHousename (const QString housename)
 {
-    //TODO: Custom field
+    QContactAddress address;
+    address.setLocality (housename);
+
+    mQContact.saveDetail (&address);
 }
 
 QString
@@ -677,9 +757,12 @@ GContactEntry::postalAddrHousename ()
 }
 
 void
-GContactEntry::setPostalAddrStreet (QString street)
+GContactEntry::setPostalAddrStreet (const QString street)
 {
-    //TODO: Custom field
+    QContactAddress address;
+    address.setStreet (street);
+
+    mQContact.saveDetail (&address);
 }
 
 QString
@@ -688,9 +771,12 @@ GContactEntry::postalAddrStreet ()
 }
 
 void
-GContactEntry::setPostalAddrPobox (QString pobox)
+GContactEntry::setPostalAddrPobox (const QString pobox)
 {
-    //TODO: Custom field
+    QContactAddress address;
+    address.setPostOfficeBox (pobox);
+
+    mQContact.saveDetail (&address);
 }
 
 QString
@@ -699,7 +785,7 @@ GContactEntry::postalAddrPobox ()
 }
 
 void
-GContactEntry::setPostalAddrNeighborhood (QString neighborhood)
+GContactEntry::setPostalAddrNeighborhood (const QString neighborhood)
 {
     //TODO: Custom field
 }
@@ -710,7 +796,7 @@ GContactEntry::postalAddrNeighborhood ()
 }
 
 void
-GContactEntry::setPostalAddrCity (QString city)
+GContactEntry::setPostalAddrCity (const QString city)
 {
     //TODO: Custom field
 }
@@ -718,13 +804,13 @@ GContactEntry::setPostalAddrCity (QString city)
 QString
 GContactEntry::postalAddrCity ()
 {
-    //TODO: Custom field
 }
 
 void
-GContactEntry::setPostalAddrSubregion (QString subregion)
+GContactEntry::setPostalAddrSubregion (const QString subregion)
 {
     //TODO: Custom field
+    // Belongs to QContactAddress
 }
 
 QString
@@ -733,9 +819,12 @@ GContactEntry::postalAddrSubregion ()
 }
 
 void
-GContactEntry::setPostalAddrRegion (QString region)
+GContactEntry::setPostalAddrRegion (const QString region)
 {
-    //TODO: Custom field
+    QContactAddress address;
+    address.setRegion (region);
+
+    mQContact.saveDetail (&address);
 }
 
 QString
@@ -744,9 +833,12 @@ GContactEntry::postalAddrRegion ()
 }
 
 void
-GContactEntry::setPostalAddrPostCode (QString postCode)
+GContactEntry::setPostalAddrPostCode (const QString postCode)
 {
-    //TODO: Custom field
+    QContactAddress address;
+    address.setPostcode (postCode);
+
+    mQContact.saveDetail (&address);
 }
 
 QString
@@ -755,9 +847,12 @@ GContactEntry::postalAddrPostCode ()
 }
 
 void
-GContactEntry::setPostalAddrCountry (QString country)
+GContactEntry::setPostalAddrCountry (const QString country)
 {
-    //TODO: Custom field
+    QContactAddress address;
+    address.setCountry (country);
+
+    mQContact.saveDetail (&address);
 }
 
 QString
@@ -766,7 +861,7 @@ GContactEntry::postalAddrCountry ()
 }
 
 void
-GContactEntry::setPostalAddrFormatted (QString formattedAddr)
+GContactEntry::setPostalAddrFormatted (const QString formattedAddr)
 {
     //TODO: Custom field
 }
@@ -777,8 +872,18 @@ GContactEntry::postalAddrFormatted ()
 }
 
 void
-GContactEntry::setPostalAddrAttrs(QString rel, QString mailClass, QString usage, QString primary)
+GContactEntry::setPostalAddrAttrs(const QString rel, const QString mailClass,
+                                  const QString usage, const QString primary)
 {
+}
+
+void
+GContactEntry::setSyncTarget ()
+{
+    QContactSyncTarget target;
+    target.setSyncTarget ("buteo-google-contacts");
+
+    mQContact.saveDetail (&target);
 }
 
 QContact

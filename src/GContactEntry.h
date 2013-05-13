@@ -35,186 +35,188 @@ public:
 
     explicit GContactEntry (bool generateXmlFlag);
 
-    void setId (QString id);
+    void setId (const QString id);
     QString id ();
 
-    void setEtag (QString etag);
+    void setEtag (const QString etag);
     QString etag ();
 
-    void setFullName (QString fullName);
+    void setFullName (const QString fullName);
     QString getFullName ();
 
-    void setAdditionalName (QString additionalName);
+    void setAdditionalName (const QString additionalName);
     QString getAdditionalName ();
 
-    void setFamilyName (QString familyName);
+    void setFamilyName (const QString familyName);
     QString getFamilyName ();
 
-    void setNamePrefix (QString namePrefix);
+    void setNamePrefix (const QString namePrefix);
     QString getNamePrefix ();
 
-    void setNameSuffix (QString nameSuffix);
+    void setNameSuffix (const QString nameSuffix);
     QString getNameSuffix ();
 
-    void setGivenName (QString givenName);
+    void setGivenName (const QString givenName);
     QString getGivenName ();
 
-    void setEmail (QString address, QString rel, QString primary);
+    void setEmail (const QString address, const QString rel, const QString primary);
     QString email ();
 
-    void setBillingInformation (QString billingInfo);
+    void setBillingInformation (const QString billingInfo);
     QString billingInformation ();
 
-    void setBirthday (QString birthday);
+    void setBirthday (const QString birthday);
     QString birthday ();
 
-    void setCalendarLink (QString href, QString label, QString rel, QString primary);
+    void setCalendarLink (const QString href, const QString rel, const QString primary);
     QString calendarLink ();
 
-    void setDirectoryServer (QString dirServer);
+    void setDirectoryServer (const QString dirServer);
     QString directoryServer ();
 
-    void setEvent (QString event, QString when);
+    void setEvent (const QString event, const QString when);
     QString event ();
 
-    void setExternalId (QString externalId, QString rel);
+    void setExternalId (const QString externalId, const QString rel);
     QString externalId ();
 
-    void setGender (QString gender);
+    void setGender (const QString gender);
     QString gender ();
 
-    void setGroupMembershipInfo (QString membershipInfo, QString deleted);
+    void setGroupMembershipInfo (const QString membershipInfo, const QString deleted);
     QString groupMembershipInfo ();
 
-    void setHobby (QString hobby);
+    void setHobby (const QString hobby);
     QString hobby ();
 
-    void setInitials (QString initials);
+    void setInitials (const QString initials);
     QString initials ();
 
-    void setJot (QString jot, QString jotType);
+    void setJot (const QString jot, const QString jotType);
     QString jot ();
 
-    void setLanguage (QString language);
+    void setLanguage (const QString language);
     QString language ();
 
-    void setMaidenName (QString maidenName);
+    void setMaidenName (const QString maidenName);
     QString maidenName ();
 
-    void setMileage (QString mileage);
+    void setMileage (const QString mileage);
     QString mileage ();
 
-    void setNickname (QString nickname);
+    void setNickname (const QString nickname);
     QString nickname ();
 
-    void setOccupation (QString occupation);
+    void setOccupation (const QString occupation);
     QString occupation ();
 
-    void setPriority (QString priority);
+    void setPriority (const QString priority);
     QString priority ();
 
-    void setRelation (QString relativeName, QString relation);
+    void setRelation (const QString relativeName, const QString relation);
     QString relation ();
 
-    void setSensitivity (QString sensitivity);
+    void setSensitivity (const QString sensitivity);
     QString sensitivity ();
 
-    void setShortname (QString shortname);
+    void setShortname (const QString shortname);
     QString shortname ();
 
-    void setSubject (QString subject);
+    void setSubject (const QString subject);
     QString subject ();
 
-    void setSystemGroup (QString systemGroup);
+    void setSystemGroup (const QString systemGroup);
     QString systemGroup ();
 
-    void setUserDefinedField (QString key, QString value);
+    void setUserDefinedField (const QString key, const QString value);
     QString userDefinedField ();
 
-    void setWebsite (QString website, QString rel, QString primary="false");
+    void setWebsite (const QString website, const QString rel, const QString primary="false");
     QString website ();
 
     // gd:xxx schema handler methods
-    void setComments (QString comments);
+    void setComments (const QString comments);
     QString comments ();
 
-    void setCountry (QString country);
+    void setCountry (const QString country);
     QString country ();
 
-    void setDeleted (bool deleted);
+    void setDeleted (const bool deleted);
     bool deleted ();
 
-    void setExtendedProperty (QString name, QString extProperty);
+    void setExtendedProperty (const QString name, const QString extProperty);
     QString extendedProperty ();
 
-    void setFeedLink (QString feedLink);
+    void setFeedLink (const QString feedLink);
     QString feedLink ();
 
-    void setIm (QString address, QString rel, QString protocol, QString primary);
+    void setIm (const QString address, const QString rel, const QString protocol, QString primary);
     QString im ();
 
-    void setMoney (QString amount, QString currencyCode);
+    void setMoney (const QString amount, const QString currencyCode);
     QString money ();
 
-    void setOrgDepartment (QString orgDept);
+    void setOrgDepartment (const QString orgDept);
     QString orgDepartment ();
 
-    void setOrgJobDescription (QString orgJobDesc);
+    void setOrgJobDescription (const QString orgJobDesc);
     QString orgJobDescription ();
 
-    void setOrgName (QString orgName);
+    void setOrgName (const QString orgName);
     QString orgName ();
 
-    void setOrgSymbol (QString orgSymbol);
+    void setOrgSymbol (const QString orgSymbol);
     QString orgSymbol ();
 
-    void setOrgTitle (QString orgTitle);
+    void setOrgTitle (const QString orgTitle);
     QString orgTitle ();
 
-    void setOriginalEvent (QString origEvent);
+    void setOriginalEvent (const QString origEvent);
     QString originalEvent ();
 
-    void setPhoneNumber (QString phoneNumber, QString rel, QString uri, QString primary);
+    void setPhoneNumber (const QString phoneNumber, const QString rel, const QString uri, const QString primary);
     QString phoneNumber ();
 
-    void setRating (QString max, QString min, QString average,
-                    QString numRaters, QString rel, QString value);
+    void setRating (const QString max, const QString min, const QString average,
+                    const QString numRaters, const QString rel, const QString value);
     QString rating ();
 
-    void setPostalAddrAgent (QString agent);
+    void setPostalAddrAgent (const QString agent);
     QString postalAddrAgent ();
 
-    void setPostalAddrHousename (QString housename);
+    void setPostalAddrHousename (const QString housename);
     QString postalAddrHousename ();
 
-    void setPostalAddrStreet (QString street);
+    void setPostalAddrStreet (const QString street);
     QString postalAddrStreet ();
 
-    void setPostalAddrPobox (QString pobox);
+    void setPostalAddrPobox (const QString pobox);
     QString postalAddrPobox ();
 
-    void setPostalAddrNeighborhood (QString neighborhood);
+    void setPostalAddrNeighborhood (const QString neighborhood);
     QString postalAddrNeighborhood ();
 
-    void setPostalAddrCity (QString city);
+    void setPostalAddrCity (const QString city);
     QString postalAddrCity ();
 
-    void setPostalAddrSubregion (QString subregion);
+    void setPostalAddrSubregion (const QString subregion);
     QString postalAddrSubregion ();
 
-    void setPostalAddrRegion (QString region);
+    void setPostalAddrRegion (const QString region);
     QString postalAddrRegion ();
 
-    void setPostalAddrPostCode (QString postCode);
+    void setPostalAddrPostCode (const QString postCode);
     QString postalAddrPostCode ();
 
-    void setPostalAddrCountry (QString country);
+    void setPostalAddrCountry (const QString country);
     QString postalAddrCountry ();
 
-    void setPostalAddrFormatted (QString formattedAddr);
+    void setPostalAddrFormatted (const QString formattedAddr);
     QString postalAddrFormatted ();
 
-    void setPostalAddrAttrs(QString rel, QString mailClass, QString usage, QString primary);
+    void setPostalAddrAttrs(const QString rel, const QString mailClass, const QString usage, const QString primary);
+
+    void setSyncTarget ();
 
     QContact qContact ();
 

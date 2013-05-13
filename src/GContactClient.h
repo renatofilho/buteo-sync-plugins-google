@@ -83,8 +83,6 @@ public slots:
     virtual void connectivityStateChanged( Sync::ConnectivityType aType,
                                            bool aState );
 
-    void processNetworkResponse ();
-
 signals:
 
     void stateChanged (Sync::SyncProgressDetail progress);

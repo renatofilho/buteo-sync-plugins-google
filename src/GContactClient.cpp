@@ -112,13 +112,6 @@ GContactClient::startSync()
 
     LOG_DEBUG ("Init done. Continuing with sync");
 
-    // Transport request finished signal
-    connect (mTransport, SIGNAL (finishedRequest()),
-             this, SLOT (processNetworkResponse ()));
-
-    connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
-             this, SLOT (networkError (QNetworkReply::NetworkError)));
-
     // syncStateChanged to signal changes from CONNECTING, RECEIVING
     // SENDING, DISCONNECTING, CLOSED
     connect(this, SIGNAL(stateChanged(Sync::SyncProgressDetail)),
@@ -468,26 +461,6 @@ GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
             << aState);
 }
 
-void
-GContactClient::processNetworkResponse ()
-{
-    FUNCTION_CALL_TRACE;
-
-    const QNetworkReply* reply = mTransport->reply ();
-    if (reply)
-    {
-        int responseCode = reply->attribute (QNetworkRequest::HttpStatusCodeAttribute).toInt ();
-        if (responseCode >= 200 && responseCode <= 300)
-        {
-            mParser->setParseData (mTransport->replyBody ());
-            mParser->parse ();
-        } else
-        {
-            // TODO: Set the error code in the SyncResults and stop sync
-        }
-    }
-}
-
 Buteo::SyncProfile::SyncDirection
 GContactClient::syncDirection () {
     FUNCTION_CALL_TRACE;
@@ -650,7 +623,7 @@ GContactClient::networkRequestFinished ()
     if (reply)
     {
         QByteArray data = mTransport->replyBody ();
-        LOG_DEBUG (data);
+        //LOG_DEBUG (data);
         if (data == 0)
         {
             LOG_DEBUG ("Nothing returned from server");
@@ -731,6 +704,7 @@ GContactClient::storeToLocal (QList<QContact> serverContacts)
     FUNCTION_CALL_TRACE;
 
     QMap<int, GContactsStatus> statusMap;
+    LOG_DEBUG ("TOTAL SERVER CONTACTS:" << serverContacts.size ());
 
     if (mContactBackend->addContacts (serverContacts, statusMap))
     {
@@ -739,6 +713,8 @@ GContactClient::storeToLocal (QList<QContact> serverContacts)
     {
         // TODO: Saving failed. Update sync results and probably stop sync
     }
+
+    emit syncFinished (Sync::SYNC_DONE);
 }
 
 void

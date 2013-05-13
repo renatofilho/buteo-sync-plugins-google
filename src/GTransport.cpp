@@ -58,6 +58,8 @@ GTransport::GTransport(QObject *parent) :
 {
     FUNCTION_CALL_TRACE;
 
+    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
+                     this, SLOT(finishedSlot(QNetworkReply*)));
 }
 
 GTransport::GTransport (QList<QPair<QByteArray, QByteArray> >* headers) :
@@ -138,11 +140,13 @@ GTransport::~GTransport()
         iNetworkReply = NULL;
     }
 
+    /*
     if (iPostData != NULL)
     {
         delete iPostData;
         iPostData = NULL;
     }
+    */
 }
 
 void
@@ -263,7 +267,7 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
         break;
     }
 
-    QObject::connect(iNetworkReply, SIGNAL(readyRead()), this,
+    QObject::connect(iNetworkReply, SIGNAL(readyRead ()), this,
                      SLOT(readyRead()));
 
     iNetworkError = iNetworkReply->error();
@@ -298,7 +302,6 @@ GTransport::readyRead()
         QByteArray bytes = iNetworkReply->readAll ();
         iNetworkReplyBody = iNetworkReplyBody + bytes;
     }
-    emit finishedRequest ();
 }
 
 void
@@ -319,11 +322,13 @@ GTransport::finishedSlot(QNetworkReply *reply)
 
     emit finishedRequest();
 
+    /*
     if (iPostData != NULL)
     {
         delete iPostData;
         iPostData = NULL;
     }
+    */
 }
 
 void

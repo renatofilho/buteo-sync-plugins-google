@@ -209,6 +209,7 @@ GParseStream::handleAtomEntry ()
 
     mContactEntry = new GContactEntry (false);
     Q_CHECK_PTR (mContactEntry);
+
     // Store the etag value of the entry
     mContactEntry->setEtag (mXml->attributes ().value ("gd:etag").toString ());
 
@@ -223,6 +224,7 @@ GParseStream::handleAtomEntry ()
         }
         mXml->readNextStartElement ();
     }
+    mContactEntry->setSyncTarget ();
     mAtom->addEntry (mContactEntry);
 }
 
@@ -285,7 +287,7 @@ GParseStream::handleEntryCalendarLink ()
 
     href = attrs.value ("href").toString ();
 
-    mContactEntry->setCalendarLink (href, label, rel, primary);
+    mContactEntry->setCalendarLink (href, rel, primary);
 }
 
 void
