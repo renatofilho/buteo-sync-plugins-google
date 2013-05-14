@@ -67,27 +67,16 @@ GContactEntry::id ()
 void
 GContactEntry::setEtag (const QString etag)
 {
-    GContactCustomDetail etagDetail;
+    GContactCustomDetail etagDetail = mQContact.detail <GContactCustomDetail>();
     etagDetail.setETag (etag);
 
     mQContact.saveDetail (&etagDetail);
 }
 
-QString
-GContactEntry::etag ()
-{
-}
-
 void
 GContactEntry::setFullName (const QString fullName)
 {
-}
-
-QString
-GContactEntry::getFullName ()
-{
-    // TODO: Custom tag. Is it necessary to handle this, since
-    // name is already part of gd:name
+    // TODO: Custom tag
     // This has to go to QContactName as a schema change tag
 }
 
@@ -98,63 +87,38 @@ GContactEntry::setAdditionalName (const QString additionalName)
     // This has to go to QContactName as a schema change tag
 }
 
-QString
-GContactEntry::getAdditionalName ()
-{
-}
-
 void
 GContactEntry::setFamilyName (const QString familyName)
 {
-    QContactName name;
+    QContactName name = mQContact.detail <QContactName>();
     name.setLastName (familyName);
     qDebug() << mQContact.saveDetail (&name);
     qDebug() << "Family name set:" << name.lastName ();
 }
 
-QString
-GContactEntry::getFamilyName ()
-{
-}
-
 void
 GContactEntry::setNamePrefix (const QString namePrefix)
 {
-    QContactName name;
+    QContactName name = mQContact.detail <QContactName>();
     name.setPrefix (namePrefix);
     mQContact.saveDetail (&name);
-}
-
-QString
-GContactEntry::getNamePrefix ()
-{
 }
 
 void
 GContactEntry::setNameSuffix (const QString nameSuffix)
 {
-    QContactName name;
+    QContactName name = mQContact.detail <QContactName>();
     name.setSuffix (nameSuffix);
     mQContact.saveDetail (&name);
-}
-
-QString
-GContactEntry::getNameSuffix ()
-{
 }
 
 void
 GContactEntry::setGivenName (const QString givenName)
 {
-    QContactName name;
+    QContactName name = mQContact.detail <QContactName>();
     name.setFirstName (givenName);
     mQContact.saveDetail (&name);
     qDebug() << "Given name set:" << name.firstName ();
-}
-
-QString
-GContactEntry::getGivenName ()
-{
 }
 
 void
@@ -167,23 +131,13 @@ GContactEntry::setEmail (const QString address, const QString rel,
     qDebug() << "Email set:" << email.emailAddress ();
 }
 
-QString
-GContactEntry::email ()
-{
-}
-
 void
 GContactEntry::setBillingInformation (const QString billingInfo)
 {
-    GContactCustomDetail billing;
+    GContactCustomDetail billing = mQContact.detail <GContactCustomDetail>();
     billing.setBillingInformation (billingInfo);
 
     mQContact.saveDetail (&billing);
-}
-
-QString
-billingInformation ()
-{
 }
 
 void
@@ -192,89 +146,46 @@ GContactEntry::setBirthday (const QString birthday)
     qDebug() << birthday;
     QContactBirthday bday;
 
-    bday.setDate (QDate::fromString (birthday, "yyyy-dd-mm"));
+    bday.setDate (QDate::fromString (birthday, "yyyy-MM-dd"));
     qDebug() << mQContact.saveDetail (&bday);
-    qDebug() << bday.date ().toString() << "DT";
-}
-
-
-/*
-void
-GContactEntry::setBirthday (QString birthday)
-{
-    qDebug() << birthday;
-    QContactBirthday bday;
-
-    QDate bdayDate = QDate::fromString( birthday, "yyyy-mm-dd");
-    qDebug() << bdayDate.toString() << "D"; // does this show the correct date?
-    bday.setDate (bdayDate);
-    mQContact.saveDetail (&bday);
-    qDebug() << bday.date().toString() << "DT"; // does it still match here?
-    qDebug() << mQContact.detail<QContactBirthday>().date() << "CDT"; // does it match here, or not?
-}
-*/
-
-QString
-GContactEntry::birthday ()
-{
 }
 
 void
 GContactEntry::setCalendarLink (const QString href,
                                 const QString rel, const QString primary)
 {
-    GContactCustomDetail calendarLink;
+    GContactCustomDetail calendarLink = mQContact.detail <GContactCustomDetail>();
     calendarLink.setCalendarLink (href);
 
     mQContact.saveDetail (&calendarLink);
 }
 
-QString
-GContactEntry::calendarLink ()
-{
-}
-
 void
 GContactEntry::setDirectoryServer (const QString dirServer)
 {
-    GContactCustomDetail dirServerDetail;
+    GContactCustomDetail dirServerDetail = mQContact.detail <GContactCustomDetail>();
     dirServerDetail.setDirectoryServer (dirServer);
 
     mQContact.saveDetail (&dirServerDetail);
 }
 
-QString
-GContactEntry::directoryServer ()
-{
-}
-
 void
 GContactEntry::setEvent (const QString event, const QString when)
 {
-    GContactCustomDetail eventDetail;
+    GContactCustomDetail eventDetail = mQContact.detail <GContactCustomDetail>();
     eventDetail.setEvent (event);
 
     mQContact.saveDetail (&eventDetail);
-}
-
-QString
-GContactEntry::event ()
-{
 }
 
 void
 GContactEntry::setExternalId (const QString externalId,
                               const QString rel)
 {
-    GContactCustomDetail externalIdDetail;
+    GContactCustomDetail externalIdDetail = mQContact.detail <GContactCustomDetail>();
     externalIdDetail.setExternalId (externalId);
 
     mQContact.saveDetail (&externalIdDetail);
-}
-
-QString
-GContactEntry::externalId ()
-{
 }
 
 void
@@ -285,24 +196,14 @@ GContactEntry::setGender (const QString gender)
     mQContact.saveDetail (&contactGender);
 }
 
-QString
-GContactEntry::gender ()
-{
-}
-
 void
 GContactEntry::setGroupMembershipInfo (const QString membershipInfo,
                                        const QString deleted)
 {
-    GContactCustomDetail membershipDetail;
+    GContactCustomDetail membershipDetail = mQContact.detail <GContactCustomDetail>();
     membershipDetail.setGroupMembershipInfo (membershipInfo);
 
     mQContact.saveDetail (&membershipDetail);
-}
-
-QString
-GContactEntry::groupMembershipInfo ()
-{
 }
 
 void
@@ -313,51 +214,31 @@ GContactEntry::setHobby (const QString hobby)
     mQContact.saveDetail (&contactHobby);
 }
 
-QString
-GContactEntry::hobby ()
-{
-}
-
 void
 GContactEntry::setInitials (const QString initials)
 {
-    GContactCustomDetail initialsDetail;
+    GContactCustomDetail initialsDetail = mQContact.detail <GContactCustomDetail>();
     initialsDetail.setInitials (initials);
 
     mQContact.saveDetail (&initialsDetail);
 }
 
-QString
-GContactEntry::initials ()
-{
-}
-
 void
 GContactEntry::setJot (const QString jot, const QString jotType)
 {
-    GContactCustomDetail jotDetail;
+    GContactCustomDetail jotDetail = mQContact.detail <GContactCustomDetail>();
     jotDetail.setJot (jot);
 
     mQContact.saveDetail (&jotDetail);
 }
 
-QString
-GContactEntry::jot ()
-{
-}
-
 void
 GContactEntry::setLanguage (const QString language)
 {
-    GContactCustomDetail languageDetail;
+    GContactCustomDetail languageDetail = mQContact.detail <GContactCustomDetail>();
     languageDetail.setLanguage (language);
 
     mQContact.saveDetail (&languageDetail);
-}
-
-QString
-GContactEntry::language ()
-{
 }
 
 void
@@ -367,23 +248,13 @@ GContactEntry::setMaidenName (const QString maidenName)
     // This should be part QContactName
 }
 
-QString
-GContactEntry::maidenName ()
-{
-}
-
 void
 GContactEntry::setMileage (const QString mileage)
 {
-    GContactCustomDetail mileageDetail;
+    GContactCustomDetail mileageDetail = mQContact.detail <GContactCustomDetail>();
     mileageDetail.setMileage (mileage);
 
     mQContact.saveDetail (&mileageDetail);
-}
-
-QString
-GContactEntry::mileage ()
-{
 }
 
 void
@@ -394,23 +265,13 @@ GContactEntry::setNickname (const QString nickname)
     mQContact.saveDetail (&nick);
 }
 
-QString
-GContactEntry::nickname ()
-{
-}
-
 void
 GContactEntry::setOccupation (const QString occupation)
 {
-    GContactCustomDetail occupationDetail;
+    GContactCustomDetail occupationDetail = mQContact.detail <GContactCustomDetail>();
     occupationDetail.setOccupation (occupation);
 
     mQContact.saveDetail (&occupationDetail);
-}
-
-QString
-GContactEntry::occupation ()
-{
 }
 
 void
@@ -422,11 +283,6 @@ GContactEntry::setPriority (const QString priority)
     mQContact.saveDetail (&priorityDetail);
 }
 
-QString
-GContactEntry::priority ()
-{
-}
-
 void
 GContactEntry::setRelation (const QString relativeName,
                             const QString relation)
@@ -435,23 +291,13 @@ GContactEntry::setRelation (const QString relativeName,
     // Create a if() condition to handle this
 }
 
-QString
-GContactEntry::relation ()
-{
-}
-
 void
 GContactEntry::setSensitivity (const QString sensitivity)
 {
-    GContactCustomDetail sensitivityDetail;
+    GContactCustomDetail sensitivityDetail = mQContact.detail <GContactCustomDetail>();
     sensitivityDetail.setSensitivity (sensitivity);
 
     mQContact.saveDetail (&sensitivityDetail);
-}
-
-QString
-GContactEntry::sensitivity ()
-{
 }
 
 void
@@ -460,37 +306,22 @@ GContactEntry::setShortname (const QString shortname)
     // TODO: Custom field
 }
 
-QString
-GContactEntry::shortname ()
-{
-}
-
 void
 GContactEntry::setSubject (const QString subject)
 {
-    GContactCustomDetail subjectDetail;
+    GContactCustomDetail subjectDetail = mQContact.detail <GContactCustomDetail>();
     subjectDetail.setSubject (subject);
 
     mQContact.saveDetail (&subjectDetail);
 }
 
-QString
-GContactEntry::subject ()
-{
-}
-
 void
 GContactEntry::setSystemGroup (const QString systemGroup)
 {
-    GContactCustomDetail systemGroupDetail;
+    GContactCustomDetail systemGroupDetail = mQContact.detail <GContactCustomDetail>();
     systemGroupDetail.setSystemGroup (systemGroup);
 
     mQContact.saveDetail (&systemGroupDetail);
-}
-
-QString
-GContactEntry::systemGroup ()
-{
 }
 
 void
@@ -501,24 +332,14 @@ GContactEntry::setUserDefinedField (const QString key,
     // How should this be handled?
 }
 
-QString
-GContactEntry::userDefinedField ()
-{
-}
-
 void
 GContactEntry::setWebsite (const QString website, const QString rel,
                            const QString primary)
 {
-    GContactCustomDetail websiteDetail;
+    GContactCustomDetail websiteDetail = mQContact.detail <GContactCustomDetail>();
     websiteDetail.setWebsite (website);
 
     mQContact.saveDetail (&websiteDetail);
-}
-
-QString
-GContactEntry::website ()
-{
 }
 
 // gd:xxx schema handler methods
@@ -530,23 +351,13 @@ GContactEntry::setComments (const QString comments)
     mQContact.saveDetail (&note);
 }
 
-QString
-GContactEntry::comments ()
-{
-}
-
 void
 GContactEntry::setCountry (const QString country)
 {
-    GContactCustomDetail countryDetail;
+    GContactCustomDetail countryDetail = mQContact.detail <GContactCustomDetail>();
     countryDetail.setCountry (country);
 
     mQContact.saveDetail (&countryDetail);
-}
-
-QString
-GContactEntry::country ()
-{
 }
 
 void
@@ -569,23 +380,13 @@ GContactEntry::setExtendedProperty (const QString name,
     // How should this be handled?
 }
 
-QString
-GContactEntry::extendedProperty ()
-{
-}
-
 void
 GContactEntry::setFeedLink (const QString feedLink)
 {
-    GContactCustomDetail feedlinkDetail;
+    GContactCustomDetail feedlinkDetail = mQContact.detail <GContactCustomDetail>();
     feedlinkDetail.setFeedLink (feedLink);
 
     mQContact.saveDetail (&feedlinkDetail);
-}
-
-QString
-GContactEntry::feedLink ()
-{
 }
 
 void
@@ -600,30 +401,19 @@ GContactEntry::setIm (const QString address, const QString rel,
     mQContact.saveDetail (&imAccount);
 }
 
-QString
-GContactEntry::im ()
-{
-}
-
 void
 GContactEntry::setMoney (const QString amount, const QString currencyCode)
 {
-    GContactCustomDetail moneyDetail;
+    GContactCustomDetail moneyDetail = mQContact.detail <GContactCustomDetail>();
     moneyDetail.setMoney (amount);
 
     mQContact.saveDetail (&moneyDetail);
 }
 
-QString
-GContactEntry::money ()
-{
-    //TODO: Custom field
-}
-
 void
 GContactEntry::setOrgDepartment (const QString orgDept)
 {
-    QContactOrganization org;
+    QContactOrganization org = mQContact.detail <QContactOrganization>();
     QStringList deptList;
     deptList << orgDept;
     org.setDepartment (deptList);
@@ -631,37 +421,22 @@ GContactEntry::setOrgDepartment (const QString orgDept)
     mQContact.saveDetail (&org);
 }
 
-QString
-GContactEntry::orgDepartment ()
-{
-}
-
 void
 GContactEntry::setOrgJobDescription (const QString orgJobDesc)
 {
-    QContactOrganization org;
+    QContactOrganization org = mQContact.detail <QContactOrganization>();
     org.setRole (orgJobDesc);
 
     mQContact.saveDetail (&org);
 }
 
-QString
-GContactEntry::orgJobDescription ()
-{
-}
-
 void
 GContactEntry::setOrgName (const QString orgName)
 {
-    QContactOrganization org;
+    QContactOrganization org = mQContact.detail <QContactOrganization>();
     org.setName (orgName);
 
     mQContact.saveDetail (&org);
-}
-
-QString
-GContactEntry::orgName ()
-{
 }
 
 void
@@ -671,34 +446,19 @@ GContactEntry::setOrgSymbol (const QString orgSymbol)
     // Should be part of Organization detail
 }
 
-QString
-GContactEntry::orgSymbol ()
-{
-}
-
 void
 GContactEntry::setOrgTitle (const QString orgTitle)
 {
-    QContactOrganization org;
+    QContactOrganization org = mQContact.detail <QContactOrganization>();
     org.setTitle (orgTitle);
 
     mQContact.saveDetail (&org);
-}
-
-QString
-GContactEntry::orgTitle ()
-{
 }
 
 void
 GContactEntry::setOriginalEvent (const QString origEvent)
 {
     //TODO: Custom field
-}
-
-QString
-GContactEntry::originalEvent ()
-{
 }
 
 void
@@ -713,21 +473,11 @@ GContactEntry::setPhoneNumber (const QString phoneNumber, const QString rel,
     mQContact.saveDetail (&number);
 }
 
-QString
-GContactEntry::phoneNumber ()
-{
-}
-
 void
 GContactEntry::setRating (const QString max, const QString min, const QString average,
                     const QString numRaters, const QString rel, const QString value)
 {
     //TODO: Custom field
-}
-
-QString
-GContactEntry::rating ()
-{
 }
 
 void
@@ -736,52 +486,31 @@ GContactEntry::setPostalAddrAgent (const QString agent)
     //TODO: Custom field
 }
 
-QString
-GContactEntry::postalAddrAgent ()
-{
-    //TODO: Custom field
-}
-
 void
 GContactEntry::setPostalAddrHousename (const QString housename)
 {
-    QContactAddress address;
+    QContactAddress address = mQContact.detail <QContactAddress>();
     address.setLocality (housename);
 
     mQContact.saveDetail (&address);
 }
 
-QString
-GContactEntry::postalAddrHousename ()
-{
-}
-
 void
 GContactEntry::setPostalAddrStreet (const QString street)
 {
-    QContactAddress address;
+    QContactAddress address = mQContact.detail <QContactAddress>();
     address.setStreet (street);
 
     mQContact.saveDetail (&address);
 }
 
-QString
-GContactEntry::postalAddrStreet ()
-{
-}
-
 void
 GContactEntry::setPostalAddrPobox (const QString pobox)
 {
-    QContactAddress address;
+    QContactAddress address = mQContact.detail <QContactAddress>();
     address.setPostOfficeBox (pobox);
 
     mQContact.saveDetail (&address);
-}
-
-QString
-GContactEntry::postalAddrPobox ()
-{
 }
 
 void
@@ -790,20 +519,10 @@ GContactEntry::setPostalAddrNeighborhood (const QString neighborhood)
     //TODO: Custom field
 }
 
-QString
-GContactEntry::postalAddrNeighborhood ()
-{
-}
-
 void
 GContactEntry::setPostalAddrCity (const QString city)
 {
     //TODO: Custom field
-}
-
-QString
-GContactEntry::postalAddrCity ()
-{
 }
 
 void
@@ -813,62 +532,37 @@ GContactEntry::setPostalAddrSubregion (const QString subregion)
     // Belongs to QContactAddress
 }
 
-QString
-GContactEntry::postalAddrSubregion ()
-{
-}
-
 void
 GContactEntry::setPostalAddrRegion (const QString region)
 {
-    QContactAddress address;
+    QContactAddress address = mQContact.detail <QContactAddress>();
     address.setRegion (region);
 
     mQContact.saveDetail (&address);
 }
 
-QString
-GContactEntry::postalAddrRegion ()
-{
-}
-
 void
 GContactEntry::setPostalAddrPostCode (const QString postCode)
 {
-    QContactAddress address;
+    QContactAddress address = mQContact.detail <QContactAddress>();
     address.setPostcode (postCode);
 
     mQContact.saveDetail (&address);
 }
 
-QString
-GContactEntry::postalAddrPostCode ()
-{
-}
-
 void
 GContactEntry::setPostalAddrCountry (const QString country)
 {
-    QContactAddress address;
+    QContactAddress address = mQContact.detail <QContactAddress>();
     address.setCountry (country);
 
     mQContact.saveDetail (&address);
-}
-
-QString
-GContactEntry::postalAddrCountry ()
-{
 }
 
 void
 GContactEntry::setPostalAddrFormatted (const QString formattedAddr)
 {
     //TODO: Custom field
-}
-
-QString
-GContactEntry::postalAddrFormatted ()
-{
 }
 
 void
