@@ -1,4 +1,17 @@
+Makefile*
+*.list
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Compiled Dynamic libraries
 *.so
-*.so.*
+*.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
 Makefile*
 *.list
