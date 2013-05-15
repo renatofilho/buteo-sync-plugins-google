@@ -13,3 +13,5 @@ Makefile*
 *.lai
 *.la
 *.a
+Makefile*
+*.list
