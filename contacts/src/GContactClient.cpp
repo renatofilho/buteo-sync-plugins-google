@@ -623,7 +623,7 @@ GContactClient::networkRequestFinished ()
     if (reply)
     {
         QByteArray data = mTransport->replyBody ();
-        //LOG_DEBUG (data);
+        LOG_DEBUG (data);
         if (data.isNull ())
         {
             LOG_DEBUG ("Nothing returned from server");

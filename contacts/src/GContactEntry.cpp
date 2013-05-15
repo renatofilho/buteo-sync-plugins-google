@@ -25,6 +25,7 @@
 #include "GContactCustomDetail.h"
 #include <QDateTime>
 #include <QDebug>
+#include <LogMacros.h>
 
 #include <QtContacts/QContact>
 #include <QtContacts/QContactGuid>
@@ -92,8 +93,8 @@ GContactEntry::setFamilyName (const QString familyName)
 {
     QContactName name = mQContact.detail <QContactName>();
     name.setLastName (familyName);
-    qDebug() << mQContact.saveDetail (&name);
-    qDebug() << "Family name set:" << name.lastName ();
+    mQContact.saveDetail (&name);
+    LOG_DEBUG ("Family name set:" + name.lastName ());
 }
 
 void
@@ -118,7 +119,7 @@ GContactEntry::setGivenName (const QString givenName)
     QContactName name = mQContact.detail <QContactName>();
     name.setFirstName (givenName);
     mQContact.saveDetail (&name);
-    qDebug() << "Given name set:" << name.firstName ();
+    LOG_DEBUG ("Given name set:" + name.firstName ());
 }
 
 void
