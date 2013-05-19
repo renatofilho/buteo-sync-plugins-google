@@ -29,7 +29,8 @@
 #include <QXmlStreamReader>
 #include <QMap>
 
-#include "GAtom.h"
+class GAtom;
+class GContactEntry;
 
 class GParseStream : public QObject
 {

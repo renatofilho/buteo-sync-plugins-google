@@ -26,16 +26,22 @@
 
 #include "buteo-gcontact-plugin_global.h"
 #include <ClientPlugin.h>
-#include "GTransport.h"
-#include "GParseStream.h"
-#include "GContactsBackend.h"
-#include "GAuth.h"
 
+#include <QNetworkReply>
+#include <QContact>
 #include <QList>
 #include <QPair>
 
 #include <buteosyncfw/SyncResults.h>
 #include <buteosyncfw/SyncCommonDefs.h>
+
+QTM_USE_NAMESPACE
+
+class GContactEntry;
+class GTransport;
+class GContactsBackend;
+class GParseStream;
+class GAuth;
 
 class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : Buteo::ClientPlugin
 {

@@ -23,6 +23,10 @@
 
 #include "GContactClient.h"
 #include "GTransport.h"
+#include "GParseStream.h"
+#include "GContactsBackend.h"
+#include "GAuth.h"
+#include "GContactEntry.h"
 
 #include <QLibrary>
 #include <QtNetwork>

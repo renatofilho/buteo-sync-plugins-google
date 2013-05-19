@@ -42,7 +42,6 @@ Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactRelation, "GContactR
 Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactSensitivity, "GContactSensitivity");
 Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactSubject, "GContactSubject");
 Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactSystemGroup, "GContactSystemGroup");
-Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactWebsite, "GContactWebsite");
 Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactCountry, "GContactCountry");
 Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactFeedLink, "GContactFeedLink");
 Q_DEFINE_LATIN1_CONSTANT(GContactCustomDetail::FieldGContactMoney, "GContactMoney");

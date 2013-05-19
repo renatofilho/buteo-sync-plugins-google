@@ -30,7 +30,7 @@
 #include <qcontactid.h>
 #include <QStringList>
 
-QTM_USE_NAMESPACE;
+QTM_USE_NAMESPACE
 
 struct GContactsStatus
 {

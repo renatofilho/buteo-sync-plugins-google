@@ -21,22 +21,13 @@
  *
  */
 
+#include "GContactEntry.h"
 #include "GAtom.h"
 #include <LogMacros.h>
 
-GAtom::GAtom(bool generateXmlFlag) :
-    mGenerateXml(generateXmlFlag)
+GAtom::GAtom()
 {
     FUNCTION_CALL_TRACE;
-
-}
-
-void
-GAtom::setGenerateXml (bool flag)
-{
-    FUNCTION_CALL_TRACE;
-
-    mGenerateXml = flag;
 }
 
 void
@@ -45,8 +36,6 @@ GAtom::setAuthorEmail (QString authorEmail)
     FUNCTION_CALL_TRACE;
 
     mAuthorEmail = authorEmail;
-    if (mGenerateXml) {}
-        // TODO: Write to XML
 }
 
 QString
@@ -92,26 +81,8 @@ GAtom::getUpdated()
 }
 
 void
-GAtom::setCategorySchema (QString schema)
+GAtom::setCategory (const QString schema, const QString term)
 {
-    mSchema = schema;
-}
-
-QString
-GAtom::getCategorySchema()
-{
-    return mCategory;
-}
-
-void
-GAtom::setCategoryTerm (QString term)
-{
-}
-
-QString
-GAtom::getCategoryTerm()
-{
-    return mCategoryTerm;
 }
 
 void
@@ -134,6 +105,11 @@ GAtom::setGenerator(QString name,
     mGeneratorName = name;
     mGeneratorVersion = version;
     mGeneratorUri = uri;
+}
+
+void
+GAtom::setContent (const QString note, const QString type)
+{
 }
 
 QString
@@ -188,12 +164,6 @@ int
 GAtom::getItemsPerPage()
 {
     return mItemsPerPage;
-}
-
-QString
-GAtom::toString()
-{
-    return "";
 }
 
 void

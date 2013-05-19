@@ -27,25 +27,26 @@
 #include <QDebug>
 #include <LogMacros.h>
 
-#include <QtContacts/QContact>
-#include <QtContacts/QContactGuid>
-#include <QtContacts/QContactName>
-#include <QtContacts/QContactEmailAddress>
-#include <QtContacts/QContactBirthday>
-#include <QtContacts/QContactGender>
-#include <QtContacts/QContactHobby>
-#include <QtContacts/QContactNickname>
-#include <QtContacts/QContactNote>
-#include <QtContacts/QContactOnlineAccount>
-#include <QtContacts/QContactOrganization>
-#include <QtContacts/QContactPhoneNumber>
+#include <QContactUrl>
+#include <QContactAnniversary>
+#include <QContact>
+#include <QContactGuid>
+#include <QContactName>
+#include <QContactEmailAddress>
+#include <QContactBirthday>
+#include <QContactGender>
+#include <QContactHobby>
+#include <QContactNickname>
+#include <QContactNote>
+#include <QContactOnlineAccount>
+#include <QContactOrganization>
+#include <QContactPhoneNumber>
 #include <QContactAddress>
 #include <QContactSyncTarget>
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
-GContactEntry::GContactEntry(bool generateXmlFlag) :
-    mGenerateXmlFlag(generateXmlFlag)
+GContactEntry::GContactEntry()
 {
 }
 
@@ -84,8 +85,9 @@ GContactEntry::setFullName (const QString fullName)
 void
 GContactEntry::setAdditionalName (const QString additionalName)
 {
-    // TODO: Custom tag.
-    // This has to go to QContactName as a schema change tag
+    QContactName name = mQContact.detail <QContactName>();
+    name.setMiddleName (additionalName);
+    mQContact.saveDetail (&name);
 }
 
 void
@@ -173,10 +175,12 @@ GContactEntry::setDirectoryServer (const QString dirServer)
 void
 GContactEntry::setEvent (const QString event, const QString when)
 {
-    GContactCustomDetail eventDetail = mQContact.detail <GContactCustomDetail>();
-    eventDetail.setEvent (event);
+    QContactAnniversary anniversary;
 
-    mQContact.saveDetail (&eventDetail);
+    anniversary.setEvent (event);
+    anniversary.setOriginalDate (QDate::fromString (when, Qt::ISODate));
+
+    mQContact.saveDetail (&anniversary);
 }
 
 void
@@ -337,10 +341,10 @@ void
 GContactEntry::setWebsite (const QString website, const QString rel,
                            const QString primary)
 {
-    GContactCustomDetail websiteDetail = mQContact.detail <GContactCustomDetail>();
-    websiteDetail.setWebsite (website);
+    QContactUrl url = mQContact.detail <QContactUrl> ();
+    url.setUrl (website);
 
-    mQContact.saveDetail (&websiteDetail);
+    mQContact.saveDetail (&url);
 }
 
 // gd:xxx schema handler methods
@@ -350,6 +354,7 @@ GContactEntry::setComments (const QString comments)
     QContactNote note;
     note.setNote (comments);
     mQContact.saveDetail (&note);
+
 }
 
 void
@@ -490,10 +495,7 @@ GContactEntry::setPostalAddrAgent (const QString agent)
 void
 GContactEntry::setPostalAddrHousename (const QString housename)
 {
-    QContactAddress address = mQContact.detail <QContactAddress>();
-    address.setLocality (housename);
-
-    mQContact.saveDetail (&address);
+    // TODO: Custom field
 }
 
 void
@@ -517,7 +519,10 @@ GContactEntry::setPostalAddrPobox (const QString pobox)
 void
 GContactEntry::setPostalAddrNeighborhood (const QString neighborhood)
 {
-    //TODO: Custom field
+    QContactAddress address = mQContact.detail <QContactAddress>();
+    address.setLocality (neighborhood);
+
+    mQContact.saveDetail (&address);
 }
 
 void

@@ -27,15 +27,20 @@
 #include <QObject>
 #include <QContactManager>
 
+#include "GAtom.h"
+
 QTM_USE_NAMESPACE
 
 class GContactEntry
 {
 public:
 
-    explicit GContactEntry (bool generateXmlFlag);
+    explicit GContactEntry ();
+
+    void setUpdated (QDateTime updated);
 
     void setId (const QString id);
+
     QString id ();
 
     void setEtag (const QString etag);
@@ -166,13 +171,12 @@ public:
 
 private:
 
-    bool mGenerateXmlFlag;
-
     QString mId;
 
     QContact mQContact;
 
     bool mDeleted;
+
 };
 
 #endif // GCONTACT_H

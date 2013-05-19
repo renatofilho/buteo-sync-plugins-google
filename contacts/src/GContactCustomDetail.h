@@ -50,7 +50,6 @@ public:
     Q_DECLARE_LATIN1_CONSTANT(FieldGContactSensitivity, "GContactSensitivity");
     Q_DECLARE_LATIN1_CONSTANT(FieldGContactSubject, "GContactSubject");
     Q_DECLARE_LATIN1_CONSTANT(FieldGContactSystemGroup, "GContactSystemGroup");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactWebsite, "GContactWebsite");
     Q_DECLARE_LATIN1_CONSTANT(FieldGContactCountry, "GContactCountry");
     Q_DECLARE_LATIN1_CONSTANT(FieldGContactFeedLink, "GContactFeedLink");
     Q_DECLARE_LATIN1_CONSTANT(FieldGContactMoney, "GContactMoney");
@@ -106,9 +105,6 @@ public:
 
     void setSystemGroup (const QString& systemGroup) { setValue(FieldGContactSystemGroup, systemGroup); }
     QString systemGroup () const { return value<QString>(FieldGContactSystemGroup); }
-
-    void setWebsite (const QString& website) { setValue(FieldGContactWebsite, website); }
-    QString website () const { return value<QString>(FieldGContactWebsite); }
 
     void setCountry (const QString& country) { setValue(FieldGContactCountry, country); }
     QString country () const { return value<QString>(FieldGContactCountry); }

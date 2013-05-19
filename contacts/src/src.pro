@@ -36,7 +36,8 @@ SOURCES += GContactClient.cpp \
     GParseStream.cpp \
     GAtom.cpp \
     GContactsBackend.cpp \
-    GContactCustomDetail.cpp
+    GContactCustomDetail.cpp \
+    GWriteStream.cpp
 
 HEADERS += GContactClient.h\
         buteo-gcontact-plugin_global.h \
@@ -47,7 +48,8 @@ HEADERS += GContactClient.h\
     GAtom.h \
     GContactsBackend.h \
     GContactDetail.h \
-    GContactCustomDetail.h
+    GContactCustomDetail.h \
+    GWriteStream.h
 
 target.path = /usr/lib/buteo-plugins
 

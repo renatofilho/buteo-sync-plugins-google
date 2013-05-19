@@ -38,7 +38,9 @@
 #include "GParseStreamTest.h"
 #include "GParseStream.h"
 #include "GAtom.h"
+#include "GContactEntry.h"
 
+QTM_USE_NAMESPACE
 GParseStreamTest::GParseStreamTest(QObject *parent) :
     QObject(parent)
 {

@@ -29,14 +29,15 @@
 #include <QMetaEnum>
 #include <QMap>
 #include <QList>
+#include <QXmlStreamWriter>
 
-#include "GContactEntry.h"
+class GContactEntry;
 
 class GAtom
 {
 
 public:
-    GAtom(bool generateXmlFlag);
+    GAtom ();
 
     typedef enum
     {
@@ -80,14 +81,13 @@ public:
     void setUpdated(QString updated);
     QString getUpdated();
 
-    void setCategorySchema (QString schema = "http://schemas.google.com/g/2005#kind");
-    QString getCategorySchema();
-
-    void setCategoryTerm (QString term = "http://schemas.google.com/contact/2008#contact");
-    QString getCategoryTerm();
+    void setCategory (const QString schema = "http://schemas.google.com/g/2005#kind",
+                      const QString term = "http://schemas.google.com/contact/2008#contact");
 
     void setTitle(QString title);
     QString getTitle();
+
+    void setContent (const QString note, const QString type="text");
 
     void setGenerator(QString name = "Contacts",
                       QString version = "1.0",
@@ -104,8 +104,6 @@ public:
 
     void setItemsPerPage(int itemsPerPage);
     int getItemsPerPage();
-
-    QString toString();
 
     void addEntry(GContactEntry* entry);
 
@@ -155,7 +153,7 @@ private:
 
     QList<GContactEntry*> mContactList;
 
-    bool mGenerateXml;
+
 };
 
 #endif // ATOM_H

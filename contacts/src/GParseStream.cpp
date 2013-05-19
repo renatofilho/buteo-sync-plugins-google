@@ -22,7 +22,7 @@
  */
 
 #include "GParseStream.h"
-
+#include "GContactEntry.h"
 #include "GAtom.h"
 #include <LogMacros.h>
 
@@ -40,7 +40,7 @@ GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
     FUNCTION_CALL_TRACE;
 
     mXml = new QXmlStreamReader (xmlStream);
-    mAtom = new GAtom (false);
+    mAtom = new GAtom ();
 
     initFunctionMap ();
 }
@@ -62,7 +62,7 @@ GParseStream::setParseData (const QByteArray data)
     FUNCTION_CALL_TRACE;
 
     mXml = new QXmlStreamReader (data);
-    mAtom = new GAtom (false);
+    mAtom = new GAtom ();
 }
 
 void
@@ -162,10 +162,13 @@ GParseStream::handleAtomCategory ()
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "category");
 
     QXmlStreamAttributes attributes = mXml->attributes ();
+    QString schema, term;
     if (attributes.hasAttribute ("scheme"))
-        mAtom->setCategorySchema (attributes.value ("scheme").toString ());
+        schema = attributes.value ("scheme").toString ();
     else if (attributes.hasAttribute ("term"))
-        mAtom->setCategoryTerm (attributes.value ("term").toString ());
+        term = attributes.value ("term").toString ();
+
+    mAtom->setCategory (schema, term);
 }
 
 void
@@ -207,7 +210,7 @@ GParseStream::handleAtomEntry ()
 
     Q_ASSERT(mXml->isStartElement () && mXml->name () == "entry");
 
-    mContactEntry = new GContactEntry (false);
+    mContactEntry = new GContactEntry ();
     Q_CHECK_PTR (mContactEntry);
 
     // Store the etag value of the entry
