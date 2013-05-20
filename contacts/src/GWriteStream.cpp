@@ -20,47 +20,128 @@
 #include <QContactAvatar>
 #include <QContactFamily>
 #include <QContactTimestamp>
+#include <QContactManager>
 
-GWriteStream::GWriteStream (const TRANSACTION_TYPE type) :
-    mXmlWriter (&mXmlBuffer), mUpdateType (type)
+GWriteStream::GWriteStream () :
+    mXmlWriter (&mXmlBuffer)
 {
 }
 
-QByteArray
-GWriteStream::encodeContact (const QList<QContact> qContactList)
+GWriteStream::~GWriteStream ()
 {
-    mXmlWriter.writeStartDocument ();
-    foreach (const QContact& contact, qContactList)
+}
+
+void
+GWriteStream::encodeAllContacts ()
+{
+    QContactManager mgr;
+    QList<QContact> allContacts = mgr.contacts ();
+
+    if (allContacts.size () <= 1)
+        return;
+
+    // QtContacts has a fictious first contact that has nothing
+    // in it. Removing this unwanted element
+    allContacts.removeFirst ();
+
+    QList<QPair<QContact, GWriteStream::TRANSACTION_TYPE> > qContactPairList;
+    QPair<QContact, GWriteStream::TRANSACTION_TYPE> contactPair;
+    for (int i=0; i<allContacts.size (); i++)
     {
-        encodeContact (contact);
+        contactPair.first = allContacts.at (i);
+        contactPair.second = GWriteStream::ADD;
+        qContactPairList.append (contactPair);
     }
+
+    encodeContact (qContactPairList);
+}
+
+void
+GWriteStream::encodeContacts (const QList<QContactLocalId> idList, TRANSACTION_TYPE type)
+{
+    QContactManager mgr;
+    QList<QContact> contactList = mgr.contacts (idList);
+
+    QList<QPair<QContact, GWriteStream::TRANSACTION_TYPE> > qContactPairList;
+    QPair<QContact, GWriteStream::TRANSACTION_TYPE> contactPair;
+    for (int i=0; i<contactList.size (); i++)
+    {
+        contactPair.first = contactList.at (i);
+        contactPair.second = type;
+        qContactPairList.append (contactPair);
+    }
+
+    encodeContact (qContactPairList);
+}
+
+QByteArray
+GWriteStream::encodeContact (QList<QPair<QContact, TRANSACTION_TYPE> > qContactList)
+{
+    if (qContactList.size () <= 0)
+        return mXmlBuffer;
+
+    mXmlWriter.writeStartDocument ();
+    // Encode as a batch
+    bool batch = false;
+    if (qContactList.size () > 1)
+    {
+        batch = true;
+        startBatchFeed ();
+    }
+
+    for (int i=0; i<qContactList.size (); i++)
+        if (!qContactList.at (i).first.isEmpty ())
+            encodeContact (qContactList.at (i), batch);
+
+    if (batch == true)
+        endBatchFeed ();
+
     mXmlWriter.writeEndDocument ();
 
     return mXmlBuffer;
 }
 
 QByteArray
-GWriteStream::encodeContact (const QContact qContact)
+GWriteStream::encodedStream ()
 {
+    return mXmlBuffer;
+}
+
+QByteArray
+GWriteStream::encodeContact(const QPair<QContact, TRANSACTION_TYPE> qContactPair,
+                            const bool batch)
+{
+    QContact qContact = qContactPair.first;
     QList<QContactDetail> allDetails = qContact.details ();
-    if (allDetails.size () <= 0)
-        return mXmlBuffer;
 
-    encodeEntry ();
-
-    if (mUpdateType == ADD)
-    {
-    } else if (mUpdateType == UPDATE)
-    {
-        // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
-        // since etag is an attribute of this element
-        encodeEtag (qContact);
-        encodeId (qContact);
-        encodeUpdated (qContact);
-    } else if (mUpdateType == DELETE)
-    {
+    if (batch == true)
+        mXmlWriter.writeStartElement ("atom:entry");
+    else {
+        mXmlWriter.writeStartElement ("atom:entry");
+        mXmlWriter.writeAttribute ("xmlns:atom", "http://www.w3.org/2005/Atom");
+        mXmlWriter.writeAttribute ("xmlns:gd", "http://schemas.google.com/g/2005");
+        mXmlWriter.writeAttribute ("xmlns:gContact", "http://schemas.google.com/contact/2008");
     }
 
+    TRANSACTION_TYPE updateType = qContactPair.second;
+    // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
+    // since etag is an attribute of this element
+    encodeEtag (qContact);
+    if (batch == true) encodeBatchTag (updateType);
+    if (updateType == UPDATE)
+    {
+        encodeId (qContact);
+        encodeUpdated (qContact);
+    }
+
+    if (updateType == DELETE)
+    {
+        mXmlWriter.writeEndElement ();
+        return mXmlBuffer;
+    }
+
+    // Category is not required for deleted entries. So place it
+    // here
     encodeCategory ();
 
     foreach (const QContactDetail& detail, allDetails)
@@ -79,6 +160,8 @@ GWriteStream::encodeContact (const QContact qContact)
             encodeBirthDay (detail);
         else if (detail.definitionName () == QContactNote::DefinitionName)
             encodeNote (detail);
+        else if (detail.definitionName () == QContactHobby::DefinitionName)
+            encodeHobby (detail);
         else if (detail.definitionName () == QContactOrganization::DefinitionName)
             encodeOrganization (detail);
         else if (detail.definitionName () == QContactAvatar::DefinitionName)
@@ -103,11 +186,40 @@ GWriteStream::encodeContact (const QContact qContact)
 }
 
 void
-GWriteStream::encodeEntry ()
+GWriteStream::startBatchFeed ()
 {
-    mXmlWriter.writeStartElement ("atom:entry");
-    mXmlWriter.writeAttribute ("xmlns:gd", "http://schemas.google.com/g/2005");
+    mXmlWriter.writeStartElement ("atom:feed");
+    mXmlWriter.writeAttribute ("xmlns:atom", "http://www.w3.org/2005/Atom");
     mXmlWriter.writeAttribute ("xmlns:gContact", "http://schemas.google.com/contact/2008");
+    mXmlWriter.writeAttribute ("xmlns:gd", "http://schemas.google.com/g/2005");
+    mXmlWriter.writeAttribute ("xmlns:batch", "http://schemas.google.com/gdata/batch");
+}
+
+void
+GWriteStream::endBatchFeed ()
+{
+    mXmlWriter.writeEndElement ();
+}
+
+void
+GWriteStream::encodeBatchTag (const TRANSACTION_TYPE type)
+{
+    if (type == ADD)
+    {
+        mXmlWriter.writeTextElement ("batch:id", "create");
+        mXmlWriter.writeEmptyElement ("batch:operation");
+        mXmlWriter.writeAttribute ("type", "insert");
+    } else if (type == UPDATE)
+    {
+        mXmlWriter.writeTextElement ("batch:id", "update");
+        mXmlWriter.writeEmptyElement ("batch:operation");
+        mXmlWriter.writeAttribute ("type", "update");
+    } else if (type == DELETE)
+    {
+        mXmlWriter.writeTextElement ("batch:id", "delete");
+        mXmlWriter.writeEmptyElement ("batch:operation");
+        mXmlWriter.writeAttribute ("type", "delete");
+    }
 }
 
 void
@@ -116,8 +228,8 @@ GWriteStream::encodeId (const QContact qContact)
     QString guid = qContact.detail (
         QContactGuid::DefinitionName).value (QContactGuid::FieldGuid);
 
-    Q_ASSERT (guid.isNull ());
-    mXmlWriter.writeTextElement ("id", "http://www.google.com/m8/feeds/contacts/default/base/" + guid);
+    if (!guid.isNull ())
+        mXmlWriter.writeTextElement ("id", "http://www.google.com/m8/feeds/contacts/default/base/" + guid);
 }
 
 void
@@ -126,8 +238,8 @@ GWriteStream::encodeUpdated (const QContact qContact)
     QString updated = qContact.detail (
         QContactTimestamp::DefinitionName).value (QContactTimestamp::FieldModificationTimestamp);
 
-    Q_ASSERT (updated.isNull ());
-    mXmlWriter.writeTextElement ("updated", updated);
+    if (!updated.isNull ())
+        mXmlWriter.writeTextElement ("updated", updated);
 }
 
 void
@@ -136,8 +248,8 @@ GWriteStream::encodeEtag (const QContact qContact)
     QString etag = qContact.detail (
         GContactCustomDetail::DefinitionName).value (GContactCustomDetail::FieldGContactETag);
 
-    Q_ASSERT (etag.isNull ());
-    mXmlWriter.writeAttribute ("gd:etag", etag);
+    if (!etag.isNull ())
+        mXmlWriter.writeAttribute ("gd:etag", etag);
 }
 
 void
@@ -157,19 +269,20 @@ void
 GWriteStream::encodeName (const QContactDetail& detail)
 {
     QContactName contactName = static_cast<QContactName>(detail);
-    if (!contactName.lastName().isEmpty()
-        || !contactName.firstName().isEmpty()
-        || !contactName.middleName().isEmpty()
-        || !contactName.prefix().isEmpty()
-        || !contactName.suffix().isEmpty()) {
-        mXmlWriter.writeStartElement ("gd:name");
+    mXmlWriter.writeStartElement ("gd:name");
+
+    if (!contactName.firstName ().isEmpty ())
         mXmlWriter.writeTextElement ("gd:givenName", contactName.firstName ());
+    if (!contactName.middleName().isEmpty())
         mXmlWriter.writeTextElement ("gd:additionalName", contactName.middleName ());
+    if (!contactName.lastName().isEmpty())
         mXmlWriter.writeTextElement ("gd:familyName", contactName.lastName ());
+    if (!contactName.prefix().isEmpty())
         mXmlWriter.writeTextElement ("gd:namePrefix", contactName.prefix ());
+    if (!contactName.suffix().isEmpty())
         mXmlWriter.writeTextElement ("gd:nameSuffix", contactName.suffix ());
-        mXmlWriter.writeEndElement ();
-    }
+
+    mXmlWriter.writeEndElement ();
 }
 
 /*!
@@ -180,6 +293,9 @@ GWriteStream::encodePhoneNumber (const QContactDetail& detail)
 {
     QContactPhoneNumber phoneNumber = static_cast<QContactPhoneNumber>(detail);
     QStringList subTypes = phoneNumber.subTypes();
+    if (phoneNumber.number ().isEmpty ())
+        return;
+
     mXmlWriter.writeStartElement ("gd:phoneNumber");
 
     QString rel = "http://schemas.google.com/g/2005#";
@@ -200,9 +316,12 @@ void
 GWriteStream::encodeEmail (const QContactDetail& detail)
 {
     QContactEmailAddress emailAddress = static_cast<QContactEmailAddress>(detail);
+    if (emailAddress.emailAddress ().isEmpty ())
+        return;
 
     // TODO: Handle 'rel' attribute, which is subtype
     mXmlWriter.writeEmptyElement ("gd:email");
+    mXmlWriter.writeAttribute ("rel", "http://schemas.google.com/g/2005#other");
     mXmlWriter.writeAttribute ("address", emailAddress.emailAddress ());
 }
 
@@ -215,12 +334,21 @@ GWriteStream::encodeAddress (const QContactDetail& detail)
     QContactAddress address = static_cast<QContactAddress>(detail);
 
     mXmlWriter.writeStartElement ("gd:structuredPostalAddress");
-    mXmlWriter.writeTextElement ("gd:street", address.street ());
-    mXmlWriter.writeTextElement ("gd:neighborhood", address.locality ());
-    mXmlWriter.writeTextElement ("gd:pobox", address.postOfficeBox ());
-    mXmlWriter.writeTextElement ("gd:region", address.region ());
-    mXmlWriter.writeTextElement ("gd:postcode", address.postcode ());
-    mXmlWriter.writeTextElement ("gd:country", address.country ());
+    mXmlWriter.writeAttribute ("rel", "http://schemas.google.com/g/2005#other");
+
+    if (!address.street ().isEmpty ())
+        mXmlWriter.writeTextElement ("gd:street", address.street ());
+    if (!address.locality ().isEmpty ())
+        mXmlWriter.writeTextElement ("gd:neighborhood", address.locality ());
+    if (!address.postOfficeBox ().isEmpty ())
+        mXmlWriter.writeTextElement ("gd:pobox", address.postOfficeBox ());
+    if (!address.region ().isEmpty ())
+        mXmlWriter.writeTextElement ("gd:region", address.region ());
+    if (!address.postcode ().isEmpty ())
+        mXmlWriter.writeTextElement ("gd:postcode", address.postcode ());
+    if (!address.country ().isEmpty ())
+        mXmlWriter.writeTextElement ("gd:country", address.country ());
+
     mXmlWriter.writeEndElement ();
 }
 
@@ -231,6 +359,8 @@ void
 GWriteStream::encodeUrl (const QContactDetail& detail)
 {
     QContactUrl contactUrl = static_cast<QContactUrl>(detail);
+    if (contactUrl.url ().isEmpty ())
+        return;
     mXmlWriter.writeEmptyElement ("gContact:website");
     mXmlWriter.writeAttribute ("rel", "home-page");
     mXmlWriter.writeAttribute ("href", contactUrl.url ());
@@ -243,15 +373,11 @@ void
 GWriteStream::encodeBirthDay (const QContactDetail& detail)
 {
     QContactBirthday bday = static_cast<QContactBirthday>(detail);
-    QVariant variant = bday.variantValue(QContactBirthday::FieldBirthday);
-    QString value;
-    if (variant.type() == QVariant::Date) {
-        value = variant.toDate().toString(Qt::ISODate);
-    } else if (variant.type() == QVariant::DateTime) {
-        value = variant.toDateTime().toString(Qt::ISODate);
-    } else {
+    if (bday.date ().isNull ())
         return;
-    }
+
+    QVariant variant = bday.variantValue(QContactBirthday::FieldBirthday);
+    QString value = variant.toDate().toString(Qt::ISODate);
 
     mXmlWriter.writeEmptyElement ("gContact:birthday");
     mXmlWriter.writeAttribute ("when", value);
@@ -264,9 +390,25 @@ void
 GWriteStream::encodeNote (const QContactDetail& detail)
 {
     QContactNote contactNote = static_cast<QContactNote>(detail);
-    mXmlWriter.writeEmptyElement ("atom:content");
+    if (contactNote.note ().isEmpty ())
+        return;
+
+    mXmlWriter.writeStartElement ("atom:content");
     mXmlWriter.writeAttribute ("type", "text");
     mXmlWriter.writeCharacters (contactNote.note ());
+    mXmlWriter.writeEndElement ();
+}
+
+/*!
+ * Encode Hobby i.e. Hobby Field Information into the Google contact XML Document
+ */
+void
+GWriteStream::encodeHobby (const QContactDetail& detail)
+{
+    QContactHobby contactHobby = static_cast<QContactHobby>(detail);
+    if (contactHobby.hobby ().isEmpty ())
+        return;
+    mXmlWriter.writeTextElement ("gContact:hobby", contactHobby.hobby ());
 }
 
 /*!
@@ -290,6 +432,8 @@ GWriteStream::encodeOrganization (const QContactDetail& detail)
 {
     QContactOrganization organization = static_cast<QContactOrganization>(detail);
     mXmlWriter.writeStartElement ("gd:organization");
+    // FIXME: The organization type should be obtained from DB
+    mXmlWriter.writeAttribute ("rel", "http://schemas.google.com/g/2005#work");
     if (organization.title().length () > 0)
         mXmlWriter.writeTextElement ("gd:orgTitle", organization.title ());
     if (organization.name().length() > 0 )
@@ -341,8 +485,10 @@ void
 GWriteStream::encodeGender (const QContactDetail &detail)
 {
     QContactGender gender = static_cast<QContactGender>(detail);
+    if (gender.gender ().isEmpty ())
+        return;
     mXmlWriter.writeEmptyElement ("gContact:gender");
-    mXmlWriter.writeCharacters (gender.gender ());
+    mXmlWriter.writeAttribute ("value", gender.gender ().toLower ());
 }
 
 /*!
@@ -352,6 +498,8 @@ void
 GWriteStream::encodeNickname (const QContactDetail &detail)
 {
     QContactNickname nicknameDetail = static_cast<QContactNickname>(detail);
+    if (nicknameDetail.nickname ().isEmpty ())
+        return;
     mXmlWriter.writeTextElement ("gContact:nickname", nicknameDetail.nickname ());
 }
 
@@ -362,10 +510,12 @@ void
 GWriteStream::encodeAnniversary (const QContactDetail &detail)
 {
     QContactAnniversary anniversary = static_cast<QContactAnniversary>(detail);
+    if (anniversary.event ().isEmpty ())
+        return;
     mXmlWriter.writeStartElement ("gContact:event");
-    if ((anniversary.event () == "anniversary") || (anniversary.event () == "other"))
-        mXmlWriter.writeAttribute ("rel", anniversary.event ());
-    mXmlWriter.writeTextElement ("gd:when", anniversary.originalDate ().toString (Qt::ISODate));
+    mXmlWriter.writeAttribute ("rel", "anniversary");
+    mXmlWriter.writeEmptyElement ("gd:when");
+    mXmlWriter.writeAttribute ("startTime", anniversary.originalDate ().toString (Qt::ISODate));
     mXmlWriter.writeEndElement ();
 }
 
@@ -376,6 +526,9 @@ void
 GWriteStream::encodeOnlineAccount (const QContactDetail &detail)
 {
     QContactOnlineAccount onlineAccount = static_cast<QContactOnlineAccount>(detail);
+    if (onlineAccount.accountUri ().isEmpty ())
+        return;
+
     QStringList subTypes = onlineAccount.subTypes();
     QString protocol = onlineAccount.protocol();
 
@@ -404,7 +557,7 @@ GWriteStream::encodeOnlineAccount (const QContactDetail &detail)
 }
 
 /*!
- * Encode family versit property if its supported in Google contact XML Document
+ * Encode family property if its supported in Google contact XML Document
  */
 void
 GWriteStream::encodeFamily (const QContactDetail &detail)

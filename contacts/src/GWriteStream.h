@@ -18,15 +18,25 @@ public:
         DELETE
     } TRANSACTION_TYPE;
 
-    GWriteStream (const TRANSACTION_TYPE type);
+    GWriteStream ();
 
-    QByteArray encodeContact (const QList<QContact> qContactList);
+    ~GWriteStream ();
 
-    QByteArray encodeContact (const QContact qContact);
+    void encodeAllContacts ();
+
+    void encodeContacts (const QList<QContactLocalId> idList, TRANSACTION_TYPE type);
+
+    QByteArray encodeContact (QList<QPair<QContact, TRANSACTION_TYPE> > qContactList);
+
+    QByteArray encodedStream ();
 
 private:
 
-    void encodeEntry ();
+    QByteArray encodeContact (const QPair<QContact, TRANSACTION_TYPE> qContactPair, const bool batch);
+
+    void startBatchFeed ();
+    void endBatchFeed ();
+    void encodeBatchTag (const TRANSACTION_TYPE type);
     void encodeId (const QContact qContact);
     void encodeUpdated (const QContact qContact);
     void encodeEtag (const QContact qContact);
@@ -39,6 +49,7 @@ private:
     void encodeUrl (const QContactDetail& detail);
     void encodeBirthDay (const QContactDetail& detail);
     void encodeNote (const QContactDetail& detail);
+    void encodeHobby (const QContactDetail& detail);
     void encodeGeoLocation (const QContactDetail& detail);
     void encodeOrganization (const QContactDetail& detail);
     void encodeAvatar (const QContactDetail &detail);
@@ -52,8 +63,6 @@ private:
     QByteArray       mXmlBuffer;
 
     QXmlStreamWriter mXmlWriter;
-
-    TRANSACTION_TYPE mUpdateType;
 };
 
 #endif // GWRITESTREAM_H
