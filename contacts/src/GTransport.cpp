@@ -235,6 +235,7 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG ("Request type:" << type);
+    mRequestType = type;
 
     iNetworkReplyBody = "";
 
@@ -248,6 +249,8 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
     switch (type)
     {
         case GET:
+            setMaxResults (MAX_RESULTS);
+            setShowDeleted ();
             iNetworkReply = iNetworkMgr.get(*iNetworkRequest);
         break;
         case POST:
@@ -317,10 +320,12 @@ GTransport::finishedSlot(QNetworkReply *reply)
 
     if (iNetworkError != QNetworkReply::NoError)
     {
-        // report error
+        emit error (iNetworkError);
     }
 
-    emit finishedRequest();
+    reply->deleteLater ();
+
+    emit finishedRequest(mRequestType);
 
     /*
     if (iPostData != NULL)
@@ -347,4 +352,20 @@ GTransport::setUpdatedMin (const QDateTime datetime)
     mUpdatedMin = datetime;
 
     iUrl.addQueryItem (UPDATED_MIN_TAG, mUpdatedMin.toString ());
+}
+
+void
+GTransport::setMaxResults (unsigned int limit)
+{
+    FUNCTION_CALL_TRACE;
+
+    iUrl.addQueryItem (MAX_RESULTS_TAG, QString::number (limit));
+}
+
+void
+GTransport::setShowDeleted ()
+{
+    FUNCTION_CALL_TRACE;
+
+    iUrl.addQueryItem (SHOW_DELETED_TAG, "true");
 }

@@ -39,7 +39,7 @@ GAtom::setAuthorEmail (QString authorEmail)
 }
 
 QString
-GAtom::getAuthorEmail()
+GAtom::authorEmail()
 {
     return mAuthorEmail;
 }
@@ -51,7 +51,7 @@ GAtom::setAuthorName (QString authorName)
 }
 
 QString
-GAtom::getAuthorName()
+GAtom::authorName()
 {
     return mAuthorName;
 }
@@ -63,7 +63,7 @@ GAtom::setId(const QString id)
 }
 
 QString
-GAtom::getId()
+GAtom::id()
 {
     return mId;
 }
@@ -75,7 +75,7 @@ GAtom::setUpdated(QString updated)
 }
 
 QString
-GAtom::getUpdated()
+GAtom::updated()
 {
     return mUpdated;
 }
@@ -92,7 +92,7 @@ GAtom::setTitle(QString title)
 }
 
 QString
-GAtom::getTitle()
+GAtom::title()
 {
     return mTitle;
 }
@@ -113,19 +113,19 @@ GAtom::setContent (const QString note, const QString type)
 }
 
 QString
-GAtom::getGeneratorName()
+GAtom::generatorName()
 {
     return mGeneratorName;
 }
 
 QString
-GAtom::getGeneratorVersion()
+GAtom::generatorVersion()
 {
     return mGeneratorVersion;
 }
 
 QString
-GAtom::getGeneratorUri()
+GAtom::generatorUri()
 {
     return mGeneratorUri;
 }
@@ -137,7 +137,7 @@ GAtom::setTotalResults(int totalResults)
 }
 
 int
-GAtom::getTotalResults()
+GAtom::totalResults()
 {
     return mTotalResults;
 }
@@ -149,7 +149,7 @@ GAtom::setStartIndex(int startIndex)
 }
 
 int
-GAtom::getStartIndex()
+GAtom::startIndex()
 {
     return mStartIndex;
 }
@@ -161,7 +161,7 @@ GAtom::setItemsPerPage(int itemsPerPage)
 }
 
 int
-GAtom::getItemsPerPage()
+GAtom::itemsPerPage()
 {
     return mItemsPerPage;
 }

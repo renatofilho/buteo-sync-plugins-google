@@ -59,11 +59,12 @@ private:
     void initFunctionMap();
 
     // Atom feed elements handler methods
-    void handleAtomUpdated();
-    void handleAtomCategory();
-    void handleAtomAuthor();
-    void handleAtomOpenSearch();
-    void handleAtomEntry();
+    void handleAtomUpdated ();
+    void handleAtomCategory ();
+    void handleAtomAuthor ();
+    void handleAtomOpenSearch ();
+    void handleAtomEntry ();
+    void handleAtomLink ();
 
     // gContact:xxx schema handler methods
     void handleEntryContent();

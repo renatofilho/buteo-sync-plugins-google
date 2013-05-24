@@ -80,6 +80,10 @@ public:
 
     void setUpdatedMin (const QDateTime datetime);
 
+    void setMaxResults (unsigned int limit);
+
+    void setShowDeleted ();
+
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
 
@@ -120,9 +124,11 @@ private:
 
     QDateTime                               mUpdatedMin;
 
+    HTTP_REQUEST_TYPE                       mRequestType;
+
 signals:
 
-    void finishedRequest ();
+    void finishedRequest (HTTP_REQUEST_TYPE type);
 
     void error (QNetworkReply::NetworkError networkError);
 

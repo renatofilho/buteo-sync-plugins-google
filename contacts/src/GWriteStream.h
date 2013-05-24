@@ -4,19 +4,14 @@
 #include <QContact>
 #include <QXmlStreamWriter>
 
+#include "GContactsBackend.h"
+#include "GConfig.h"
+
 QTM_USE_NAMESPACE
 
 class GWriteStream
 {
 public:
-
-    typedef enum
-    {
-        NONE = 0,
-        ADD,
-        UPDATE,
-        DELETE
-    } TRANSACTION_TYPE;
 
     GWriteStream ();
 
@@ -24,19 +19,21 @@ public:
 
     void encodeAllContacts ();
 
-    void encodeContacts (const QList<QContactLocalId> idList, TRANSACTION_TYPE type);
+    void encodeContacts (const QList<QContactLocalId> idList, GConfig::TRANSACTION_TYPE type);
 
-    QByteArray encodeContact (QList<QPair<QContact, TRANSACTION_TYPE> > qContactList);
+    QByteArray encodeContact (QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap);
 
     QByteArray encodedStream ();
 
 private:
 
-    QByteArray encodeContact (const QPair<QContact, TRANSACTION_TYPE> qContactPair, const bool batch);
+    QByteArray encodeContact (const QContact qContact,
+                              const GConfig::TRANSACTION_TYPE updateType,
+                              const bool batch);
 
     void startBatchFeed ();
     void endBatchFeed ();
-    void encodeBatchTag (const TRANSACTION_TYPE type);
+    void encodeBatchTag (const GConfig::TRANSACTION_TYPE type);
     void encodeId (const QContact qContact);
     void encodeUpdated (const QContact qContact);
     void encodeEtag (const QContact qContact);
@@ -63,6 +60,8 @@ private:
     QByteArray       mXmlBuffer;
 
     QXmlStreamWriter mXmlWriter;
+
+    GContactsBackend mContactsBackend;
 };
 
 #endif // GWRITESTREAM_H

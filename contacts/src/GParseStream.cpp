@@ -77,6 +77,7 @@ GParseStream::initFunctionMap ()
     mAtomFunctionMap.insert ("totalResults", &GParseStream::handleAtomOpenSearch);
     mAtomFunctionMap.insert ("startIndex", &GParseStream::handleAtomOpenSearch);
     mAtomFunctionMap.insert ("itemsPerPage", &GParseStream::handleAtomOpenSearch);
+    mAtomFunctionMap.insert ("link", &GParseStream::handleAtomLink);
     mAtomFunctionMap.insert ("entry", &GParseStream::handleAtomEntry);
 
     mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
@@ -201,6 +202,18 @@ GParseStream::handleAtomOpenSearch ()
         mAtom->setStartIndex (mXml->readElementText ().toInt ());
     else if (mXml->name () == "itemsPerPage")
         mAtom->setItemsPerPage (mXml->readElementText ().toInt ());
+}
+
+void
+GParseStream::handleAtomLink ()
+{
+    FUNCTION_CALL_TRACE;
+
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "link");
+    if (mXml->attributes ().hasAttribute ("rel"))
+    {
+        mAtom->setNextEntriesUrl (mXml->attributes ().value ("href").toString ());
+    }
 }
 
 void

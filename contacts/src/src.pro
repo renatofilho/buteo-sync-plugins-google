@@ -49,7 +49,8 @@ HEADERS += GContactClient.h\
     GContactsBackend.h \
     GContactDetail.h \
     GContactCustomDetail.h \
-    GWriteStream.h
+    GWriteStream.h \
+    GConfig.h
 
 target.path = /usr/lib/buteo-plugins
 

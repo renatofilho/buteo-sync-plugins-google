@@ -29,6 +29,7 @@
 #include <QContactGuid>
 #include <QBuffer>
 #include <QSet>
+#include <QHash>
 
 GContactsBackend::GContactsBackend(QObject* parent) :
                     QObject (parent), iMgr(new QContactManager())
@@ -69,14 +70,14 @@ GContactsBackend::getAllContactIds()
     return iMgr->contactIds (getSyncTargetFilter ());
 }
 
-QList<QPair<QContactLocalId, QString> >
+QHash<QString, QContactLocalId>
 GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Retrieve New Contacts Since " << aTimeStamp);
 
-    QList<QPair<QContactLocalId, QString> > idList;
+    QHash<QString, QContactLocalId> idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventAdded;
 
@@ -85,7 +86,7 @@ GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
     return idList;
 }
 
-QList<QPair<QContactLocalId, QString> >
+QHash<QString, QContactLocalId>
 GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
 {
 
@@ -93,7 +94,7 @@ GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
 
     LOG_DEBUG("Retrieve Modified Contacts Since " << aTimeStamp);
 
-    QList<QPair<QContactLocalId, QString> > idList;
+    QHash<QString, QContactLocalId> idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventChanged;
 
@@ -102,14 +103,14 @@ GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
     return idList;
 }
 
-QList<QPair<QContactLocalId, QString> >
+QHash<QString, QContactLocalId>
 GContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Retrieve Deleted Contacts Since " << aTimeStamp);
 
-    QList<QPair<QContactLocalId, QString> > idList;
+    QHash<QString, QContactLocalId> idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventRemoved;
 
@@ -296,7 +297,7 @@ GContactsBackend::deleteContacts(const QStringList &aContactIDList)
 void
 GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
         const QDateTime& aTimeStamp,
-        QList<QPair<QContactLocalId, QString> >& aIdList)
+        QHash<QString, QContactLocalId>& aIdList)
 {
     FUNCTION_CALL_TRACE;
 
@@ -339,10 +340,10 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
 
     QList<QContact> contacts = iMgr->contacts(localIdList, guidHint);
 
-    for (int i=0; i<contacts.size (); i++)
+    foreach (QContact contact, contacts)
     {
-        aIdList.append (QPair<QContactLocalId, QString> (contacts.at (i).localId (),
-                               contacts.at (i).detail<QContactGuid>().value (QContactGuid::FieldGuid)));
+        aIdList.insert (contact.detail<QContactGuid>().value (QContactGuid::FieldGuid),
+                        contact.localId ());
     }
 }
 

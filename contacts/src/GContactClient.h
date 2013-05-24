@@ -35,6 +35,9 @@
 #include <buteosyncfw/SyncResults.h>
 #include <buteosyncfw/SyncCommonDefs.h>
 
+#include "GConfig.h"
+#include "GTransport.h"
+
 QTM_USE_NAMESPACE
 
 class GContactEntry;
@@ -42,6 +45,7 @@ class GTransport;
 class GContactsBackend;
 class GParseStream;
 class GAuth;
+class GWriteStream;
 
 class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : Buteo::ClientPlugin
 {
@@ -110,13 +114,13 @@ protected slots:
 
     void receiveSyncFinished (Sync::SyncStatus);
 
-    void networkRequestFinished ();
+    void networkRequestFinished (GTransport::HTTP_REQUEST_TYPE);
 
     void networkError (QNetworkReply::NetworkError error);
 
-    bool start ();
-
 private:
+
+    bool start ();
 
     bool initConfig ();
 
@@ -158,21 +162,25 @@ private:
      */
     const QDateTime lastSyncTime ();
 
-    void remoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts);
+    void filterRemoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts,
+                                             QList<GContactEntry*>& remoteAddedContacts,
+                                             QList<GContactEntry*>& remoteModifiedContacts,
+                                             QList<GContactEntry*>& remoteDeletedContacts);
 
-    void storeToRemote (QList<QContact> deviceContacts);
+    void storeToRemote ();
 
-    void storeToLocal (QList<QContact> serverContacts);
-
-    void storeToLocal ();
+    bool storeToLocal (const QList<GContactEntry*> remoteContacts);
 
     QList<QContact> toQContacts (const QList<GContactEntry*> gContactList);
 
-    void resolveConflicts ();
+    void resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
+                           QList<GContactEntry*>& deletedRemoteContacts);
 
-    GAuth*                     mGoogleAuth;
+    GAuth*                      mGoogleAuth;
 
     bool                        mSlowSync;
+
+    bool                        mHasMoreContactsToStore;
 
     Buteo::SyncProfile::SyncDirection mSyncDirection;
 
@@ -190,21 +198,11 @@ private:
 
     QMap<QString, Buteo::DatabaseResults> mItemResults;
 
-    QList<QContactLocalId>                  mAllLocalContacts;
-    QList<QPair<QContactLocalId, QString> > mLocalAddedContacts;
-    QList<QPair<QContactLocalId, QString> > mLocalModifiedContacts;
-    QList<QPair<QContactLocalId, QString> > mLocalDeletedContacts;
+    QList<QContactLocalId>          mAllLocalContactIds;
 
-    QList<GContactEntry*> mRemoteAddedContacts;
-    QList<GContactEntry*> mRemoteModifiedContacts;
-    QList<GContactEntry*> mRemoteDeletedContacts;
-
-    enum TRANS_TYPE
-    {
-        ADD = 0,
-        MODIFY,
-        DELETE
-    };
+    QHash<QString, QContactLocalId> mAddedContactIds;
+    QHash<QString, QContactLocalId> mModifiedContactIds;
+    QHash<QString, QContactLocalId> mDeletedContactIds;
 
 #ifndef QT_NO_DEBUG
     friend class GContactClientTest;

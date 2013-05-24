@@ -22,6 +22,8 @@
 #include <QContactTimestamp>
 #include <QContactManager>
 
+#include <QHash>
+
 GWriteStream::GWriteStream () :
     mXmlWriter (&mXmlBuffer)
 {
@@ -34,64 +36,56 @@ GWriteStream::~GWriteStream ()
 void
 GWriteStream::encodeAllContacts ()
 {
-    QContactManager mgr;
-    QList<QContact> allContacts = mgr.contacts ();
+    QList<QContact> allContacts;
+    QList<QContactLocalId> allContactIds = mContactsBackend.getAllContactIds ();
 
-    if (allContacts.size () <= 1)
+    if (allContactIds.size () <= 1)
         return;
 
     // QtContacts has a fictious first contact that has nothing
     // in it. Removing this unwanted element
-    allContacts.removeFirst ();
+    allContactIds.removeFirst ();
 
-    QList<QPair<QContact, GWriteStream::TRANSACTION_TYPE> > qContactPairList;
-    QPair<QContact, GWriteStream::TRANSACTION_TYPE> contactPair;
-    for (int i=0; i<allContacts.size (); i++)
+    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap;
+    foreach (QContactLocalId localId, allContactIds)
     {
-        contactPair.first = allContacts.at (i);
-        contactPair.second = GWriteStream::ADD;
-        qContactPairList.append (contactPair);
+        qContactMap.insert (localId, GConfig::ADD);
     }
 
-    encodeContact (qContactPairList);
+    encodeContact (qContactMap);
 }
 
 void
-GWriteStream::encodeContacts (const QList<QContactLocalId> idList, TRANSACTION_TYPE type)
+GWriteStream::encodeContacts (const QList<QContactLocalId> idList, GConfig::TRANSACTION_TYPE type)
 {
-    QContactManager mgr;
-    QList<QContact> contactList = mgr.contacts (idList);
-
-    QList<QPair<QContact, GWriteStream::TRANSACTION_TYPE> > qContactPairList;
-    QPair<QContact, GWriteStream::TRANSACTION_TYPE> contactPair;
-    for (int i=0; i<contactList.size (); i++)
+    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap;
+    foreach (QContactLocalId localId, idList)
     {
-        contactPair.first = contactList.at (i);
-        contactPair.second = type;
-        qContactPairList.append (contactPair);
+        qContactMap.insert (localId, type);
     }
 
-    encodeContact (qContactPairList);
+    encodeContact (qContactMap);
 }
 
 QByteArray
-GWriteStream::encodeContact (QList<QPair<QContact, TRANSACTION_TYPE> > qContactList)
+GWriteStream::encodeContact (QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap)
 {
-    if (qContactList.size () <= 0)
+    if (qContactMap.size () <= 0)
         return mXmlBuffer;
 
     mXmlWriter.writeStartDocument ();
-    // Encode as a batch
-    bool batch = false;
-    if (qContactList.size () > 1)
-    {
-        batch = true;
-        startBatchFeed ();
-    }
+    // Encode everything as a batch request
+    bool batch = true;
+    startBatchFeed ();
 
-    for (int i=0; i<qContactList.size (); i++)
-        if (!qContactList.at (i).first.isEmpty ())
-            encodeContact (qContactList.at (i), batch);
+    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE>::iterator contactPair;
+    for (contactPair = qContactMap.begin (); contactPair != qContactMap.end (); ++contactPair)
+    {
+        QContact contact;
+        mContactsBackend.getContact (contactPair.key (), contact);
+        if (!contact.isEmpty ())
+            encodeContact (contact, contactPair.value (), batch);
+    }
 
     if (batch == true)
         endBatchFeed ();
@@ -108,10 +102,10 @@ GWriteStream::encodedStream ()
 }
 
 QByteArray
-GWriteStream::encodeContact(const QPair<QContact, TRANSACTION_TYPE> qContactPair,
+GWriteStream::encodeContact(const QContact qContact,
+                            const GConfig::TRANSACTION_TYPE updateType,
                             const bool batch)
 {
-    QContact qContact = qContactPair.first;
     QList<QContactDetail> allDetails = qContact.details ();
 
     if (batch == true)
@@ -123,18 +117,17 @@ GWriteStream::encodeContact(const QPair<QContact, TRANSACTION_TYPE> qContactPair
         mXmlWriter.writeAttribute ("xmlns:gContact", "http://schemas.google.com/contact/2008");
     }
 
-    TRANSACTION_TYPE updateType = qContactPair.second;
     // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
     // since etag is an attribute of this element
     encodeEtag (qContact);
     if (batch == true) encodeBatchTag (updateType);
-    if (updateType == UPDATE)
+    if (updateType == GConfig::UPDATE)
     {
         encodeId (qContact);
         encodeUpdated (qContact);
     }
 
-    if (updateType == DELETE)
+    if (updateType == GConfig::DELETE)
     {
         mXmlWriter.writeEndElement ();
         return mXmlBuffer;
@@ -202,19 +195,19 @@ GWriteStream::endBatchFeed ()
 }
 
 void
-GWriteStream::encodeBatchTag (const TRANSACTION_TYPE type)
+GWriteStream::encodeBatchTag (const GConfig::TRANSACTION_TYPE type)
 {
-    if (type == ADD)
+    if (type == GConfig::ADD)
     {
         mXmlWriter.writeTextElement ("batch:id", "create");
         mXmlWriter.writeEmptyElement ("batch:operation");
         mXmlWriter.writeAttribute ("type", "insert");
-    } else if (type == UPDATE)
+    } else if (type == GConfig::UPDATE)
     {
         mXmlWriter.writeTextElement ("batch:id", "update");
         mXmlWriter.writeEmptyElement ("batch:operation");
         mXmlWriter.writeAttribute ("type", "update");
-    } else if (type == DELETE)
+    } else if (type == GConfig::DELETE)
     {
         mXmlWriter.writeTextElement ("batch:id", "delete");
         mXmlWriter.writeEmptyElement ("batch:operation");
