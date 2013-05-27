@@ -1,5 +1,6 @@
 #include "GWriteStreamTest.h"
 #include "GWriteStream.h"
+#include "GConfig.h"
 
 #include <QPair>
 #include <QDebug>
@@ -15,15 +16,12 @@ GWriteStreamTest::testEncodeContact ()
     GWriteStream ws;
 
     QContactManager mgr;
-    QList<QContact> contactList = mgr.contacts ();
+    QList<QContactLocalId> contactList = mgr.contactIds ();
 
-    QList<QPair<QContact, GWriteStream::TRANSACTION_TYPE> > qContactList;
-    QPair<QContact, GWriteStream::TRANSACTION_TYPE> contactPair;
-    contactPair.first = contactList.at (1);
-    contactPair.second = GWriteStream::ADD;
-    qContactList.append (contactPair);
+    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> contactMap;
+    contactMap.insert (contactList.at (1), GConfig::ADD);
 
-    qDebug() << ws.encodeContact (qContactList);
+    qDebug() << ws.encodeContact (contactMap);
 }
 
 void
@@ -32,29 +30,9 @@ GWriteStreamTest::testEncodeContacts ()
     GWriteStream ws;
 
     QContactManager mgr;
-    QList<QContact> contactList = mgr.contacts ();
+    QList<QContactLocalId> contactList = mgr.contactIds ();
 
-    QList<QPair<QContact, GWriteStream::TRANSACTION_TYPE> > qContactList;
-    QPair<QContact, GWriteStream::TRANSACTION_TYPE> contactPair;
-    for (int i=0; i<contactList.size (); i++)
-    {
-        contactPair.first = contactList.at (i);
-        contactPair.second = GWriteStream::ADD;
-        qContactList.append (contactPair);
-    }
-    qDebug() << ws.encodeContact (qContactList);
-}
-
-void
-GWriteStreamTest::testEncodeContactWithIds ()
-{
-    GWriteStream ws;
-
-    QContactManager mgr;
-    QList<QContactLocalId> idList = mgr.contactIds ();
-    idList.removeFirst ();
-    ws.encodeContacts (idList, GWriteStream::UPDATE);
-
+    ws.encodeContacts (contactList, GConfig::UPDATE);
     qDebug() << ws.encodedStream ();
 }
 

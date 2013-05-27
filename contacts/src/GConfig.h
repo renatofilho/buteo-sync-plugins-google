@@ -5,7 +5,7 @@ class GConfig
 {
 public:
 
-    static const int MAX_RESULTS;
+    static const int MAX_RESULTS = 10;
     static const QString SCOPE_URL;
     static const QString GCONTACT_URL;
 
@@ -38,7 +38,6 @@ public:
     } TRANSACTION_TYPE;
 };
 
-static const int MAX_RESULTS = 10;
 static const QString SCOPE_URL = "https://www.google.com/m8/feeds/";
 static const QString GCONTACT_URL = SCOPE_URL + "/contacts/default/";
 

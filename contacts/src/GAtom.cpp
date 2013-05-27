@@ -177,3 +177,15 @@ GAtom::entries()
 {
     return mContactList;
 }
+
+void
+GAtom::setNextEntriesUrl (const QString nextUrl)
+{
+    mNextEntriesUrl = nextUrl;
+}
+
+const QString
+GAtom::nextEntriesUrl ()
+{
+    return mNextEntriesUrl;
+}

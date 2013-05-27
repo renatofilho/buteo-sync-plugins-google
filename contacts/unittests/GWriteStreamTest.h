@@ -20,8 +20,6 @@ private slots:
 
     void testEncodeContacts ();
 
-    void testEncodeContactWithIds ();
-
     void encodeAllContacts ();
 };
 
