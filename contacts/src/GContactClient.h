@@ -114,13 +114,13 @@ protected slots:
 
     void receiveSyncFinished (Sync::SyncStatus);
 
-    void networkRequestFinished (GTransport::HTTP_REQUEST_TYPE);
+    void networkRequestFinished ();
 
     void networkError (QNetworkReply::NetworkError error);
 
-private:
-
     bool start ();
+
+private:
 
     bool initConfig ();
 
@@ -203,6 +203,8 @@ private:
     QHash<QString, QContactLocalId> mAddedContactIds;
     QHash<QString, QContactLocalId> mModifiedContactIds;
     QHash<QString, QContactLocalId> mDeletedContactIds;
+
+    int mStartIndex;
 
 #ifndef QT_NO_DEBUG
     friend class GContactClientTest;

@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     GContactsBackendTest contactsBackendTest;
     GWriteStreamTest writer;
 
-    QTest::qExec (&writer, argc, argv);
+    QTest::qExec (&parseStreamTest, argc, argv);
 
     return 0;
 }

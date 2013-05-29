@@ -129,6 +129,7 @@ GWriteStream::encodeContact(const QContact qContact,
 
     if (updateType == GConfig::DELETE)
     {
+        encodeId (qContact);
         mXmlWriter.writeEndElement ();
         return mXmlBuffer;
     }

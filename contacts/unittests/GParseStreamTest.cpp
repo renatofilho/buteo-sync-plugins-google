@@ -24,6 +24,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QtTest/QtTest>
+#include "iostream"
 
 #include <QContactName>
 #include <QContactNote>
@@ -50,8 +51,8 @@ GParseStreamTest::initTestCase()
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     QTextStream in (&file);
     QByteArray ba = in.readAll ().toAscii ();
-    mPs = new GParseStream (ba);
-    mPs->parse ();
+    mPs = new GParseStream ();
+    mAtom = mPs->parse (ba);
     file.close ();
 }
 
@@ -64,7 +65,6 @@ GParseStreamTest::testParse ()
 void
 GParseStreamTest::testAtom ()
 {
-    mAtom = mPs->atom ();
     QVERIFY (mAtom != NULL);
     QVERIFY (mAtom->authorName () == "nemo sailfish");
     QVERIFY (mAtom->authorEmail () == "nemosailfish@gmail.com");
@@ -83,32 +83,38 @@ GParseStreamTest::testContactEntry ()
     QContact qContact = gContacts.at (0)->qContact ();
     qDebug () << qContact.detail<QContactName> ().firstName ();
     qDebug () << qContact.detail<QContactName> ().lastName ();
-    qDebug () << qContact.detail<QContactName> ().firstName ();
-    qDebug () << qContact.detail<QContactName> ().lastName ();
     qDebug () << qContact.detail<QContactNickname> ().nickname ();
     qDebug () << qContact.detail<QContactEmailAddress> ().emailAddress ();
     qDebug () << qContact.detail<QContactNote> ().note ();
     qDebug () << qContact.detail<QContactBirthday> ().date ().toString ();
-    qDebug () << qContact.detail<QContactBirthday> ().date ().toString();
 
-    /*
+    std::cout << qContact.detail<QContactName> ().firstName ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactName> ().lastName ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactNickname> ().nickname ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactEmailAddress> ().emailAddress ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactNote> ().note ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactBirthday> ().date ().toString ("yyyy-MM-dd").toStdString () << "\n";
+
     QVERIFY (qContact.detail<QContactName> ().firstName () == "Tarzan");
-    // FIXME: For some weird reason, lastname comes up as empty
-    //QVERIFY (qContact.detail<QContactName> ().lastName () == "Hello");
+    QVERIFY (qContact.detail<QContactName> ().lastName () == "Hello");
     QVERIFY (qContact.detail<QContactNickname> ().nickname () == "Taru");
     QVERIFY (qContact.detail<QContactEmailAddress> ().emailAddress () == "tarzan.forest@forest.com");
     QVERIFY (qContact.detail<QContactNote> ().note () == "This is a note");
-    //QVERIFY (qContact.detail<QContactBirthday> ().date ().toString () == "1967-12-02");
-    */
+    QVERIFY (qContact.detail<QContactBirthday> ().date ().toString ("yyyy-MM-dd") == "1967-12-02");
 
+    std::cout << "---------" << "\n";
     qContact = gContacts.at (1)->qContact ();
-    qDebug () << qContact.detail<QContactName> ().firstName ();
-    qDebug () << qContact.detail<QContactName> ().lastName ();
+    /*
     qDebug () << qContact.detail<QContactName> ().firstName ();
     qDebug () << qContact.detail<QContactName> ().lastName ();
     qDebug () << qContact.detail<QContactNickname> ().nickname ();
     qDebug () << qContact.detail<QContactEmailAddress> ().emailAddress ();
     qDebug () << qContact.detail<QContactNote> ().note ();
     qDebug () << qContact.detail<QContactBirthday> ().date ().toString ();
-    qDebug () << qContact.detail<QContactBirthday> ().date ().toString();
+    */
+    std::cout << qContact.detail<QContactName> ().firstName ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactName> ().lastName ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactNickname> ().nickname ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactEmailAddress> ().emailAddress ().toStdString () << "\n";
+    std::cout << qContact.detail<QContactNote> ().note ().toStdString () << "\n";
 }

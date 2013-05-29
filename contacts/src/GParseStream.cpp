@@ -48,21 +48,6 @@ GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
 GParseStream::~GParseStream ()
 {
     FUNCTION_CALL_TRACE;
-
-    delete mAtom;
-    mAtom = NULL;
-
-    delete mXml;
-    mXml = NULL;
-}
-
-void
-GParseStream::setParseData (const QByteArray data)
-{
-    FUNCTION_CALL_TRACE;
-
-    mXml = new QXmlStreamReader (data);
-    mAtom = new GAtom ();
 }
 
 void
@@ -126,17 +111,15 @@ GParseStream::initFunctionMap ()
 }
 
 GAtom*
-GParseStream::atom ()
+GParseStream::parse (const QByteArray xmlBuffer)
 {
     FUNCTION_CALL_TRACE;
 
-    return mAtom;
-}
+    mXml = new QXmlStreamReader (xmlBuffer);
+    mAtom = new GAtom ();
 
-void
-GParseStream::parse ()
-{
-    FUNCTION_CALL_TRACE;
+    Q_CHECK_PTR (mXml);
+    Q_CHECK_PTR (mAtom);
 
     while (!mXml->atEnd () && !mXml->hasError ())
     {
@@ -147,6 +130,9 @@ GParseStream::parse ()
                 (*this.*handler) ();
         }
     }
+    delete mXml;
+
+    return mAtom;
 }
 
 void
@@ -248,7 +234,7 @@ void
 GParseStream::handleEntryId ()
 {
     QString idUrl = mXml->readElementText ();
-    mContactEntry->setId (idUrl.right (idUrl.lastIndexOf ('/')));
+    mContactEntry->setId (idUrl.remove (0, idUrl.lastIndexOf ('/') + 1));
 }
 
 void
@@ -603,14 +589,13 @@ GParseStream::handleEntryMoney ()
 void
 GParseStream::handleEntryName ()
 {
-    //Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
 
     while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
              mXml->qualifiedName () == "gd:name"))
     {
         if (mXml->tokenType () == QXmlStreamReader::StartElement)
         {
-    qDebug() << mXml->qualifiedName ();
             if (mXml->qualifiedName () == "gd:givenName")
                 mContactEntry->setGivenName (mXml->readElementText ());
             else if (mXml->qualifiedName () == "gd:additionalName")

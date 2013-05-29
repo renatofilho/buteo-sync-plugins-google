@@ -48,16 +48,6 @@ public:
 
     explicit GTransport(QObject *parent = 0);
 
-    /*! \brief Constructor to be used along with setUrl()
-      Same object can be used any number of time for
-      network request
-     */
-    GTransport(QList<QPair<QByteArray, QByteArray> > *headers);
-
-    GTransport(QString url, QList<QPair<QByteArray, QByteArray> > *headers = 0);
-
-    GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers = 0);
-
     virtual ~GTransport();
 
     void setUrl (const QString url);
@@ -66,7 +56,7 @@ public:
 
     void setHeaders ();
 
-    void addHeader (const QPair<QByteArray, QByteArray> header);
+    void addHeader (const QByteArray first, const QByteArray second);
 
     void setAuthToken (const QString token);
 
@@ -83,6 +73,10 @@ public:
     void setMaxResults (unsigned int limit);
 
     void setShowDeleted ();
+
+    void setStartIndex (const int index);
+
+    HTTP_REQUEST_TYPE requestType ();
 
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
@@ -102,7 +96,7 @@ private:
 
     QUrl 									iUrl;
 
-    QList<QPair<QByteArray, QByteArray> > 	*iHeaders;
+    QList<QPair<QByteArray, QByteArray> > 	iHeaders;
 
     QByteArray 								*iAuthToken;
 
@@ -128,7 +122,7 @@ private:
 
 signals:
 
-    void finishedRequest (HTTP_REQUEST_TYPE type);
+    void finishedRequest ();
 
     void error (QNetworkReply::NetworkError networkError);
 

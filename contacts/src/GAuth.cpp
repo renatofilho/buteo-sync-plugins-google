@@ -87,7 +87,9 @@ void GAuth::getToken()
         delete iTransport;
         iTransport = NULL;
     }
-    iTransport = new GTransport(TOKEN_URI, data.toAscii(), NULL);
+    iTransport = new GTransport();
+    iTransport->setUrl (TOKEN_URI);
+    iTransport->setData (data.toAscii ());
     QObject::connect(iTransport, SIGNAL(finishedRequest()),
                      this, SLOT(tokenResponse()));
     iTransport->request(GTransport::POST);
@@ -135,7 +137,9 @@ void GAuth::deviceAuth()
                          SCOPE_TAG + EQUALS + CONTACTS_SCOPE_URL + " " + USER_INFO_PROFILE;
 
     // FIXME: Create a proper GTransport object
-    iTransport = new GTransport(OAUTH_DEVICE_CODE_URL, data.toAscii(), NULL);
+    iTransport = new GTransport();
+    iTransport->setData (data.toAscii ());
+    iTransport->setUrl (OAUTH_DEVICE_CODE_URL);
 
     QObject::connect(iTransport, SIGNAL(finishedRequest()),
                      this, SLOT(deviceCodeResponse()));

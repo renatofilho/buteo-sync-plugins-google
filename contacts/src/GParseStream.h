@@ -42,11 +42,7 @@ public:
 
     ~GParseStream ();
 
-    void setParseData (const QByteArray data);
-
-    void parse();
-
-    GAtom* atom();
+    GAtom* parse(const QByteArray xmlBuffer);
 
 signals:
 

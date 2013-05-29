@@ -56,7 +56,7 @@ GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
     ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true), mParser(0),
-            mTransport(0), mCommittedItems(0) {
+            mTransport(0), mCommittedItems(0), mStartIndex (0) {
     FUNCTION_CALL_TRACE;
 }
 
@@ -551,11 +551,10 @@ GContactClient::fetchRemoteContacts ()
         LOG_CRITICAL ("Auth token is null");
         return;
     }
-    LOG_DEBUG ("++ Auth token" << token);
     mTransport->setAuthToken (token);
 
-    connect (mTransport, SIGNAL (finishedRequest (GTransport::HTTP_REQUEST_TYPE)),
-             this, SLOT (networkRequestFinished (GTransport::HTTP_REQUEST_TYPE)));
+    connect (mTransport, SIGNAL (finishedRequest ()),
+             this, SLOT (networkRequestFinished ()));
 
     connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
              this, SLOT (networkError (QNetworkReply::NetworkError)));
@@ -608,7 +607,7 @@ GContactClient::lastSyncTime ()
 }
 
 void
-GContactClient::networkRequestFinished (GTransport::HTTP_REQUEST_TYPE requestType)
+GContactClient::networkRequestFinished ()
 {
     FUNCTION_CALL_TRACE;
 
@@ -620,6 +619,7 @@ GContactClient::networkRequestFinished (GTransport::HTTP_REQUEST_TYPE requestTyp
 
     const QNetworkReply* reply = mTransport->reply ();
     bool syncDone = false;
+    GTransport::HTTP_REQUEST_TYPE requestType = mTransport->requestType ();
     if (reply)
     {
 
@@ -630,12 +630,9 @@ GContactClient::networkRequestFinished (GTransport::HTTP_REQUEST_TYPE requestTyp
             LOG_DEBUG ("Nothing returned from server");
             return;
         }
-        mParser->setParseData (data);
 
-        mParser->parse ();
+        GAtom* atom = mParser->parse (data);
 
-        // Get the atom object
-        GAtom* atom = mParser->atom ();
         if (!atom)
         {
             LOG_CRITICAL ("NULL atom object. Something wrong with parsing");
@@ -665,14 +662,17 @@ GContactClient::networkRequestFinished (GTransport::HTTP_REQUEST_TYPE requestTyp
             if (remoteContacts.size () > 0)
                 storeToLocal (remoteContacts);
 
-            if (!atom->nextEntriesUrl ().isNull () ||
-                !atom->nextEntriesUrl ().isEmpty ())
+            if ((!atom->nextEntriesUrl ().isNull () ||
+                !atom->nextEntriesUrl ().isEmpty ()) &&
+                (remoteContacts.size () >= GConfig::MAX_RESULTS))
             {
                 // Request for the next batch
                 // This condition will make this slot to be
                 // called again and again until there are no more
                 // entries left to be fetched from the server
-                mTransport->setUrl (atom->nextEntriesUrl ());
+                mStartIndex += GConfig::MAX_RESULTS + 1;
+                //mTransport->setUrl (atom->nextEntriesUrl ());
+                mTransport->setStartIndex (mStartIndex);
                 mTransport->request (GTransport::GET);
             } else
             {
@@ -680,16 +680,15 @@ GContactClient::networkRequestFinished (GTransport::HTTP_REQUEST_TYPE requestTyp
                 // server. Continue with saving the local contacts to
                 // server
                 storeToRemote ();
-
-                syncDone = true;
             }
 
-            delete atom;
+            syncDone = true;
         }
+        delete atom;
     }
 
-    if (syncDone == false)
-        emit syncFinished (Sync::SYNC_ERROR);
+    //if (syncDone == false)
+    //    emit syncFinished (Sync::SYNC_ERROR);
 }
 
 void
@@ -755,6 +754,12 @@ GContactClient::storeToRemote ()
     {
         QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> allChangedContactIds;
 
+        /*
+         * Create a new list of contact ids that are added/modified/deleted
+         * The ids added to this list need to be deleted from the
+         * member attributes so that the sync'd entries would nto be present
+         * the next time, this method is invoked
+         */
         int totalCount = 0;
         QHash<QString, QContactLocalId>::iterator iter;
         for (iter = mAddedContactIds.begin ();
@@ -809,10 +814,20 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
     bool syncSuccess = false;
     if (mSlowSync == true)
     {
-        QList<QContact> remoteQContacts = toQContacts (remoteContacts);
+        // Since we request for all the deleted contacts, if
+        // slow sync is performed many times, even deleted contacts
+        // will appear in *remoteContacts. Filter them out while
+        // saving them to device
+        QList<GContactEntry*> filteredRemoteContacts;
+        foreach (GContactEntry* gEntry, remoteContacts)
+        {
+            if (gEntry->deleted () != true)
+                filteredRemoteContacts.append (gEntry);
+        }
+        LOG_DEBUG ("TOTAL FILTERED SERVER CONTACTS:" << filteredRemoteContacts.size ());
+        QList<QContact> remoteQContacts = toQContacts (filteredRemoteContacts);
         QMap<int, GContactsStatus> statusMap;
         LOG_DEBUG ("TOTAL SERVER CONTACTS:" << remoteQContacts.size ());
-
 
         if (mContactBackend->addContacts (remoteQContacts, statusMap))
         {

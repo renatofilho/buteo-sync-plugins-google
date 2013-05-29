@@ -22,6 +22,7 @@
  */
 
 #include "GTransport.h"
+#include "GConfig.h"
 
 #include <QBuffer>
 #include <QDebug>
@@ -29,17 +30,20 @@
 #include <QDateTime>
 #include <LogMacros.h>
 
+/*
 const int MAX_RESULTS = 10;
 const QString SCOPE_URL("https://www.google.com/m8/feeds/");
 const QString GCONTACT_URL(SCOPE_URL + "/contacts/default/");
 
-const QString GDATA_VERSION_TAG = QString("GData-Version ");
+const QString GDATA_VERSION_TAG = QString("GData-Version");
 const QString GDATA_VERSION = QString("3.0");
 const QString G_DELETE_OVERRIDE_HEADER("X-HTTP-Method-Override: DELETE");
 const QString G_ETAG_HEADER("If-Match ");
-const QString G_AUTH_HEADER ("Authorization ");
+const QString G_AUTH_HEADER ("Authorization");
+*/
 
 /* Query parameters */
+/*
 const QString QUERY_TAG("q");
 const QString MAX_RESULTS_TAG("max-results");
 const QString START_INDEX_TAG("start-index");
@@ -52,76 +56,16 @@ const QString SORTORDER_TAG("sortorder");
 const QString PHOTO_TAG("photos");
 const QString MEDIA_TAG("media");
 const QString BATCH_TAG("batch");
+*/
 
 GTransport::GTransport(QObject *parent) :
-    QObject(parent), iNetworkMgr (this), iNetworkRequest (new QNetworkRequest)
+    QObject(parent), iNetworkMgr (this), iNetworkRequest (NULL)
 {
     FUNCTION_CALL_TRACE;
 
+    addHeader (GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ());
     QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
                      this, SLOT(finishedSlot(QNetworkReply*)));
-}
-
-GTransport::GTransport (QList<QPair<QByteArray, QByteArray> >* headers) :
-        iHeaders(headers), iNetworkMgr(this), iPostData(NULL),
-        iNetworkRequest(new QNetworkRequest), iNetworkReply(NULL)
-{
-    FUNCTION_CALL_TRACE;
-
-    if (headers != NULL)
-        setHeaders();
-
-    iNetworkMgr.setProxy (QNetworkProxy (QNetworkProxy::NoProxy));
-
-    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
-                     this, SLOT(finishedSlot(QNetworkReply*)));
-    QObject::connect (&iNetworkMgr, SIGNAL(error(QNetworkReply::NetworkError)),
-                      this, SLOT (handleNetworkError (QNetworkReply::NetworkError)));
-
-}
-
-GTransport::GTransport (const QString url, QList<QPair<QByteArray, QByteArray> >* headers) :
-        iUrl(url), iHeaders(headers), iNetworkMgr(this), iPostData(NULL),
-        iNetworkRequest(new QNetworkRequest), iNetworkReply(NULL)
-{
-    FUNCTION_CALL_TRACE;
-
-    if (headers != NULL)
-        setHeaders();
-
-    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
-                     this, SLOT(finishedSlot(QNetworkReply*)));
-
-    QObject::connect (&iNetworkMgr, SIGNAL(error(QNetworkReply::NetworkError)),
-                      this, SLOT (handleNetworkError (QNetworkReply::NetworkError)));
-
-    iUrl.setUrl(url, QUrl::StrictMode);
-    encode(iUrl);
-    iNetworkRequest->setUrl (iUrl);
-}
-
-GTransport::GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers) :
-        iUrl(url), iHeaders(headers), iNetworkMgr(this),
-        iNetworkRequest(new QNetworkRequest), iNetworkReply(NULL)
-{
-    FUNCTION_CALL_TRACE;
-
-    QBuffer *buffer = new QBuffer(this);
-    buffer->setData(data);
-    iPostData = buffer;
-
-    if (headers != NULL)
-        setHeaders();
-
-    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
-                     this, SLOT(finishedSlot(QNetworkReply*)));
-
-    QObject::connect (&iNetworkMgr, SIGNAL(error(QNetworkReply::NetworkError)),
-                      this, SLOT (handleNetworkError (QNetworkReply::NetworkError)));
-
-    iUrl.setUrl(url, QUrl::StrictMode);
-    encode(iUrl);
-    iNetworkRequest->setUrl (iUrl);
 }
 
 GTransport::~GTransport()
@@ -136,7 +80,7 @@ GTransport::~GTransport()
 
     if (iNetworkReply != NULL)
     {
-        iNetworkReply->deleteLater();
+        //iNetworkReply->deleteLater();
         iNetworkReply = NULL;
     }
 
@@ -157,8 +101,7 @@ GTransport::setUrl (const QString url)
     iUrl.setUrl(url, QUrl::StrictMode);
     encode(iUrl);
 
-    iNetworkRequest->setUrl (iUrl);
-
+    //iNetworkRequest->setUrl (iUrl);
 }
 
 void
@@ -175,19 +118,19 @@ void GTransport::setHeaders()
 {
     FUNCTION_CALL_TRACE;
 
-    for (int i=0; i < iHeaders->size(); i++)
+    for (int i=0; i < iHeaders.size(); i++)
     {
-        QPair<QByteArray, QByteArray> headerPair = iHeaders->at(i);
+        QPair<QByteArray, QByteArray> headerPair = iHeaders.at(i);
         iNetworkRequest->setRawHeader(headerPair.first, headerPair.second);
     }
 }
 
 void
-GTransport::addHeader (const QPair<QByteArray, QByteArray> header)
+GTransport::addHeader (const QByteArray first, const QByteArray second)
 {
     FUNCTION_CALL_TRACE;
 
-    iNetworkRequest->setRawHeader (header.first, header.second);
+    iHeaders.append (QPair<QByteArray, QByteArray> (first, second));
 }
 
 void
@@ -198,7 +141,7 @@ GTransport::setAuthToken (const QString token)
     mAuthToken = token;
 
     QByteArray header1 = QString(G_AUTH_HEADER).toAscii ();
-    addHeader (QPair<QByteArray, QByteArray>(header1, ("Bearer " + token).toAscii ()));
+    addHeader (header1, ("Bearer " + token).toAscii ());
 }
 
 void
@@ -235,22 +178,32 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG ("Request type:" << type);
+    if (iNetworkRequest)
+    {
+        delete iNetworkRequest;
+        iNetworkRequest = NULL;
+    }
+
+    iNetworkRequest = new QNetworkRequest ();
+    iNetworkRequest->setUrl (iUrl);
     mRequestType = type;
 
     iNetworkReplyBody = "";
 
-    LOG_DEBUG("++URL:" << iNetworkRequest->url ().toString ());
-            addHeader (QPair<QByteArray,QByteArray>(GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ()));
-            QList<QByteArray> headers = iNetworkRequest->rawHeaderList ();
-            for (int i=0; i<headers.size (); i++) {
-                QByteArray value = iNetworkRequest->rawHeader (headers.at(i));
-                LOG_DEBUG ("HHH" << headers.at (i) << ":" << value);
-            }
+    for (int i=0; i<iHeaders.size (); i++)
+    {
+        LOG_DEBUG ("Header " << i << ":" << iHeaders.at (i).first
+                                  << ":" << iHeaders.at (i).second);
+        iNetworkRequest->setRawHeader (iHeaders.at (i).first,
+                                       iHeaders.at (i).second);
+    }
     switch (type)
     {
         case GET:
-            setMaxResults (MAX_RESULTS);
+            setMaxResults (GConfig::MAX_RESULTS);
             setShowDeleted ();
+            iNetworkRequest->setUrl (iUrl);
+            LOG_DEBUG("++URL:" << iNetworkRequest->url ().toString ());
             iNetworkReply = iNetworkMgr.get(*iNetworkRequest);
         break;
         case POST:
@@ -325,7 +278,7 @@ GTransport::finishedSlot(QNetworkReply *reply)
 
     reply->deleteLater ();
 
-    emit finishedRequest(mRequestType);
+    emit finishedRequest();
 
     /*
     if (iPostData != NULL)
@@ -351,7 +304,8 @@ GTransport::setUpdatedMin (const QDateTime datetime)
 
     mUpdatedMin = datetime;
 
-    iUrl.addQueryItem (UPDATED_MIN_TAG, mUpdatedMin.toString ());
+    if (!iUrl.hasQueryItem (UPDATED_MIN_TAG))
+        iUrl.addQueryItem (UPDATED_MIN_TAG, mUpdatedMin.toString ());
 }
 
 void
@@ -359,7 +313,9 @@ GTransport::setMaxResults (unsigned int limit)
 {
     FUNCTION_CALL_TRACE;
 
-    iUrl.addQueryItem (MAX_RESULTS_TAG, QString::number (limit));
+    if (!iUrl.hasQueryItem (MAX_RESULTS_TAG))
+        iUrl.addQueryItem (MAX_RESULTS_TAG, QString::number (limit));
+    LOG_DEBUG ("Final url" << iUrl.toString ());
 }
 
 void
@@ -367,5 +323,23 @@ GTransport::setShowDeleted ()
 {
     FUNCTION_CALL_TRACE;
 
-    iUrl.addQueryItem (SHOW_DELETED_TAG, "true");
+    if (!iUrl.hasQueryItem (SHOW_DELETED_TAG))
+        iUrl.addQueryItem (SHOW_DELETED_TAG, "true");
+}
+
+void
+GTransport::setStartIndex (const int index)
+{
+    FUNCTION_CALL_TRACE;
+
+    if (iUrl.hasQueryItem ("start-index"))
+        iUrl.removeQueryItem ("start-index");
+
+    iUrl.addQueryItem ("start-index", QString::number (index));
+}
+
+GTransport::HTTP_REQUEST_TYPE
+GTransport::requestType ()
+{
+    return mRequestType;
 }

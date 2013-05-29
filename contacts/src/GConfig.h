@@ -41,11 +41,11 @@ public:
 static const QString SCOPE_URL = "https://www.google.com/m8/feeds/";
 static const QString GCONTACT_URL = SCOPE_URL + "/contacts/default/";
 
-static const QString GDATA_VERSION_TAG = "GData-Version ";
+static const QString GDATA_VERSION_TAG = "GData-Version";
 static const QString GDATA_VERSION = "3.0";
 static const QString G_DELETE_OVERRIDE_HEADER = "X-HTTP-Method-Override: DELETE";
-static const QString G_ETAG_HEADER = "If-Match ";
-static const QString G_AUTH_HEADER = "Authorization ";
+static const QString G_ETAG_HEADER = "If-Match";
+static const QString G_AUTH_HEADER = "Authorization";
 
 /* Query parameters */
 static const QString QUERY_TAG = "q";

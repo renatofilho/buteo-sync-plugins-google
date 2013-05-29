@@ -18,9 +18,11 @@ private slots:
 
     void testEncodeContact ();
 
+    void testEncodeMultipleContacts ();
+
     void testEncodeContacts ();
 
-    void encodeAllContacts ();
+    void testEncodeAllContacts ();
 };
 
 #endif // GWRITESTREAMTEST_H

@@ -1,7 +1,7 @@
 TEMPLATE = app
 
 QT += network
-CONFIG += qtestlib mobility debug link_pkgconfig
+CONFIG += qtestlib mobility debug link_pkgconfig console
 MOBILITY += contacts
 
 PKGCONFIG += buteosyncfw

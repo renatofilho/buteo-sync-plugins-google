@@ -46,7 +46,8 @@
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
-GContactEntry::GContactEntry()
+GContactEntry::GContactEntry() :
+    mDeleted (false)
 {
 }
 
