@@ -119,16 +119,17 @@ GWriteStream::encodeContact(const QContact qContact,
 
     // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
     // since etag is an attribute of this element
-    encodeEtag (qContact);
     if (batch == true) encodeBatchTag (updateType);
     if (updateType == GConfig::UPDATE)
     {
+        encodeEtag (qContact);
         encodeId (qContact);
         encodeUpdated (qContact);
     }
 
     if (updateType == GConfig::DELETE)
     {
+        encodeEtag (qContact);
         encodeId (qContact);
         mXmlWriter.writeEndElement ();
         return mXmlBuffer;
@@ -504,13 +505,15 @@ void
 GWriteStream::encodeAnniversary (const QContactDetail &detail)
 {
     QContactAnniversary anniversary = static_cast<QContactAnniversary>(detail);
-    if (anniversary.event ().isEmpty ())
-        return;
-    mXmlWriter.writeStartElement ("gContact:event");
-    mXmlWriter.writeAttribute ("rel", "anniversary");
-    mXmlWriter.writeEmptyElement ("gd:when");
-    mXmlWriter.writeAttribute ("startTime", anniversary.originalDate ().toString (Qt::ISODate));
-    mXmlWriter.writeEndElement ();
+    if (!anniversary.event ().isEmpty () &&
+        !anniversary.originalDate ().isNull ())
+    {
+        mXmlWriter.writeStartElement ("gContact:event");
+        mXmlWriter.writeAttribute ("rel", "anniversary");
+        mXmlWriter.writeEmptyElement ("gd:when");
+        mXmlWriter.writeAttribute ("startTime", anniversary.originalDate ().toString (Qt::ISODate));
+        mXmlWriter.writeEndElement ();
+    }
 }
 
 /*!
@@ -547,6 +550,8 @@ GWriteStream::encodeOnlineAccount (const QContactDetail &detail)
 
     mXmlWriter.writeEmptyElement ("gd:im");
     mXmlWriter.writeAttribute ("protocol", "http://schemas.google.com/g/2005#" + propertyName);
+    // FIXME: The 'rel' value should be properly stored and retrieved
+    mXmlWriter.writeAttribute ("rel", "http://schemas.google.com/g/2005#home");
     mXmlWriter.writeAttribute ("address", onlineAccount.accountUri ());
 }
 
