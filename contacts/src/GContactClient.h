@@ -148,7 +148,7 @@ private:
 
     void generateResults( bool aSuccessful );
 
-    void fetchRemoteContacts ();
+    void fetchRemoteContacts (const int startIndex);
 
     void changedLocalContactIds ();
 
@@ -205,6 +205,8 @@ private:
     QHash<QString, QContactLocalId> mDeletedContactIds;
 
     int mStartIndex;
+
+    QString mRemoteURI;
 
 #ifndef QT_NO_DEBUG
     friend class GContactClientTest;

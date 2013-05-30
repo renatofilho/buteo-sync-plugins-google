@@ -52,9 +52,8 @@ GAuth::GAuth(QObject *parent) :
 {
 }
 
-const QString GAuth::token()
+const QByteArray GAuth::token()
 {
-    LOG_DEBUG("Token:" << iToken);
     // FIXME: Read the token from file until accounts&sso
     // integration is done
     QFile file ("/tmp/access_token.txt");
@@ -62,7 +61,8 @@ const QString GAuth::token()
     QTextStream in (&file);
     iToken = in.readAll ();
     file.close ();
-    return iToken;
+    LOG_DEBUG("Token:" << iToken);
+    return iToken.toAscii ();
 }
 
 void GAuth::authenticate()

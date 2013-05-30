@@ -48,6 +48,10 @@ public:
 
     explicit GTransport(QObject *parent = 0);
 
+    GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers);
+
+    GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers, QByteArray data);
+
     virtual ~GTransport();
 
     void setUrl (const QString url);
@@ -92,7 +96,7 @@ public:
 
 private:
 
-    void encode(QUrl& url);
+    void construct (const QUrl &url);
 
     QUrl 									iUrl;
 
@@ -103,6 +107,7 @@ private:
     QNetworkAccessManager					iNetworkMgr;
 
     QIODevice								*iPostData;
+    //QByteArray								iPostData;
 
     QNetworkRequest							*iNetworkRequest;
 

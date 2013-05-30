@@ -196,7 +196,8 @@ GParseStream::handleAtomLink ()
     FUNCTION_CALL_TRACE;
 
     Q_ASSERT(mXml->isStartElement () && mXml->name () == "link");
-    if (mXml->attributes ().hasAttribute ("rel"))
+    if (mXml->attributes ().hasAttribute ("rel") &&
+        (mXml->attributes ().value ("rel") == "next"))
     {
         mAtom->setNextEntriesUrl (mXml->attributes ().value ("href").toString ());
     }

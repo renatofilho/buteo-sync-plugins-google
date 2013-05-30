@@ -67,7 +67,7 @@ GContactsBackend::getAllContactIds()
     FUNCTION_CALL_TRACE;
     Q_ASSERT (iMgr);
 
-    return iMgr->contactIds (getSyncTargetFilter ());
+    return iMgr->contactIds ();
 }
 
 QHash<QString, QContactLocalId>
@@ -306,13 +306,15 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
     QContactChangeLogFilter filter(aEventType);
     filter.setSince(aTimeStamp);
 
-    localIdList = iMgr->contactIds(filter & getSyncTargetFilter());
+    localIdList = iMgr->contactIds(filter);
+    //localIdList = iMgr->contactIds(filter & getSyncTargetFilter());
 
     // Filter out ids for items that were added after the specified time.
     if (aEventType != QContactChangeLogFilter::EventAdded)
     {
         filter.setEventType(QContactChangeLogFilter::EventAdded);
-        QList<QContactLocalId> addedList = iMgr->contactIds(filter & getSyncTargetFilter());
+        QList<QContactLocalId> addedList = iMgr->contactIds (filter);
+        //QList<QContactLocalId> addedList = iMgr->contactIds(filter & getSyncTargetFilter());
         foreach (const QContactLocalId &id, addedList)
         {
             localIdList.removeAll(id);

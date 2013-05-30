@@ -35,7 +35,7 @@ public:
 
     void authenticate();
 
-    const QString token();
+    const QByteArray token();
 
 private:
     void getToken();
@@ -61,9 +61,9 @@ private slots:
     void deviceCodeResponse();
 
     void tokenResponse();
-    
+
 public slots:
-    
+
 };
 
 #endif // GAUTH_H

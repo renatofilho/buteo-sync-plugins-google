@@ -22,7 +22,6 @@
  */
 
 #include "GTransport.h"
-#include "GConfig.h"
 
 #include <QBuffer>
 #include <QDebug>
@@ -30,20 +29,18 @@
 #include <QDateTime>
 #include <LogMacros.h>
 
-/*
 const int MAX_RESULTS = 10;
 const QString SCOPE_URL("https://www.google.com/m8/feeds/");
 const QString GCONTACT_URL(SCOPE_URL + "/contacts/default/");
 
-const QString GDATA_VERSION_TAG = QString("GData-Version");
-const QString GDATA_VERSION = QString("3.0");
+const QString GDATA_VERSION_TAG = "GData-Version";
+const QString GDATA_VERSION = "3.1";
 const QString G_DELETE_OVERRIDE_HEADER("X-HTTP-Method-Override: DELETE");
 const QString G_ETAG_HEADER("If-Match ");
 const QString G_AUTH_HEADER ("Authorization");
-*/
+const QString G_CONTENT_TYPE_HEADER = "application/atom+xml";
 
 /* Query parameters */
-/*
 const QString QUERY_TAG("q");
 const QString MAX_RESULTS_TAG("max-results");
 const QString START_INDEX_TAG("start-index");
@@ -56,41 +53,44 @@ const QString SORTORDER_TAG("sortorder");
 const QString PHOTO_TAG("photos");
 const QString MEDIA_TAG("media");
 const QString BATCH_TAG("batch");
-*/
 
 GTransport::GTransport(QObject *parent) :
     QObject(parent), iNetworkMgr (this), iNetworkRequest (NULL)
 {
     FUNCTION_CALL_TRACE;
+}
 
-    addHeader (GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ());
-    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
-                     this, SLOT(finishedSlot(QNetworkReply*)));
+GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers) :
+    iHeaders (headers), iNetworkMgr (this),
+    iNetworkRequest (NULL), iNetworkReply (NULL)
+{
+    construct (url);
+}
+
+GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers, QByteArray data) :
+    iHeaders (headers), iNetworkMgr (this),
+    iNetworkRequest (NULL), iNetworkReply (NULL)
+{
+    QBuffer* buffer = new QBuffer (this);
+    buffer->setData (data);
+    iPostData = buffer;
+    construct (url);
 }
 
 GTransport::~GTransport()
 {
     FUNCTION_CALL_TRACE;
 
-    if (iNetworkRequest != NULL)
-    {
-        delete iNetworkRequest;
-        iNetworkRequest = NULL;
-    }
+    delete iNetworkRequest;
+    iNetworkRequest = NULL;
 
     if (iNetworkReply != NULL)
     {
-        //iNetworkReply->deleteLater();
+        iNetworkReply->deleteLater();
         iNetworkReply = NULL;
     }
 
-    /*
-    if (iPostData != NULL)
-    {
-        delete iPostData;
-        iPostData = NULL;
-    }
-    */
+    delete iPostData;
 }
 
 void
@@ -99,9 +99,7 @@ GTransport::setUrl (const QString url)
     FUNCTION_CALL_TRACE;
 
     iUrl.setUrl(url, QUrl::StrictMode);
-    encode(iUrl);
-
-    //iNetworkRequest->setUrl (iUrl);
+    construct (iUrl);
 }
 
 void
@@ -109,8 +107,9 @@ GTransport::setData (QByteArray data)
 {
     FUNCTION_CALL_TRACE;
 
-    QBuffer *buffer = new QBuffer (this);
+    QBuffer* buffer = new QBuffer (this);
     buffer->setData (data);
+
     iPostData = buffer;
 }
 
@@ -118,9 +117,16 @@ void GTransport::setHeaders()
 {
     FUNCTION_CALL_TRACE;
 
-    for (int i=0; i < iHeaders.size(); i++)
+    /*
+     * A laughable bug in Google (bug#3397). If the "GDataVersion:3.0" tag is not
+     * the first header in the list, then google does not consider
+     * it as a 3.0 version, and just returns the default format
+     * So, the headers order is very sensitive
+     */
+    iNetworkRequest->setRawHeader (GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ());
+    for (int i=0; i < iHeaders.count (); i++)
     {
-        QPair<QByteArray, QByteArray> headerPair = iHeaders.at(i);
+        QPair<QByteArray, QByteArray> headerPair = iHeaders[i];
         iNetworkRequest->setRawHeader(headerPair.first, headerPair.second);
     }
 }
@@ -157,18 +163,24 @@ GTransport::setProxy (QString proxyHost, QString proxyPort)
     iNetworkMgr.setProxy (proxy);
 }
 
-void GTransport::encode(QUrl& url)
+void
+GTransport::construct (const QUrl& url)
 {
     FUNCTION_CALL_TRACE;
 
-    QList<QPair<QString, QString> > queryList = url.queryItems();
+    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
+                     this, SLOT(finishedSlot(QNetworkReply*)));
+
+    iUrl = url;
+
+    QList<QPair<QString, QString> > queryList = iUrl.queryItems();
     for (int i=0; i < queryList.size(); i++)
     {
         QPair<QString, QString> pair = queryList.at(i);
         QByteArray leftEncode = QUrl::toPercentEncoding(pair.first);
         QByteArray rightEncode = QUrl::toPercentEncoding(pair.second);
-        url.removeQueryItem(pair.first);
-        url.addEncodedQueryItem(leftEncode, rightEncode);
+        iUrl.removeQueryItem(pair.first);
+        iUrl.addEncodedQueryItem(leftEncode, rightEncode);
     }
 }
 
@@ -184,30 +196,39 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
         iNetworkRequest = NULL;
     }
 
-    iNetworkRequest = new QNetworkRequest ();
-    iNetworkRequest->setUrl (iUrl);
-    mRequestType = type;
-
+    if (iNetworkRequest == NULL)
+    {
+        if (iNetworkReply)
+        {
+            iNetworkReply->deleteLater ();
+            iNetworkReply = NULL;
+        }
+    }
     iNetworkReplyBody = "";
 
-    for (int i=0; i<iHeaders.size (); i++)
+    iNetworkRequest = new QNetworkRequest ();
+    iNetworkRequest->setUrl (iUrl);
+    if (iPostData)
     {
-        LOG_DEBUG ("Header " << i << ":" << iHeaders.at (i).first
-                                  << ":" << iHeaders.at (i).second);
-        iNetworkRequest->setRawHeader (iHeaders.at (i).first,
-                                       iHeaders.at (i).second);
+        //iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, iPostData->size ());
+        iNetworkRequest->setHeader (QNetworkRequest::ContentTypeHeader, "application/atom+xml; charset=UTF-8; type=feed");
     }
+    setHeaders ();
+
+    mRequestType = type;
+    LOG_DEBUG("++URL:" << iNetworkRequest->url ().toString ());
     switch (type)
     {
-        case GET:
-            setMaxResults (GConfig::MAX_RESULTS);
-            setShowDeleted ();
-            iNetworkRequest->setUrl (iUrl);
-            LOG_DEBUG("++URL:" << iNetworkRequest->url ().toString ());
+        case GET: {
+            iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, 0);
             iNetworkReply = iNetworkMgr.get(*iNetworkRequest);
+            LOG_DEBUG ("--- FINISHED GET REQUEST ---");
+        }
         break;
-        case POST:
+        case POST: {
             iNetworkReply = iNetworkMgr.post(*iNetworkRequest, iPostData);
+            LOG_DEBUG ("--- FINISHED POST REQUEST ---");
+        }
         break;
         case PUT:
             iNetworkReply = iNetworkMgr.put(*iNetworkRequest, iPostData);
@@ -223,10 +244,16 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
         break;
     }
 
+    QList<QByteArray> headerList = iNetworkRequest->rawHeaderList ();
+    for (int i=0; i<headerList.size (); i++)
+    {
+        LOG_DEBUG ("Header " << i << ":" << headerList.at (i)
+                                  << ":" << iNetworkRequest->rawHeader (headerList.at (i)));
+        //iNetworkRequest->setRawHeader (iHeaders.at (i).first,
+        //                               iHeaders.at (i).second);
+    }
     QObject::connect(iNetworkReply, SIGNAL(readyRead ()), this,
                      SLOT(readyRead()));
-
-    iNetworkError = iNetworkReply->error();
 }
 
 const
@@ -253,11 +280,12 @@ GTransport::readyRead()
     mResponseCode = iNetworkReply->attribute (
                 QNetworkRequest::HttpStatusCodeAttribute).toInt ();
     LOG_DEBUG ("++RESPONSE CODE:" << mResponseCode);
+    QByteArray bytes = iNetworkReply->readAll ();
     if (mResponseCode >= 200 && mResponseCode <= 300)
     {
-        QByteArray bytes = iNetworkReply->readAll ();
-        iNetworkReplyBody = iNetworkReplyBody + bytes;
-    }
+        iNetworkReplyBody += bytes;
+    } else
+        LOG_DEBUG ("SERVER ERROR:" << bytes);
 }
 
 void
@@ -276,17 +304,11 @@ GTransport::finishedSlot(QNetworkReply *reply)
         emit error (iNetworkError);
     }
 
-    reply->deleteLater ();
-
+    LOG_DEBUG ("--- Emitting finishedRequest () ---");
     emit finishedRequest();
 
-    /*
-    if (iPostData != NULL)
-    {
-        delete iPostData;
-        iPostData = NULL;
-    }
-    */
+    delete iPostData;
+    iPostData = NULL;
 }
 
 void

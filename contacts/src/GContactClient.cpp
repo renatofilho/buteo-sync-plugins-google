@@ -56,7 +56,7 @@ GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
     ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true), mParser(0),
-            mTransport(0), mCommittedItems(0), mStartIndex (0) {
+            mTransport(0), mCommittedItems(0), mStartIndex (1) {
     FUNCTION_CALL_TRACE;
 }
 
@@ -74,7 +74,9 @@ GContactClient::init() {
         mSlowSync = false;
 
     mContactBackend = new GContactsBackend ();
-    if (initConfig () && initTransport ()) {
+    //if (initConfig () && initTransport ()) {
+    if (initConfig ())
+    {
         return true;
     } else {
         // Uninitialize everything that was initialized before failure.
@@ -113,7 +115,8 @@ GContactClient::startSync()
 
     FUNCTION_CALL_TRACE;
 
-    if (!mContactBackend || !mGoogleAuth || !mParser || !mTransport)
+    //if (!mContactBackend || !mGoogleAuth || !mParser || !mTransport)
+    if (!mContactBackend || !mGoogleAuth || !mParser)
         return false;
 
     LOG_DEBUG ("Init done. Continuing with sync");
@@ -168,7 +171,7 @@ GContactClient::start ()
         else
             changedLocalContactIds ();
 
-        fetchRemoteContacts ();
+        fetchRemoteContacts (mStartIndex);
 
         break;
     case Buteo::SyncProfile::SYNC_DIRECTION_FROM_REMOTE:
@@ -380,7 +383,7 @@ GContactClient::initTransport()
 
     LOG_DEBUG("Creating HTTP transport");
 
-    QString remoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
+
     bool success = false;
 
     //if (!remoteURI.isEmpty()) {
@@ -388,8 +391,8 @@ GContactClient::initTransport()
         mTransport = new GTransport ();
         Q_CHECK_PTR (mTransport);
 
-        LOG_DEBUG("Setting remote URI to" << remoteURI);
-        mTransport->setUrl (remoteURI);
+        LOG_DEBUG("Setting remote URI to" << mRemoteURI);
+        mTransport->setUrl (mRemoteURI);
 
         QString proxyHost = iProfile.key(Buteo::KEY_HTTP_PROXY_HOST);
         if (!proxyHost.isEmpty()) {
@@ -431,6 +434,10 @@ GContactClient::initConfig () {
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Initiating config...");
+
+    mRemoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
+    if (mRemoteURI.isEmpty ())
+        return false;
 
     mGoogleAuth = new GAuth ();
 
@@ -527,7 +534,7 @@ GContactClient::generateResults( bool aSuccessful )
 }
 
 void
-GContactClient::fetchRemoteContacts ()
+GContactClient::fetchRemoteContacts (const int startIndex)
 {
     FUNCTION_CALL_TRACE;
 
@@ -537,9 +544,19 @@ GContactClient::fetchRemoteContacts ()
      o Connect finishedRequest to parseResults & network error slots
      o Use mTransport to perform network fetch
     */
+    QUrl url (mRemoteURI, QUrl::StrictMode);
+    QList<QPair<QByteArray, QByteArray> > headers;
     QDateTime syncTime = lastSyncTime ();
     if (!syncTime.isNull ())
-        mTransport->setUpdatedMin (syncTime);
+        url.addQueryItem ("updated-min", syncTime.toString (Qt::ISODate));
+
+    if (startIndex != 1)
+    {
+        url.addQueryItem ("start-index", QString::number (startIndex));
+    }
+    //url.addQueryItem ("max-results", QString::number (GConfig::MAX_RESULTS));
+    if (mSlowSync == false)
+        url.addQueryItem ("showdeleted", "true");
 
     // FIXME: Fetching contacts using etag value as described in Google
     // data API does not seem to work
@@ -549,10 +566,19 @@ GContactClient::fetchRemoteContacts ()
     if (token.isNull () || token.isEmpty ())
     {
         LOG_CRITICAL ("Auth token is null");
+        // Better error would be SYNC_CONFIG_ERROR
+        emit syncFinished (Sync::SYNC_ERROR);
         return;
     }
-    mTransport->setAuthToken (token);
+    headers.append (QPair<QByteArray, QByteArray> (QByteArray("Authorization"),
+                                                   QByteArray (QString ("Bearer " + token).toAscii ())));
 
+    if (mTransport)
+    {
+        mTransport->deleteLater ();
+        mTransport = NULL;
+    }
+    mTransport = new GTransport (url, headers);
     connect (mTransport, SIGNAL (finishedRequest ()),
              this, SLOT (networkRequestFinished ()));
 
@@ -593,7 +619,13 @@ GContactClient::authToken ()
 {
     FUNCTION_CALL_TRACE;
 
-    return mGoogleAuth->token ();
+    QString token = mGoogleAuth->token ();
+    if (token.endsWith ('\n'))
+    {
+        token.chop (1);
+        LOG_DEBUG ("~~~ CHOPPED NEW LINE CHAR ~~~");
+    }
+    return token;
 }
 
 const QDateTime
@@ -658,22 +690,22 @@ GContactClient::networkRequestFinished ()
                 storeToRemote ();
         } else if (requestType == GTransport::GET)
         {
+            LOG_DEBUG ("+++ GET REQUEST +++");
             QList<GContactEntry*> remoteContacts = atom->entries ();
             if (remoteContacts.size () > 0)
                 storeToLocal (remoteContacts);
 
             if ((!atom->nextEntriesUrl ().isNull () ||
-                !atom->nextEntriesUrl ().isEmpty ()) &&
-                (remoteContacts.size () >= GConfig::MAX_RESULTS))
+                !atom->nextEntriesUrl ().isEmpty ()))// &&
+                //(remoteContacts.size () >= GConfig::MAX_RESULTS))
             {
                 // Request for the next batch
                 // This condition will make this slot to be
                 // called again and again until there are no more
                 // entries left to be fetched from the server
-                mStartIndex += GConfig::MAX_RESULTS + 1;
+                mStartIndex += GConfig::MAX_RESULTS;
                 //mTransport->setUrl (atom->nextEntriesUrl ());
-                mTransport->setStartIndex (mStartIndex);
-                mTransport->request (GTransport::GET);
+                fetchRemoteContacts (mStartIndex);
             } else
             {
                 // There are no more entries to be fetched from
@@ -728,14 +760,16 @@ GContactClient::storeToRemote ()
 {
     FUNCTION_CALL_TRACE;
 
+    QByteArray encodedContacts;
     if (mSlowSync == true)
     {
+        LOG_DEBUG ("TOTAL LOCAL CONTACTS FOR REMOTE STORAGE:" << mAllLocalContactIds.size ());
         if (!mAllLocalContactIds.isEmpty ())
         {
             GWriteStream ws;
             ws.encodeContacts (mAllLocalContactIds.mid (0, GConfig::MAX_RESULTS),
                            GConfig::ADD);
-            QByteArray encodedContacts = ws.encodedStream ();
+            encodedContacts = ws.encodedStream ();
 
             // Once the contacts have been encoded, remove them
             // from mAllLocalContactIds
@@ -746,9 +780,6 @@ GContactClient::storeToRemote ()
                 mHasMoreContactsToStore = true;
             else
                 mHasMoreContactsToStore = false;
-
-            mTransport->setData (encodedContacts);
-            mTransport->request (GTransport::POST);
         }
     } else
     {
@@ -797,12 +828,43 @@ GContactClient::storeToRemote ()
         {
             GWriteStream ws;
 
-            QByteArray encodedContacts =
-                ws.encodeContact (allChangedContactIds);
-
-            mTransport->setData (encodedContacts);
-            mTransport->request (GTransport::POST);
+            encodedContacts = ws.encodeContact (allChangedContactIds);
         }
+    }
+
+    if (!encodedContacts.isEmpty ())
+    {
+        QUrl url (mRemoteURI + "/batch", QUrl::StrictMode);
+        QList<QPair<QByteArray, QByteArray> > headers;
+
+        QString token = authToken ();
+        if (token.isNull () || token.isEmpty ())
+        {
+            emit syncFinished (Sync::SYNC_ERROR);
+        }
+        headers.append (QPair<QByteArray, QByteArray> (QByteArray("GDataVersion"),
+                                                       QByteArray ("3.0")));
+        headers.append (QPair<QByteArray, QByteArray> (QByteArray("Authorization"),
+                                                       QByteArray (QString ("Bearer " + token).toAscii ())));
+        headers.append (QPair<QByteArray, QByteArray> (QByteArray("Content-Type"),
+                                                       QByteArray ("application/atom+xml")));
+        headers.append (QPair<QByteArray, QByteArray> (QByteArray("Content-Length"),
+                                                       QString::number (encodedContacts.size ()).toAscii ()));
+        LOG_DEBUG ("POST DATA:" << encodedContacts);
+
+        if (mTransport)
+        {
+            mTransport->deleteLater ();
+            mTransport = NULL;
+        }
+        mTransport = new GTransport (url, headers, encodedContacts);
+        connect (mTransport, SIGNAL (finishedRequest ()),
+                 this, SLOT (networkRequestFinished ()));
+
+        connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
+                 this, SLOT (networkError (QNetworkReply::NetworkError)));
+
+        mTransport->request (GTransport::POST);
     }
 }
 
@@ -818,25 +880,21 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
         // slow sync is performed many times, even deleted contacts
         // will appear in *remoteContacts. Filter them out while
         // saving them to device
-        QList<GContactEntry*> filteredRemoteContacts;
-        foreach (GContactEntry* gEntry, remoteContacts)
+        LOG_DEBUG ("TOTAL REMOTE CONTACTS:" << remoteContacts.size ());
+        if (remoteContacts.size () > 0)
         {
-            if (gEntry->deleted () != true)
-                filteredRemoteContacts.append (gEntry);
-        }
-        LOG_DEBUG ("TOTAL FILTERED SERVER CONTACTS:" << filteredRemoteContacts.size ());
-        QList<QContact> remoteQContacts = toQContacts (filteredRemoteContacts);
-        QMap<int, GContactsStatus> statusMap;
-        LOG_DEBUG ("TOTAL SERVER CONTACTS:" << remoteQContacts.size ());
+            QList<QContact> remoteQContacts = toQContacts (remoteContacts);
+            QMap<int, GContactsStatus> statusMap;
 
-        if (mContactBackend->addContacts (remoteQContacts, statusMap))
-        {
-            // TODO: Saving succeeded. Update sync results
-            syncSuccess = true;
-        } else
-        {
-            // TODO: Saving failed. Update sync results and probably stop sync
-            syncSuccess = false;
+            if (mContactBackend->addContacts (remoteQContacts, statusMap))
+            {
+                // TODO: Saving succeeded. Update sync results
+                syncSuccess = true;
+            } else
+            {
+                // TODO: Saving failed. Update sync results and probably stop sync
+                syncSuccess = false;
+            }
         }
     } else if (mSlowSync == false)
     {
