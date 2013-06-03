@@ -108,6 +108,9 @@ GParseStream::initFunctionMap ()
     mContactFunctionMap.insert ("gd:phoneNumber", &GParseStream::handleEntryPhoneNumber);
     mContactFunctionMap.insert ("gd:rating", &GParseStream::handleEntryRating);
     mContactFunctionMap.insert ("gd:structuredPostalAddress", &GParseStream::handleEntryStructuredPostalAddress);
+
+    mContactFunctionMap.insert ("batch:status", &GParseStream::handleEntryBatchStatus);
+    mContactFunctionMap.insert ("batch:operation", &GParseStream::handleEntryBatchOperation);
 }
 
 GAtom*
@@ -138,7 +141,7 @@ GParseStream::parse (const QByteArray xmlBuffer)
 void
 GParseStream::handleAtomUpdated ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "updated");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "updated");
 
     mAtom->setUpdated (mXml->readElementText ());
 }
@@ -146,7 +149,7 @@ GParseStream::handleAtomUpdated ()
 void
 GParseStream::handleAtomCategory ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "category");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "category");
 
     QXmlStreamAttributes attributes = mXml->attributes ();
     QString schema, term;
@@ -161,10 +164,10 @@ GParseStream::handleAtomCategory ()
 void
 GParseStream::handleAtomAuthor ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "author");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "author");
 
     while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
-             mXml->qualifiedName () == "author"))
+             mXml->name () == "author"))
     {
         if (mXml->tokenType () == QXmlStreamReader::StartElement)
         {
@@ -204,6 +207,28 @@ GParseStream::handleAtomLink ()
 }
 
 void
+GParseStream::handleEntryBatchStatus ()
+{
+    FUNCTION_CALL_TRACE;
+
+    Q_ASSERT(mXml->isStartElement () && (mXml->name () == "status"));
+
+    mContactEntry->setBatchResponseStatusCode (mXml->attributes ().value ("code").toString ().toInt ());
+    mContactEntry->setBatchResponseReason (mXml->attributes ().value ("reason").toString ());
+    mContactEntry->setBatchResponseReasonText (mXml->readElementText ());
+}
+
+void
+GParseStream::handleEntryBatchOperation ()
+{
+    FUNCTION_CALL_TRACE;
+
+    Q_ASSERT(mXml->isStartElement () && (mXml->name () == "operation"));
+
+    mContactEntry->setBatchResponseOpsType (mXml->readElementText ());
+}
+
+void
 GParseStream::handleAtomEntry ()
 {
     FUNCTION_CALL_TRACE;
@@ -212,6 +237,10 @@ GParseStream::handleAtomEntry ()
 
     mContactEntry = new GContactEntry ();
     Q_CHECK_PTR (mContactEntry);
+
+    // TODO: Optimize the parsing of the entries for GET and POST
+    // responses. For POST response, there is no need for parsing the complete
+    // response, but just the id is enough
 
     // Store the etag value of the entry
     mContactEntry->setEtag (mXml->attributes ().value ("gd:etag").toString ());
@@ -248,9 +277,13 @@ GParseStream::handleEntryContent ()
 void
 GParseStream::handleEntryTitle ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "title");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "title");
 
+    QString title = mXml->readElementText ();
     mContactEntry->setFullName (mXml->readElementText ());
+
+    if (title == "Error")
+        mContactEntry->setError (true);
 }
 
 void

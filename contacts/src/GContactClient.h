@@ -176,6 +176,8 @@ private:
     void resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
                            QList<GContactEntry*>& deletedRemoteContacts);
 
+    void updateIdsToLocal (const QList<GContactEntry*> responseEntries);
+
     GAuth*                      mGoogleAuth;
 
     bool                        mSlowSync;
@@ -187,8 +189,6 @@ private:
     Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;
 
     GContactsBackend*           mContactBackend;
-
-    GParseStream*               mParser;
 
     GTransport*                 mTransport;
 

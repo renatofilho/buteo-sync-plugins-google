@@ -71,9 +71,12 @@ GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers,
     iHeaders (headers), iNetworkMgr (this),
     iNetworkRequest (NULL), iNetworkReply (NULL)
 {
+    /*
     QBuffer* buffer = new QBuffer (this);
     buffer->setData (data);
     iPostData = buffer;
+    */
+    iPostData = data;
     construct (url);
 }
 
@@ -90,7 +93,7 @@ GTransport::~GTransport()
         iNetworkReply = NULL;
     }
 
-    delete iPostData;
+    //delete iPostData;
 }
 
 void
@@ -107,10 +110,12 @@ GTransport::setData (QByteArray data)
 {
     FUNCTION_CALL_TRACE;
 
+    /*
     QBuffer* buffer = new QBuffer (this);
     buffer->setData (data);
+    */
 
-    iPostData = buffer;
+    iPostData = data;
 }
 
 void GTransport::setHeaders()
@@ -123,7 +128,7 @@ void GTransport::setHeaders()
      * it as a 3.0 version, and just returns the default format
      * So, the headers order is very sensitive
      */
-    iNetworkRequest->setRawHeader (GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ());
+    //iNetworkRequest->setRawHeader (GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ());
     for (int i=0; i < iHeaders.count (); i++)
     {
         QPair<QByteArray, QByteArray> headerPair = iHeaders[i];
@@ -208,10 +213,10 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
 
     iNetworkRequest = new QNetworkRequest ();
     iNetworkRequest->setUrl (iUrl);
-    if (iPostData)
+    if (!iPostData.isEmpty ())
     {
         //iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, iPostData->size ());
-        iNetworkRequest->setHeader (QNetworkRequest::ContentTypeHeader, "application/atom+xml; charset=UTF-8; type=feed");
+        //iNetworkRequest->setHeader (QNetworkRequest::ContentTypeHeader, "application/atom+xml; charset=UTF-8; type=feed");
     }
     setHeaders ();
 
@@ -220,7 +225,6 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
     switch (type)
     {
         case GET: {
-            iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, 0);
             iNetworkReply = iNetworkMgr.get(*iNetworkRequest);
             LOG_DEBUG ("--- FINISHED GET REQUEST ---");
         }
@@ -304,11 +308,7 @@ GTransport::finishedSlot(QNetworkReply *reply)
         emit error (iNetworkError);
     }
 
-    LOG_DEBUG ("--- Emitting finishedRequest () ---");
     emit finishedRequest();
-
-    delete iPostData;
-    iPostData = NULL;
 }
 
 void

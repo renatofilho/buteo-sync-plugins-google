@@ -90,6 +90,8 @@ public:
 
     const QString nextEntriesUrl ();
 
+    const QList<GContactEntry*> responseErrorEntries ();
+
 private:
 
     QString mAuthorEmail;

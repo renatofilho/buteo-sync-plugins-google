@@ -587,8 +587,43 @@ GContactEntry::setSyncTarget ()
     mQContact.saveDetail (&target);
 }
 
+void
+GContactEntry::setBatchResponseStatusCode (const int code)
+{
+    this->mResponseCode = code;
+}
+
+void
+GContactEntry::setBatchResponseReason (const QString reason)
+{
+    this->mReason = reason;
+}
+
+void
+GContactEntry::setBatchResponseReasonText (const QString reasonText)
+{
+    this->mReasonText = reasonText;
+}
+
+void
+GContactEntry::GContactEntry::setBatchResponseOpsType (const QString opsType)
+{
+}
+
 QContact
 GContactEntry::qContact()
 {
     return mQContact;
+}
+
+void
+GContactEntry::setError (const bool errorFlag)
+{
+    mError = errorFlag;
+}
+
+bool
+GContactEntry::error ()
+{
+    return mError;
 }

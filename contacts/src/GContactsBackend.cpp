@@ -67,7 +67,9 @@ GContactsBackend::getAllContactIds()
     FUNCTION_CALL_TRACE;
     Q_ASSERT (iMgr);
 
-    return iMgr->contactIds ();
+    QList<QContactLocalId> idList = iMgr->contactIds ();
+    idList.removeFirst (); // The first contact is some fictious contact that is not required
+    return idList;
 }
 
 QHash<QString, QContactLocalId>

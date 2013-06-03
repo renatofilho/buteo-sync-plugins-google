@@ -106,8 +106,8 @@ private:
 
     QNetworkAccessManager					iNetworkMgr;
 
-    QIODevice								*iPostData;
-    //QByteArray								iPostData;
+    //QIODevice								*iPostData;
+    QByteArray								iPostData;
 
     QNetworkRequest							*iNetworkRequest;
 

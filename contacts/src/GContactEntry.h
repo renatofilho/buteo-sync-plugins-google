@@ -167,7 +167,19 @@ public:
 
     void setSyncTarget ();
 
+    void setBatchResponseStatusCode (const int code);
+
+    void setBatchResponseReason (const QString reason);
+
+    void setBatchResponseReasonText (const QString reasonText);
+
+    void setBatchResponseOpsType (const QString opsType);
+
     QContact qContact ();
+
+    void setError (const bool errorFlag);
+
+    bool error ();
 
 private:
 
@@ -177,6 +189,15 @@ private:
 
     bool mDeleted;
 
+    bool mError;
+
+    int mResponseCode;
+
+    QString mReason;
+
+    QString mReasonText;
+
+    QString mOpsType;
 };
 
 #endif // GCONTACT_H

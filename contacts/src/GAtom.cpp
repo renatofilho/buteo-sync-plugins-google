@@ -189,3 +189,15 @@ GAtom::nextEntriesUrl ()
 {
     return mNextEntriesUrl;
 }
+
+const QList<GContactEntry*>
+GAtom::responseErrorEntries ()
+{
+    QList<GContactEntry*> errorEntries;
+    foreach (GContactEntry* entry, mContactList)
+    {
+        if (entry->error () == true)
+            errorEntries.append (entry);
+    }
+    return errorEntries;
+}

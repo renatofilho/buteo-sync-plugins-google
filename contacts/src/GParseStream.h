@@ -62,6 +62,11 @@ private:
     void handleAtomEntry ();
     void handleAtomLink ();
 
+    // Following are for the response received from the server
+    // incase of failures
+    void handleEntryBatchStatus ();
+    void handleEntryBatchOperation ();
+
     // gContact:xxx schema handler methods
     void handleEntryContent();
     void handleEntryId();

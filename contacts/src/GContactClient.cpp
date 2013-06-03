@@ -55,7 +55,7 @@ extern "C" void destroyPlugin(GContactClient *aClient) {
 GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
-    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true), mParser(0),
+    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true),
             mTransport(0), mCommittedItems(0), mStartIndex (1) {
     FUNCTION_CALL_TRACE;
 }
@@ -91,7 +91,7 @@ GContactClient::uninit()
 {
     FUNCTION_CALL_TRACE;
 
-    closeTransport();
+    //closeTransport();
 
     return true;
 }
@@ -116,7 +116,7 @@ GContactClient::startSync()
     FUNCTION_CALL_TRACE;
 
     //if (!mContactBackend || !mGoogleAuth || !mParser || !mTransport)
-    if (!mContactBackend || !mGoogleAuth || !mParser)
+    if (!mContactBackend || !mGoogleAuth)
         return false;
 
     LOG_DEBUG ("Init done. Continuing with sync");
@@ -441,8 +441,6 @@ GContactClient::initConfig () {
 
     mGoogleAuth = new GAuth ();
 
-    mParser = new GParseStream ();
-
     mSyncDirection = syncDirection ();
 
     mConflictResPolicy = conflictResolutionPolicy ();
@@ -554,7 +552,7 @@ GContactClient::fetchRemoteContacts (const int startIndex)
     {
         url.addQueryItem ("start-index", QString::number (startIndex));
     }
-    //url.addQueryItem ("max-results", QString::number (GConfig::MAX_RESULTS));
+    url.addQueryItem ("max-results", QString::number (GConfig::MAX_RESULTS));
     if (mSlowSync == false)
         url.addQueryItem ("showdeleted", "true");
 
@@ -570,7 +568,9 @@ GContactClient::fetchRemoteContacts (const int startIndex)
         emit syncFinished (Sync::SYNC_ERROR);
         return;
     }
-    headers.append (QPair<QByteArray, QByteArray> (QByteArray("Authorization"),
+    headers.append (QPair<QByteArray, QByteArray> (QByteArray ("GData-Version"),
+                                                   QByteArray ("3.0")));
+    headers.append (QPair<QByteArray, QByteArray> (QByteArray ("Authorization"),
                                                    QByteArray (QString ("Bearer " + token).toAscii ())));
 
     if (mTransport)
@@ -621,10 +621,8 @@ GContactClient::authToken ()
 
     QString token = mGoogleAuth->token ();
     if (token.endsWith ('\n'))
-    {
         token.chop (1);
-        LOG_DEBUG ("~~~ CHOPPED NEW LINE CHAR ~~~");
-    }
+
     return token;
 }
 
@@ -646,15 +644,13 @@ GContactClient::networkRequestFinished ()
     // o Error - if network error, set the sync results with the code
     // o Call uninit
     // o Stop sync
-    // o If success, invoke the mParser->parse () and connect
-    // to the parse complete signal
+    // o If success, invoke the mParser->parse ()
 
     const QNetworkReply* reply = mTransport->reply ();
     bool syncDone = false;
     GTransport::HTTP_REQUEST_TYPE requestType = mTransport->requestType ();
     if (reply)
     {
-
         QByteArray data = mTransport->replyBody ();
         LOG_DEBUG (data);
         if (data.isNull ())
@@ -663,7 +659,8 @@ GContactClient::networkRequestFinished ()
             return;
         }
 
-        GAtom* atom = mParser->parse (data);
+        GParseStream parser;
+        GAtom* atom = parser.parse (data);
 
         if (!atom)
         {
@@ -680,8 +677,11 @@ GContactClient::networkRequestFinished ()
                 syncDone = false;
                 LOG_CRITICAL ("Error in the request message. Check the data format");
                 LOG_CRITICAL (data);
-                emit syncFinished (Sync::SYNC_ERROR);
+                // No need to signal error for the entire sync.
+                // It might be a problem in a specific batch POST request
             }
+
+            updateIdsToLocal (atom->entries ());
 
             // Since we are POSTing a batch of MAX_RESULTS to
             // the server, we will continue with the next batch
@@ -696,8 +696,7 @@ GContactClient::networkRequestFinished ()
                 storeToLocal (remoteContacts);
 
             if ((!atom->nextEntriesUrl ().isNull () ||
-                !atom->nextEntriesUrl ().isEmpty ()))// &&
-                //(remoteContacts.size () >= GConfig::MAX_RESULTS))
+                !atom->nextEntriesUrl ().isEmpty ()))
             {
                 // Request for the next batch
                 // This condition will make this slot to be
@@ -718,9 +717,6 @@ GContactClient::networkRequestFinished ()
         }
         delete atom;
     }
-
-    //if (syncDone == false)
-    //    emit syncFinished (Sync::SYNC_ERROR);
 }
 
 void
@@ -730,7 +726,7 @@ GContactClient::networkError (QNetworkReply::NetworkError error)
 
     // TODO: If interested, check the value of error. But
     // it is enough to say that it is a SYNC_CONNECTION_ERROR
-    emit syncFinished (Sync::SYNC_CONNECTION_ERROR);
+    //emit syncFinished (Sync::SYNC_CONNECTION_ERROR);
 }
 
 void
@@ -842,7 +838,7 @@ GContactClient::storeToRemote ()
         {
             emit syncFinished (Sync::SYNC_ERROR);
         }
-        headers.append (QPair<QByteArray, QByteArray> (QByteArray("GDataVersion"),
+        headers.append (QPair<QByteArray, QByteArray> (QByteArray("GData-Version"),
                                                        QByteArray ("3.0")));
         headers.append (QPair<QByteArray, QByteArray> (QByteArray("Authorization"),
                                                        QByteArray (QString ("Bearer " + token).toAscii ())));
@@ -1027,4 +1023,16 @@ GContactClient::resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
             mDeletedContactIds.remove (entry->id ());
         }
     }
+}
+
+void
+GContactClient::updateIdsToLocal (const QList<GContactEntry*> responseEntries)
+{
+    // Fetch only the ids from the contact entry list
+    foreach (GContactEntry* entry, responseEntries) {
+        // TODO: We will have to store the local id also to the server,
+        // so that a mapping can be done while storing the remote id to
+        // local
+    }
+    const QList<QContact> qContacts = toQContacts (responseEntries);
 }
