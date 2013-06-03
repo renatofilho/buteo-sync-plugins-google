@@ -64,6 +64,8 @@ public:
 
     void setAuthToken (const QString token);
 
+    void setGDataVersionHeader ();
+
     void setProxy (QString proxyHost, QString proxyPort);
 
     void request(const HTTP_REQUEST_TYPE type);
@@ -81,6 +83,8 @@ public:
     void setStartIndex (const int index);
 
     HTTP_REQUEST_TYPE requestType ();
+
+    void reset ();
 
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
@@ -106,7 +110,6 @@ private:
 
     QNetworkAccessManager					iNetworkMgr;
 
-    //QIODevice								*iPostData;
     QByteArray								iPostData;
 
     QNetworkRequest							*iNetworkRequest;
@@ -129,7 +132,7 @@ signals:
 
     void finishedRequest ();
 
-    void error (QNetworkReply::NetworkError networkError);
+    void error (int errorCode);
 
 private slots:
 
@@ -137,7 +140,6 @@ private slots:
 
     virtual void readyRead();
 
-    void handleNetworkError (QNetworkReply::NetworkError networkError);
 };
 
 #endif // GTRANSPORT_H

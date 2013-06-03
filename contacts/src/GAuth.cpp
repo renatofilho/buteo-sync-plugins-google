@@ -52,7 +52,7 @@ GAuth::GAuth(QObject *parent) :
 {
 }
 
-const QByteArray GAuth::token()
+const QString GAuth::token()
 {
     // FIXME: Read the token from file until accounts&sso
     // integration is done
@@ -60,9 +60,11 @@ const QByteArray GAuth::token()
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     QTextStream in (&file);
     iToken = in.readAll ();
+    if (iToken.endsWith ('\n'))
+        iToken.chop (1);
     file.close ();
     LOG_DEBUG("Token:" << iToken);
-    return iToken.toAscii ();
+    return iToken;
 }
 
 void GAuth::authenticate()

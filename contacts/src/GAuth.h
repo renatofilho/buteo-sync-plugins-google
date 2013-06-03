@@ -35,7 +35,7 @@ public:
 
     void authenticate();
 
-    const QByteArray token();
+    const QString token();
 
 private:
     void getToken();

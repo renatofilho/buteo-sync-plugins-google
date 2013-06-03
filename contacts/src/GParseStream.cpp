@@ -282,7 +282,7 @@ GParseStream::handleEntryTitle ()
     QString title = mXml->readElementText ();
     mContactEntry->setFullName (mXml->readElementText ());
 
-    if (title == "Error")
+    if (title.contains ("Error"))
         mContactEntry->setError (true);
 }
 

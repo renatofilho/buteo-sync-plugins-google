@@ -56,16 +56,19 @@ GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
     ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true),
-            mTransport(0), mCommittedItems(0), mStartIndex (1) {
+            mTransport(0), mCommittedItems(0), mStartIndex (1)
+{
     FUNCTION_CALL_TRACE;
 }
 
-GContactClient::~GContactClient() {
+GContactClient::~GContactClient()
+{
     FUNCTION_CALL_TRACE;
 }
 
 bool
-GContactClient::init() {
+GContactClient::init()
+{
     FUNCTION_CALL_TRACE;
 
     if (lastSyncTime ().isNull ())
@@ -74,11 +77,11 @@ GContactClient::init() {
         mSlowSync = false;
 
     mContactBackend = new GContactsBackend ();
-    //if (initConfig () && initTransport ()) {
-    if (initConfig ())
+    if (initConfig () && initTransport ())
     {
         return true;
-    } else {
+    } else
+    {
         // Uninitialize everything that was initialized before failure.
         uninit();
 
@@ -91,7 +94,7 @@ GContactClient::uninit()
 {
     FUNCTION_CALL_TRACE;
 
-    //closeTransport();
+    closeTransport();
 
     return true;
 }
@@ -115,8 +118,7 @@ GContactClient::startSync()
 
     FUNCTION_CALL_TRACE;
 
-    //if (!mContactBackend || !mGoogleAuth || !mParser || !mTransport)
-    if (!mContactBackend || !mGoogleAuth)
+    if (!mContactBackend || !mGoogleAuth || !mTransport)
         return false;
 
     LOG_DEBUG ("Init done. Continuing with sync");
@@ -193,7 +195,7 @@ GContactClient::start ()
 bool
 GContactClient::abort (Sync::SyncStatus status)
 {
-    // TODO: Implement
+    emit syncFinished (Sync::SYNC_ABORTED);
     return true;
 }
 
@@ -383,79 +385,85 @@ GContactClient::initTransport()
 
     LOG_DEBUG("Creating HTTP transport");
 
+    mRemoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
+    if (mRemoteURI.isEmpty ())
+    {
+        // Set to the default value
+        mRemoteURI = "https://www.google.com/m8/feeds/contacts/default/full/";
+    }
 
-    bool success = false;
+    mTransport = new GTransport ();
+    Q_CHECK_PTR (mTransport);
 
-    //if (!remoteURI.isEmpty()) {
+    connect (mTransport, SIGNAL (finishedRequest ()),
+             this, SLOT (networkRequestFinished ()));
 
-        mTransport = new GTransport ();
-        Q_CHECK_PTR (mTransport);
+    connect (mTransport, SIGNAL (error (int)),
+             this, SLOT (networkError (int)));
 
-        LOG_DEBUG("Setting remote URI to" << mRemoteURI);
-        mTransport->setUrl (mRemoteURI);
+    LOG_DEBUG("Setting remote URI to" << mRemoteURI);
+    mTransport->setUrl (mRemoteURI);
 
-        QString proxyHost = iProfile.key(Buteo::KEY_HTTP_PROXY_HOST);
-        if (!proxyHost.isEmpty()) {
+    QString proxyHost = iProfile.key(Buteo::KEY_HTTP_PROXY_HOST);
+    // Set proxy, if available
+    if (!proxyHost.isEmpty()) {
 
-            QString proxyPort = iProfile.key(Buteo::KEY_HTTP_PROXY_PORT);
+        QString proxyPort = iProfile.key(Buteo::KEY_HTTP_PROXY_PORT);
 
-            mTransport->setProxy (proxyHost, proxyPort);
+        mTransport->setProxy (proxyHost, proxyPort);
 
-            LOG_DEBUG("Proxy host:" << proxyHost);
-            LOG_DEBUG("Proxy port:" << proxyPort);
-        } else {
-            LOG_DEBUG("Not using proxy");
-        }
+        LOG_DEBUG("Proxy host:" << proxyHost);
+        LOG_DEBUG("Proxy port:" << proxyPort);
+    } else {
+        LOG_DEBUG("Not using proxy");
+    }
 
-        success = true;
-    //} else {
-    //    LOG_DEBUG("Could not find 'Remote database' property");
-    //}
-
-    return success;
+    return true;
 }
 
-void GContactClient::closeTransport() {
+void
+GContactClient::closeTransport()
+{
 
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Closing transport...");
 
-    delete mTransport;
+    mTransport->deleteLater ();
     mTransport = NULL;
 
     LOG_DEBUG("Transport closed");
-
 }
 
 bool
-GContactClient::initConfig () {
+GContactClient::initConfig ()
+{
 
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Initiating config...");
 
-    mRemoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
-    if (mRemoteURI.isEmpty ())
-        return false;
-
     mGoogleAuth = new GAuth ();
 
-    mSyncDirection = syncDirection ();
+    mSyncDirection = iProfile.syncDirection();
 
-    mConflictResPolicy = conflictResolutionPolicy ();
+    mConflictResPolicy = iProfile.conflictResolutionPolicy();
 
     return true;
 }
 
-void GContactClient::closeConfig() {
+void
+GContactClient::closeConfig()
+{
 
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Closing config...");
 }
 
-Buteo::SyncResults GContactClient::getSyncResults() const {
+Buteo::SyncResults
+GContactClient::getSyncResults() const
+{
     FUNCTION_CALL_TRACE;
 
     return mResults;
@@ -463,7 +471,8 @@ Buteo::SyncResults GContactClient::getSyncResults() const {
 
 void
 GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
-        bool aState) {
+        bool aState)
+{
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Received connectivity change event:" << aType << " changed to "
@@ -471,23 +480,19 @@ GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
 }
 
 Buteo::SyncProfile::SyncDirection
-GContactClient::syncDirection () {
+GContactClient::syncDirection ()
+{
     FUNCTION_CALL_TRACE;
 
-    Buteo::SyncProfile::SyncDirection direction =
-            iProfile.syncDirection();
-
-    return direction;
+    return mSyncDirection;
 }
 
 Buteo::SyncProfile::ConflictResolutionPolicy
-GContactClient::conflictResolutionPolicy () {
+GContactClient::conflictResolutionPolicy ()
+{
     FUNCTION_CALL_TRACE;
 
-    Buteo::SyncProfile::ConflictResolutionPolicy crPolicy =
-            iProfile.conflictResolutionPolicy();
-
-    return crPolicy;
+    return mConflictResPolicy;
 }
 
 void
@@ -542,19 +547,17 @@ GContactClient::fetchRemoteContacts (const int startIndex)
      o Connect finishedRequest to parseResults & network error slots
      o Use mTransport to perform network fetch
     */
-    QUrl url (mRemoteURI, QUrl::StrictMode);
-    QList<QPair<QByteArray, QByteArray> > headers;
     QDateTime syncTime = lastSyncTime ();
     if (!syncTime.isNull ())
-        url.addQueryItem ("updated-min", syncTime.toString (Qt::ISODate));
+        mTransport->setUpdatedMin (syncTime);
 
     if (startIndex != 1)
     {
-        url.addQueryItem ("start-index", QString::number (startIndex));
+        mTransport->setStartIndex (startIndex);
     }
-    url.addQueryItem ("max-results", QString::number (GConfig::MAX_RESULTS));
+    mTransport->setMaxResults (GConfig::MAX_RESULTS);
     if (mSlowSync == false)
-        url.addQueryItem ("showdeleted", "true");
+        mTransport->setShowDeleted ();
 
     // FIXME: Fetching contacts using etag value as described in Google
     // data API does not seem to work
@@ -568,22 +571,9 @@ GContactClient::fetchRemoteContacts (const int startIndex)
         emit syncFinished (Sync::SYNC_ERROR);
         return;
     }
-    headers.append (QPair<QByteArray, QByteArray> (QByteArray ("GData-Version"),
-                                                   QByteArray ("3.0")));
-    headers.append (QPair<QByteArray, QByteArray> (QByteArray ("Authorization"),
-                                                   QByteArray (QString ("Bearer " + token).toAscii ())));
-
-    if (mTransport)
-    {
-        mTransport->deleteLater ();
-        mTransport = NULL;
-    }
-    mTransport = new GTransport (url, headers);
-    connect (mTransport, SIGNAL (finishedRequest ()),
-             this, SLOT (networkRequestFinished ()));
-
-    connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
-             this, SLOT (networkError (QNetworkReply::NetworkError)));
+    mTransport->setGDataVersionHeader ();
+    mTransport->addHeader (QByteArray ("Authorization"),
+                           QByteArray (QString ("Bearer " + token).toAscii ()));
 
     mTransport->request (GTransport::GET);
 }
@@ -620,8 +610,6 @@ GContactClient::authToken ()
     FUNCTION_CALL_TRACE;
 
     QString token = mGoogleAuth->token ();
-    if (token.endsWith ('\n'))
-        token.chop (1);
 
     return token;
 }
@@ -720,13 +708,21 @@ GContactClient::networkRequestFinished ()
 }
 
 void
-GContactClient::networkError (QNetworkReply::NetworkError error)
+GContactClient::networkError (int errorCode)
 {
     FUNCTION_CALL_TRACE;
 
     // TODO: If interested, check the value of error. But
     // it is enough to say that it is a SYNC_CONNECTION_ERROR
     //emit syncFinished (Sync::SYNC_CONNECTION_ERROR);
+    switch (errorCode)
+    {
+    case 401:
+        emit syncFinished (Sync::SYNC_AUTHENTICATION_FAILURE);
+        break;
+    default:
+        break;
+    };
 }
 
 void
@@ -830,35 +826,13 @@ GContactClient::storeToRemote ()
 
     if (!encodedContacts.isEmpty ())
     {
-        QUrl url (mRemoteURI + "/batch", QUrl::StrictMode);
-        QList<QPair<QByteArray, QByteArray> > headers;
+        mTransport->reset ();
+        mTransport->setUrl (mRemoteURI + "/batch");
+        mTransport->setGDataVersionHeader ();
+        mTransport->setAuthToken (mGoogleAuth->token ());
+        mTransport->setData (encodedContacts);
 
-        QString token = authToken ();
-        if (token.isNull () || token.isEmpty ())
-        {
-            emit syncFinished (Sync::SYNC_ERROR);
-        }
-        headers.append (QPair<QByteArray, QByteArray> (QByteArray("GData-Version"),
-                                                       QByteArray ("3.0")));
-        headers.append (QPair<QByteArray, QByteArray> (QByteArray("Authorization"),
-                                                       QByteArray (QString ("Bearer " + token).toAscii ())));
-        headers.append (QPair<QByteArray, QByteArray> (QByteArray("Content-Type"),
-                                                       QByteArray ("application/atom+xml")));
-        headers.append (QPair<QByteArray, QByteArray> (QByteArray("Content-Length"),
-                                                       QString::number (encodedContacts.size ()).toAscii ()));
         LOG_DEBUG ("POST DATA:" << encodedContacts);
-
-        if (mTransport)
-        {
-            mTransport->deleteLater ();
-            mTransport = NULL;
-        }
-        mTransport = new GTransport (url, headers, encodedContacts);
-        connect (mTransport, SIGNAL (finishedRequest ()),
-                 this, SLOT (networkRequestFinished ()));
-
-        connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
-                 this, SLOT (networkError (QNetworkReply::NetworkError)));
 
         mTransport->request (GTransport::POST);
     }

@@ -68,15 +68,9 @@ GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers)
 }
 
 GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers, QByteArray data) :
-    iHeaders (headers), iNetworkMgr (this),
+    iHeaders (headers), iNetworkMgr (this), iPostData (data),
     iNetworkRequest (NULL), iNetworkReply (NULL)
 {
-    /*
-    QBuffer* buffer = new QBuffer (this);
-    buffer->setData (data);
-    iPostData = buffer;
-    */
-    iPostData = data;
     construct (url);
 }
 
@@ -92,8 +86,6 @@ GTransport::~GTransport()
         iNetworkReply->deleteLater();
         iNetworkReply = NULL;
     }
-
-    //delete iPostData;
 }
 
 void
@@ -110,12 +102,10 @@ GTransport::setData (QByteArray data)
 {
     FUNCTION_CALL_TRACE;
 
-    /*
-    QBuffer* buffer = new QBuffer (this);
-    buffer->setData (data);
-    */
+    if (!iPostData.isEmpty ())
+        iPostData.clear ();
 
-    iPostData = data;
+        iPostData = data;
 }
 
 void GTransport::setHeaders()
@@ -128,7 +118,6 @@ void GTransport::setHeaders()
      * it as a 3.0 version, and just returns the default format
      * So, the headers order is very sensitive
      */
-    //iNetworkRequest->setRawHeader (GDATA_VERSION_TAG.toAscii (), GDATA_VERSION.toAscii ());
     for (int i=0; i < iHeaders.count (); i++)
     {
         QPair<QByteArray, QByteArray> headerPair = iHeaders[i];
@@ -153,6 +142,12 @@ GTransport::setAuthToken (const QString token)
 
     QByteArray header1 = QString(G_AUTH_HEADER).toAscii ();
     addHeader (header1, ("Bearer " + token).toAscii ());
+}
+
+void
+GTransport::setGDataVersionHeader ()
+{
+    iHeaders.append (QPair<QByteArray, QByteArray> (QByteArray ("GData-Version"), QByteArray ("3.0")));
 }
 
 void
@@ -213,11 +208,6 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
 
     iNetworkRequest = new QNetworkRequest ();
     iNetworkRequest->setUrl (iUrl);
-    if (!iPostData.isEmpty ())
-    {
-        //iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, iPostData->size ());
-        //iNetworkRequest->setHeader (QNetworkRequest::ContentTypeHeader, "application/atom+xml; charset=UTF-8; type=feed");
-    }
     setHeaders ();
 
     mRequestType = type;
@@ -230,6 +220,8 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
         }
         break;
         case POST: {
+            iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, iPostData.size ());
+            iNetworkRequest->setHeader (QNetworkRequest::ContentTypeHeader, "application/atom+xml; charset=UTF-8; type=feed");
             iNetworkReply = iNetworkMgr.post(*iNetworkRequest, iPostData);
             LOG_DEBUG ("--- FINISHED POST REQUEST ---");
         }
@@ -253,8 +245,6 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
     {
         LOG_DEBUG ("Header " << i << ":" << headerList.at (i)
                                   << ":" << iNetworkRequest->rawHeader (headerList.at (i)));
-        //iNetworkRequest->setRawHeader (iHeaders.at (i).first,
-        //                               iHeaders.at (i).second);
     }
     QObject::connect(iNetworkReply, SIGNAL(readyRead ()), this,
                      SLOT(readyRead()));
@@ -289,7 +279,10 @@ GTransport::readyRead()
     {
         iNetworkReplyBody += bytes;
     } else
+    {
         LOG_DEBUG ("SERVER ERROR:" << bytes);
+        emit error (mResponseCode);
+    }
 }
 
 void
@@ -309,14 +302,6 @@ GTransport::finishedSlot(QNetworkReply *reply)
     }
 
     emit finishedRequest();
-}
-
-void
-GTransport::handleNetworkError (QNetworkReply::NetworkError networkError)
-{
-    FUNCTION_CALL_TRACE;
-
-    emit error (networkError);
 }
 
 void
@@ -364,4 +349,12 @@ GTransport::HTTP_REQUEST_TYPE
 GTransport::requestType ()
 {
     return mRequestType;
+}
+
+void
+GTransport::reset ()
+{
+    iUrl.clear ();
+    iHeaders.clear ();
+    iPostData.clear ();
 }

@@ -116,7 +116,7 @@ protected slots:
 
     void networkRequestFinished ();
 
-    void networkError (QNetworkReply::NetworkError error);
+    void networkError (int errorCode);
 
     bool start ();
 
