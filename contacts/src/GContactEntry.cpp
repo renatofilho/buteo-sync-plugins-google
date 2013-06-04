@@ -47,7 +47,7 @@
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
 GContactEntry::GContactEntry() :
-    mDeleted (false)
+    mDeleted (false), mHasPhoto (false)
 {
 }
 
@@ -626,4 +626,28 @@ bool
 GContactEntry::error ()
 {
     return mError;
+}
+
+void
+GContactEntry::setHasPhoto (const bool hasPhotoFlag)
+{
+    mHasPhoto = hasPhotoFlag;
+}
+
+bool
+GContactEntry::hasPhoto ()
+{
+    return mHasPhoto;
+}
+
+void
+GContactEntry::setPhotoUrl (const QString photoUrl)
+{
+    mPhotoUrl = photoUrl;
+}
+
+QString
+GContactEntry::photoUrl ()
+{
+    return mPhotoUrl;
 }

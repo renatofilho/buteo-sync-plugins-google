@@ -68,6 +68,7 @@ GParseStream::initFunctionMap ()
     mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
     mContactFunctionMap.insert ("content", &GParseStream::handleEntryContent);
     mContactFunctionMap.insert ("title", &GParseStream::handleEntryTitle);
+    mContactFunctionMap.insert ("link", &GParseStream::handleEntryLink);
     mContactFunctionMap.insert ("gContact:billingInformation", &GParseStream::handleEntryBillingInformation);
     mContactFunctionMap.insert ("gContact:birthday", &GParseStream::handleEntryBirthday);
     mContactFunctionMap.insert ("gContact:calendarLink", &GParseStream::handleEntryCalendarLink);
@@ -284,6 +285,20 @@ GParseStream::handleEntryTitle ()
 
     if (title.contains ("Error"))
         mContactEntry->setError (true);
+}
+
+void
+GParseStream::handleEntryLink ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "link");
+
+    if (mXml->attributes ().hasAttribute ("gd:etag") &&
+        (mXml->attributes ().value ("rel") == "http://schemas.google.com/contacts/2008/rel#photo"))
+    {
+        // the contact entry has a photo
+        mContactEntry->setHasPhoto (true);
+        mContactEntry->setPhotoUrl (mXml->attributes ().value ("href").toString ());
+    }
 }
 
 void

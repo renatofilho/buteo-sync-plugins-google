@@ -181,6 +181,14 @@ public:
 
     bool error ();
 
+    void setHasPhoto (const bool hasPhotoFlag);
+
+    bool hasPhoto ();
+
+    void setPhotoUrl (const QString photoUrl);
+
+    QString photoUrl ();
+
 private:
 
     QString mId;
@@ -198,6 +206,10 @@ private:
     QString mReasonText;
 
     QString mOpsType;
+
+    bool mHasPhoto;
+
+    QString mPhotoUrl;
 };
 
 #endif // GCONTACT_H

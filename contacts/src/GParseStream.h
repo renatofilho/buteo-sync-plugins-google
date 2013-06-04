@@ -71,6 +71,7 @@ private:
     void handleEntryContent();
     void handleEntryId();
     void handleEntryTitle();
+    void handleEntryLink ();
     void handleEntryBillingInformation();
     void handleEntryBirthday();
     void handleEntryCalendarLink();
