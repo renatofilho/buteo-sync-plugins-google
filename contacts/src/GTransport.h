@@ -106,8 +106,6 @@ private:
 
     QList<QPair<QByteArray, QByteArray> > 	iHeaders;
 
-    QByteArray 								*iAuthToken;
-
     QNetworkAccessManager					iNetworkMgr;
 
     QByteArray								iPostData;

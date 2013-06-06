@@ -200,7 +200,7 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
     {
         if (iNetworkReply)
         {
-            iNetworkReply->deleteLater ();
+            //iNetworkReply->deleteLater ();
             iNetworkReply = NULL;
         }
     }
@@ -312,7 +312,8 @@ GTransport::setUpdatedMin (const QDateTime datetime)
     mUpdatedMin = datetime;
 
     if (!iUrl.hasQueryItem (UPDATED_MIN_TAG))
-        iUrl.addQueryItem (UPDATED_MIN_TAG, mUpdatedMin.toString ());
+        iUrl.addQueryItem (UPDATED_MIN_TAG,
+                           mUpdatedMin.toString (Qt::ISODate));
 }
 
 void
@@ -322,7 +323,6 @@ GTransport::setMaxResults (unsigned int limit)
 
     if (!iUrl.hasQueryItem (MAX_RESULTS_TAG))
         iUrl.addQueryItem (MAX_RESULTS_TAG, QString::number (limit));
-    LOG_DEBUG ("Final url" << iUrl.toString ());
 }
 
 void

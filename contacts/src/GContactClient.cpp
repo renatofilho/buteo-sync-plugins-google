@@ -635,7 +635,6 @@ GContactClient::networkRequestFinished ()
     // o If success, invoke the mParser->parse ()
 
     const QNetworkReply* reply = mTransport->reply ();
-    bool syncDone = false;
     GTransport::HTTP_REQUEST_TYPE requestType = mTransport->requestType ();
     if (reply)
     {
@@ -662,7 +661,6 @@ GContactClient::networkRequestFinished ()
             // buffer
             if (atom->title () == "Error")
             {
-                syncDone = false;
                 LOG_CRITICAL ("Error in the request message. Check the data format");
                 LOG_CRITICAL (data);
                 // No need to signal error for the entire sync.
@@ -675,7 +673,11 @@ GContactClient::networkRequestFinished ()
             // the server, we will continue with the next batch
             // if there are any
             if (mHasMoreContactsToStore == true)
+            {
+                mSyncStatus = Sync::SYNC_PROGRESS;
                 storeToRemote ();
+            } else
+                mSyncStatus = Sync::SYNC_DONE;
         } else if (requestType == GTransport::GET)
         {
             LOG_DEBUG ("+++ GET REQUEST +++");
@@ -693,17 +695,28 @@ GContactClient::networkRequestFinished ()
                 mStartIndex += GConfig::MAX_RESULTS;
                 //mTransport->setUrl (atom->nextEntriesUrl ());
                 fetchRemoteContacts (mStartIndex);
+                mSyncStatus = Sync::SYNC_PROGRESS;
             } else
             {
                 // There are no more entries to be fetched from
                 // server. Continue with saving the local contacts to
                 // server
-                storeToRemote ();
+                if (storeToRemote () == true)
+                    mSyncStatus = Sync::SYNC_PROGRESS;
+                else
+                    mSyncStatus = Sync::SYNC_DONE;
             }
-
-            syncDone = true;
         }
         delete atom;
+    } else
+    {
+        mSyncStatus = Sync::SYNC_ERROR;
+    }
+
+    if (mSyncStatus == Sync::SYNC_DONE ||
+        mSyncStatus == Sync::SYNC_ERROR)
+    {
+        emit syncFinished (mSyncStatus);
     }
 }
 
@@ -717,12 +730,29 @@ GContactClient::networkError (int errorCode)
     //emit syncFinished (Sync::SYNC_CONNECTION_ERROR);
     switch (errorCode)
     {
+    case 400:
+        // Bad request. Better to bail out, since it could be a problem with the
+        // data format of the request/response
+        mSyncStatus = Sync::SYNC_BAD_REQUEST;
+        break;
     case 401:
-        emit syncFinished (Sync::SYNC_AUTHENTICATION_FAILURE);
+        mSyncStatus = Sync::SYNC_AUTHENTICATION_FAILURE;
+        break;
+    case 403:
+    case 408:
+        mSyncStatus = Sync::SYNC_ERROR;
+        break;
+    case 500:
+    case 503:
+    case 504:
+        // Server failures
+        mSyncStatus = Sync::SYNC_SERVER_FAILURE;
         break;
     default:
         break;
     };
+
+    emit syncFinished (mSyncStatus);
 }
 
 void
@@ -747,11 +777,12 @@ GContactClient::filterRemoteAddedModifiedDeletedContacts (const QList<GContactEn
     }
 }
 
-void
+bool
 GContactClient::storeToRemote ()
 {
     FUNCTION_CALL_TRACE;
 
+    bool hasContactsToSend = false;
     QByteArray encodedContacts;
     if (mSlowSync == true)
     {
@@ -772,6 +803,8 @@ GContactClient::storeToRemote ()
                 mHasMoreContactsToStore = true;
             else
                 mHasMoreContactsToStore = false;
+
+            hasContactsToSend = true;
         }
     } else
     {
@@ -784,29 +817,41 @@ GContactClient::storeToRemote ()
          * the next time, this method is invoked
          */
         int totalCount = 0;
-        QHash<QString, QContactLocalId>::iterator iter;
-        for (iter = mAddedContactIds.begin ();
-             (iter != mAddedContactIds.end ()) && (totalCount < GConfig::MAX_RESULTS);
-             ++iter, totalCount++)
+        QHash<QString, QContactLocalId>::iterator iter = mAddedContactIds.begin ();
+
+        while (iter != mAddedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::ADD);
-            mAddedContactIds.erase (iter);
+            iter = mAddedContactIds.erase (iter);
+            totalCount++;
+            if ((iter == mAddedContactIds.end ()) ||
+                (totalCount > GConfig::MAX_RESULTS))
+                break;
+            ++iter;
         }
 
-        for (iter = mModifiedContactIds.begin ();
-             (iter != mModifiedContactIds.end ()) && (totalCount < GConfig::MAX_RESULTS);
-             ++iter, totalCount++)
+        iter = mModifiedContactIds.begin ();
+        while (iter != mModifiedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::UPDATE);
-            mModifiedContactIds.erase (iter);
+            iter = mModifiedContactIds.erase (iter);
+            totalCount++;
+            if ((iter == mModifiedContactIds.end ()) ||
+                (totalCount > GConfig::MAX_RESULTS))
+                break;
+            ++iter;
         }
 
-        for (iter = mDeletedContactIds.begin ();
-             (iter != mDeletedContactIds.end ()) && (totalCount < GConfig::MAX_RESULTS);
-             ++iter, totalCount++)
+        iter = mDeletedContactIds.begin ();
+        while (iter != mDeletedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::DELETE);
-            mDeletedContactIds.erase (iter);
+            iter = mDeletedContactIds.erase (iter);
+            totalCount++;
+            if ((iter == mDeletedContactIds.end ()) ||
+                (totalCount > GConfig::MAX_RESULTS))
+                break;
+            ++iter;
         }
 
         if ((mAddedContactIds.size () +
@@ -821,6 +866,7 @@ GContactClient::storeToRemote ()
             GWriteStream ws;
 
             encodedContacts = ws.encodeContact (allChangedContactIds);
+            hasContactsToSend = true;
         }
     }
 
@@ -836,6 +882,7 @@ GContactClient::storeToRemote ()
 
         mTransport->request (GTransport::POST);
     }
+    return hasContactsToSend;
 }
 
 bool

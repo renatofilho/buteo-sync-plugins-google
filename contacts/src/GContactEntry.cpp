@@ -43,18 +43,25 @@
 #include <QContactPhoneNumber>
 #include <QContactAddress>
 #include <QContactSyncTarget>
+#include <QContactTimestamp>
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
 GContactEntry::GContactEntry() :
     mDeleted (false), mHasPhoto (false)
 {
+    // Set the timestamp explictly, since otherwise, qtcontacts-tracker
+    // seems to mess up the created timestamp
+    QContactTimestamp ts;
+    ts.setCreated (QDateTime::currentDateTimeUtc ());
+    mQContact.saveDetail (&ts);
 }
 
 void
 GContactEntry::setId (QString id)
 {
-    QContactGuid contactGuid;
+    LOG_DEBUG ("### GUID=" << id);
+    QContactGuid contactGuid = mQContact.detail<QContactGuid> ();
     contactGuid.setGuid (id);
     mQContact.saveDetail (&contactGuid);
 

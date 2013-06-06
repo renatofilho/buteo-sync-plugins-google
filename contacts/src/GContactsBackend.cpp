@@ -132,6 +132,8 @@ GContactsBackend::addContacts( QList<QContact>& aContactList,
     GContactsStatus status;
     QMap<int, QContactManager::Error> errorMap;
 
+    // TODO: Should a check be made for existing contacts based
+    // on guid and filter them out?
     bool retVal = iMgr->saveContacts (&aContactList, &errorMap);
 
     if (!retVal)

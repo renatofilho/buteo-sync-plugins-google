@@ -167,7 +167,7 @@ private:
                                              QList<GContactEntry*>& remoteModifiedContacts,
                                              QList<GContactEntry*>& remoteDeletedContacts);
 
-    void storeToRemote ();
+    bool storeToRemote ();
 
     bool storeToLocal (const QList<GContactEntry*> remoteContacts);
 
@@ -207,6 +207,8 @@ private:
     int mStartIndex;
 
     QString mRemoteURI;
+
+    Sync::SyncStatus mSyncStatus;
 
 #ifndef QT_NO_DEBUG
     friend class GContactClientTest;
