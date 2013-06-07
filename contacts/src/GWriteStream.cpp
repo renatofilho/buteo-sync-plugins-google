@@ -114,8 +114,11 @@ GWriteStream::encodeContact(const QContact qContact,
         mXmlWriter.writeStartElement ("atom:entry");
         mXmlWriter.writeAttribute ("xmlns:atom", "http://www.w3.org/2005/Atom");
         mXmlWriter.writeAttribute ("xmlns:gd", "http://schemas.google.com/g/2005");
-        mXmlWriter.writeAttribute ("xmlns:gContact", "http://schemas.google.com/contact/2008");
+        mXmlWriter.writeAttribute (" bexmlns:gContact", "http://schemas.google.com/contact/2008");
     }
+
+    // Set the local id as "gContact:userDefinedField"
+    encodeLocalId (qContact);
 
     // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
     // since etag is an attribute of this element
@@ -225,6 +228,19 @@ GWriteStream::encodeId (const QContact qContact)
 
     if (!guid.isNull ())
         mXmlWriter.writeTextElement ("id", "http://www.google.com/m8/feeds/contacts/default/base/" + guid);
+}
+
+void
+GWriteStream::encodeLocalId (const QContact qContact)
+{
+    QString localId = QString::number (qContact.localId ());
+
+    if (!localId.isNull ())
+    {
+        mXmlWriter.writeEmptyElement ("gContact:userDefinedField");
+        mXmlWriter.writeAttribute ("key", "ButeoLocalId");
+        mXmlWriter.writeAttribute ("value", localId);
+    }
 }
 
 void

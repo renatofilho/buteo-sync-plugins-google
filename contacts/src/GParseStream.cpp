@@ -26,12 +26,15 @@
 #include "GAtom.h"
 #include <LogMacros.h>
 
-GParseStream::GParseStream (QObject* parent) :
-                            mXml (NULL), mAtom (NULL)
+GParseStream::GParseStream (bool response, QObject* parent) :
+                            QObject (parent), mXml (NULL), mAtom (NULL)
 {
     FUNCTION_CALL_TRACE;
 
-    initFunctionMap ();
+    if (response == true)
+        initResponseFunctionMap ();
+    else
+        initFunctionMap ();
 }
 
 GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
@@ -51,10 +54,8 @@ GParseStream::~GParseStream ()
 }
 
 void
-GParseStream::initFunctionMap ()
+GParseStream::initAtomFunctionMap ()
 {
-    FUNCTION_CALL_TRACE;
-
     // Initialize the function map
     mAtomFunctionMap.insert ("updated", &GParseStream::handleAtomUpdated);
     mAtomFunctionMap.insert ("category", &GParseStream::handleAtomCategory);
@@ -64,6 +65,28 @@ GParseStream::initFunctionMap ()
     mAtomFunctionMap.insert ("itemsPerPage", &GParseStream::handleAtomOpenSearch);
     mAtomFunctionMap.insert ("link", &GParseStream::handleAtomLink);
     mAtomFunctionMap.insert ("entry", &GParseStream::handleAtomEntry);
+}
+
+void
+GParseStream::initResponseFunctionMap ()
+{
+    initAtomFunctionMap ();
+
+    mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
+    mContactFunctionMap.insert ("title", &GParseStream::handleEntryTitle);
+
+    mContactFunctionMap.insert ("gContact:userDefinedField", &GParseStream::handleEntryUserDefinedField);
+
+    mContactFunctionMap.insert ("batch:status", &GParseStream::handleEntryBatchStatus);
+    mContactFunctionMap.insert ("batch:operation", &GParseStream::handleEntryBatchOperation);
+}
+
+void
+GParseStream::initFunctionMap ()
+{
+    FUNCTION_CALL_TRACE;
+
+    initAtomFunctionMap ();
 
     mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
     mContactFunctionMap.insert ("content", &GParseStream::handleEntryContent);
@@ -265,7 +288,7 @@ void
 GParseStream::handleEntryId ()
 {
     QString idUrl = mXml->readElementText ();
-    mContactEntry->setId (idUrl.remove (0, idUrl.lastIndexOf ('/') + 1));
+    mContactEntry->setGuid (idUrl.remove (0, idUrl.lastIndexOf ('/') + 1));
 }
 
 void
@@ -528,8 +551,12 @@ GParseStream::handleEntryUserDefinedField ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:userDefinedField");
 
-    mContactEntry->setUserDefinedField (mXml->attributes ().value ("key").toString (),
-                                        mXml->attributes ().value ("value").toString ());
+    QString key = mXml->attributes ().value ("key").toString ();
+    QString value = mXml->attributes ().value ("value").toString ();
+    if (key == "ButeoLocalId")
+    {
+        mContactEntry->setLocalId (value);
+    }
 }
 
 void

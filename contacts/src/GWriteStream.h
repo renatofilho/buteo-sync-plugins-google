@@ -35,6 +35,7 @@ private:
     void endBatchFeed ();
     void encodeBatchTag (const GConfig::TRANSACTION_TYPE type);
     void encodeId (const QContact qContact);
+    void encodeLocalId (const QContact qContact);
     void encodeUpdated (const QContact qContact);
     void encodeEtag (const QContact qContact);
     void encodeCategory ();

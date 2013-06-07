@@ -51,7 +51,7 @@ GParseStreamTest::initTestCase()
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     QTextStream in (&file);
     QByteArray ba = in.readAll ().toAscii ();
-    mPs = new GParseStream ();
+    mPs = new GParseStream (false);
     mAtom = mPs->parse (ba);
     file.close ();
 }

@@ -621,7 +621,14 @@ GContactClient::lastSyncTime ()
 
     Buteo::ProfileManager pm;
     Buteo::SyncProfile* sp = pm.syncProfile (iProfile.name ());
-    return sp->lastSuccessfulSyncTime ();
+    // Without the hack (adding 5 secs), the qttracker engine contact storage
+    // time is greater than the sync finish time
+    // Because of this, the already added contacts are being sync'd again
+    // for consecutive sync's
+    if (!sp->lastSuccessfulSyncTime ().isNull ())
+        return sp->lastSuccessfulSyncTime ().addSecs (5);
+    else
+        return sp->lastSuccessfulSyncTime ();
 }
 
 void
@@ -646,7 +653,13 @@ GContactClient::networkRequestFinished ()
             return;
         }
 
-        GParseStream parser;
+        bool isPostResponse = false;
+        if (requestType == GTransport::GET)
+            isPostResponse = false;
+        else if (requestType == GTransport::POST)
+            isPostResponse = true;
+
+        GParseStream parser (false);
         GAtom* atom = parser.parse (data);
 
         if (!atom)
@@ -657,6 +670,7 @@ GContactClient::networkRequestFinished ()
 
         if (requestType == GTransport::POST)
         {
+            LOG_DEBUG ("@@@PREVIOUS REQUEST TYPE=POST");
             // Check if there are any errors in the returned XML
             // buffer
             if (atom->title () == "Error")
@@ -680,7 +694,7 @@ GContactClient::networkRequestFinished ()
                 mSyncStatus = Sync::SYNC_DONE;
         } else if (requestType == GTransport::GET)
         {
-            LOG_DEBUG ("+++ GET REQUEST +++");
+            LOG_DEBUG ("@@@PREVIOUS REQUEST TYPE=GET");
             QList<GContactEntry*> remoteContacts = atom->entries ();
             if (remoteContacts.size () > 0)
                 storeToLocal (remoteContacts);
@@ -763,17 +777,20 @@ GContactClient::filterRemoteAddedModifiedDeletedContacts (const QList<GContactEn
 {
     FUNCTION_CALL_TRACE;
 
-    for (int i=0; i<remoteContacts.size (); i++)
+    foreach (GContactEntry* entry, remoteContacts)
     {
-        if (remoteContacts.at (i)->deleted ())
-        {
-            remoteDeletedContacts.append (remoteContacts.at (i));
-        }
+        QContactLocalId localId = mContactBackend->entryExists (entry->guid ());
+        if (localId != 0)
+            entry->setLocalId (QString::number (localId));
 
-        if (mContactBackend->entryExists (remoteContacts.at (i)->id ()))
-            remoteModifiedContacts.append (remoteContacts.at (i));
-        else
-            remoteAddedContacts.append (remoteContacts.at (i));
+        if (localId != 0)
+        {
+            if (entry->deleted () == true)
+                remoteDeletedContacts.append (entry);
+            else
+                remoteModifiedContacts.append (entry);
+        } else
+            remoteAddedContacts.append (entry);
     }
 }
 
@@ -893,6 +910,7 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
     bool syncSuccess = false;
     if (mSlowSync == true)
     {
+        LOG_DEBUG ("@@@storeToLocal#SLOW SYNC");
         // Since we request for all the deleted contacts, if
         // slow sync is performed many times, even deleted contacts
         // will appear in *remoteContacts. Filter them out while
@@ -915,6 +933,7 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
         }
     } else if (mSlowSync == false)
     {
+        LOG_DEBUG ("@@@storeToLocal#FAST SYNC");
         QList<GContactEntry*> remoteAddedContacts, remoteModifiedContacts, remoteDeletedContacts;
         filterRemoteAddedModifiedDeletedContacts (remoteContacts,
                                                   remoteAddedContacts,
@@ -923,8 +942,12 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
 
         resolveConflicts (remoteModifiedContacts, remoteDeletedContacts);
 
+        LOG_DEBUG ("###REMOTED ADDED=" << remoteAddedContacts.size ());
+        LOG_DEBUG ("###REMOTED MODIFIED=" << remoteModifiedContacts.size ());
+        LOG_DEBUG ("###REMOTED DELETED=" << remoteDeletedContacts.size ());
         if (remoteAddedContacts.size () > 0)
         {
+            LOG_DEBUG ("***Adding " << remoteAddedContacts.size () << " contacts");
             QList<QContact> addedContacts = toQContacts (remoteAddedContacts);
             QMap<int, GContactsStatus> addedStatusMap;
             if (mContactBackend->addContacts (addedContacts, addedStatusMap))
@@ -935,6 +958,7 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
 
         if (remoteModifiedContacts.size () > 0)
         {
+            LOG_DEBUG ("***Modifying " << remoteModifiedContacts.size () << " contacts");
             QList<QContact> modifiedContacts = toQContacts (remoteModifiedContacts);
 
             QStringList modifiedIdsList;
@@ -955,9 +979,10 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
 
         if (remoteDeletedContacts.size () > 0)
         {
+            LOG_DEBUG ("***Deleting " << remoteModifiedContacts.size () << " contacts");
             QStringList guidList;
             for (int i=0; i<remoteDeletedContacts.size (); i++)
-                guidList << remoteDeletedContacts.at (i)->id ();
+                guidList << remoteDeletedContacts.at (i)->guid ();
 
             QStringList localIdList = mContactBackend->localIds (guidList);
 
@@ -1007,41 +1032,41 @@ GContactClient::resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
     for (iter = modifiedRemoteContacts.begin (); iter != modifiedRemoteContacts.end (); ++iter)
     {
         GContactEntry* entry = *iter;
-        if (mModifiedContactIds.contains (entry->id ()))
+        if (mModifiedContactIds.contains (entry->guid ()))
         {
             if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
                 modifiedRemoteContacts.erase (iter);
             else
-                mModifiedContactIds.remove (entry->id ());
+                mModifiedContactIds.remove (entry->guid ());
         }
 
-        if (mDeletedContactIds.contains (entry->id ()))
+        if (mDeletedContactIds.contains (entry->guid ()))
         {
             if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
                 modifiedRemoteContacts.erase (iter);
             else
-                mDeletedContactIds.remove (entry->id ());
+                mDeletedContactIds.remove (entry->guid ());
         }
     }
 
     for (iter = deletedRemoteContacts.begin (); iter != deletedRemoteContacts.end (); ++iter)
     {
         GContactEntry* entry = *iter;
-        if (mModifiedContactIds.contains (entry->id ()))
+        if (mModifiedContactIds.contains (entry->guid ()))
         {
             if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
                 deletedRemoteContacts.erase (iter);
             else
-                mModifiedContactIds.remove (entry->id ());
+                mModifiedContactIds.remove (entry->guid ());
         }
 
-        if (mDeletedContactIds.contains (entry->id ()))
+        if (mDeletedContactIds.contains (entry->guid ()))
         {
             // If the entry is deleted both at the server and
             // locally, then just remove it from the lists
             // so that no further action need to be taken
             deletedRemoteContacts.erase (iter);
-            mDeletedContactIds.remove (entry->id ());
+            mDeletedContactIds.remove (entry->guid ());
         }
     }
 }
@@ -1050,10 +1075,13 @@ void
 GContactClient::updateIdsToLocal (const QList<GContactEntry*> responseEntries)
 {
     // Fetch only the ids from the contact entry list
+    QStringList contactIdList;
     foreach (GContactEntry* entry, responseEntries) {
-        // TODO: We will have to store the local id also to the server,
+        // We will have to store the local id also to the server,
         // so that a mapping can be done while storing the remote id to
         // local
+        contactIdList << entry->localId ();
     }
-    const QList<QContact> qContacts = toQContacts (responseEntries);
+    QList<QContact> qContacts = toQContacts (responseEntries);
+    mContactBackend->modifyContacts (qContacts, contactIdList);
 }

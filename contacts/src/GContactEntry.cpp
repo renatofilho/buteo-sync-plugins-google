@@ -58,7 +58,7 @@ GContactEntry::GContactEntry() :
 }
 
 void
-GContactEntry::setId (QString id)
+GContactEntry::setGuid (const QString id)
 {
     LOG_DEBUG ("### GUID=" << id);
     QContactGuid contactGuid = mQContact.detail<QContactGuid> ();
@@ -69,9 +69,24 @@ GContactEntry::setId (QString id)
 }
 
 QString
-GContactEntry::id ()
+GContactEntry::guid ()
 {
     return mId;
+}
+
+void
+GContactEntry::setLocalId (const QString localId)
+{
+    mLocalId = localId;
+    QContactId id;
+    id.setLocalId (localId.toLong ());
+    mQContact.setId (id);
+}
+
+QString
+GContactEntry::localId ()
+{
+    return mLocalId;
 }
 
 void

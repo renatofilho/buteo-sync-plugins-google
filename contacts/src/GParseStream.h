@@ -36,7 +36,7 @@ class GParseStream : public QObject
 {
     Q_OBJECT
 public:
-    explicit GParseStream (QObject* parent = 0);
+    explicit GParseStream (bool response, QObject* parent = 0);
 
     explicit GParseStream (QByteArray xmlStream, QObject *parent = 0);
 
@@ -51,6 +51,10 @@ signals:
 public slots:
 
 private:
+
+    void initAtomFunctionMap ();
+
+    void initResponseFunctionMap ();
 
     void initFunctionMap();
 

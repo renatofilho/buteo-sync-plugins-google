@@ -109,6 +109,13 @@ QHash<QString, QContactLocalId>
 GContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
+    // Getting the following error while retrieving deleted contacts
+    // So, it is not possible to sync deleted contacts
+
+    // "Warning: libqtcontacts-tracker: querybuilder.cpp:2127:
+    // QContactFilter::ChangeLogFilter: Unsupported event type:
+    // QContactChangeLogFilter::EventRemoved"
+
 
     LOG_DEBUG("Retrieve Deleted Contacts Since " << aTimeStamp);
 
@@ -508,24 +515,29 @@ GContactsBackend::getSyncTargetFilter() const
     return detailFilterDefaultSyncTarget;
 }
 
-bool
+QContactLocalId
 GContactsBackend::entryExists (const QString entryGuid)
 {
+    /*
     QContactFetchHint hint;
     hint.setDetailDefinitionsHint (QStringList(QContactGuid::DefinitionName));
+    */
 
     QContactDetailFilter guidFilter;
     guidFilter.setDetailDefinitionName (QContactGuid::DefinitionName);
     guidFilter.setValue (entryGuid);
     guidFilter.setMatchFlags (QContactFilter::MatchExactly);
 
-    if (iMgr->contacts (guidFilter, QList<QContactSortOrder>(), hint).size () == 0)
-        return false;
+    QList<QContactLocalId> idList = iMgr->contactIds (guidFilter);
+
+    if (idList.size () > 0)
+        return idList.first ();
     else
-        return true;
+        return 0;
 }
 
-const QStringList GContactsBackend::localIds(const QStringList guidList)
+const
+QStringList GContactsBackend::localIds(const QStringList guidList)
 {
     QContactFetchHint hint;
     hint.setDetailDefinitionsHint (QStringList(QContactGuid::DefinitionName));

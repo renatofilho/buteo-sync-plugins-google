@@ -39,9 +39,13 @@ public:
 
     void setUpdated (QDateTime updated);
 
-    void setId (const QString id);
+    void setGuid (const QString id);
 
-    QString id ();
+    QString guid ();
+
+    void setLocalId (const QString localId);
+
+    QString localId ();
 
     void setEtag (const QString etag);
 
@@ -192,6 +196,8 @@ public:
 private:
 
     QString mId;
+
+    QString mLocalId;
 
     QContact mQContact;
 
