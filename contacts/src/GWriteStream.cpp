@@ -163,7 +163,7 @@ GWriteStream::encodeContact(const QContact qContact,
         else if (detail.definitionName () == QContactOrganization::DefinitionName)
             encodeOrganization (detail);
         else if (detail.definitionName () == QContactAvatar::DefinitionName)
-            encodeAvatar (detail);
+            encodeAvatar (detail, qContact);
         else if (detail.definitionName () == QContactAnniversary::DefinitionName)
             encodeAnniversary (detail);
         else if (detail.definitionName () == QContactNickname::DefinitionName)
@@ -465,26 +465,24 @@ GWriteStream::encodeOrganization (const QContactDetail& detail)
  * Encode avatar URIs into the Google contact XML Document
  */
 void
-GWriteStream::encodeAvatar (const QContactDetail &detail)
+GWriteStream::encodeAvatar (const QContactDetail &detail, const QContact qContact)
 {
+    mContactsWithAvatars << qContact.id ().localId ();
     /*
-    property.setName(QLatin1String("PHOTO"));
     QContactAvatar contactAvatar = static_cast<QContactAvatar>(detail);
     QUrl imageUrl(contactAvatar.imageUrl());
-    // XXX: fix up this mess: checking the scheme here and in encodeContentFromFile,
-    // organisation logo and ringtone are QStrings but avatar is a QUrl
-    if (!imageUrl.scheme().isEmpty()
-            && !imageUrl.host().isEmpty()
-            && imageUrl.scheme() != QLatin1String("file")) {
-        property.insertParameter(QLatin1String("VALUE"), QLatin1String("URL"));
-        property.setValue(imageUrl.toString());
-        *generatedProperties << property;
-        *processedFields << QContactAvatar::FieldImageUrl;
-    } else {
-        if (encodeContentFromFile(contactAvatar.imageUrl().toLocalFile(), property)) {
-            *generatedProperties << property;
-            *processedFields << QContactAvatar::FieldImageUrl;
-        }
+
+    // If the url stored for the contact is the url from google,
+    // then there is no need to sync it back to server
+    // Only if it is a locally added avatar, it needs to be sync'd
+    // to the server
+    if ((imageUrl.host () != "www.google.com") &&
+         imageUrl.isValid () &&
+         !imageUrl.isEmpty ())
+    {
+        QContactGuid guid = qContact.detail<QContactGuid> ();
+        imageUrl.setFragment (guid.guid ());
+        mAvatarUrls.append (imageUrl);
     }
     */
 }
@@ -591,4 +589,10 @@ GWriteStream::encodeFamily (const QContactDetail &detail)
         mXmlWriter.writeAttribute ("rel", "child");
         mXmlWriter.writeCharacters (member);
     }
+}
+
+QList<QContactLocalId>&
+GWriteStream::contactsWithAvatars ()
+{
+    return mContactsWithAvatars;
 }

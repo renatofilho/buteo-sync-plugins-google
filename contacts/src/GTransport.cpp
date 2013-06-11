@@ -221,13 +221,14 @@ GTransport::request(const HTTP_REQUEST_TYPE type)
         break;
         case POST: {
             iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, iPostData.size ());
-            iNetworkRequest->setHeader (QNetworkRequest::ContentTypeHeader, "application/atom+xml; charset=UTF-8; type=feed");
             iNetworkReply = iNetworkMgr.post(*iNetworkRequest, iPostData);
             LOG_DEBUG ("--- FINISHED POST REQUEST ---");
         }
         break;
         case PUT:
+            iNetworkRequest->setHeader (QNetworkRequest::ContentLengthHeader, iPostData.size ());
             iNetworkReply = iNetworkMgr.put(*iNetworkRequest, iPostData);
+            LOG_DEBUG ("--- FINISHED PUT REQUEST ---");
         break;
         case DELETE:
             iNetworkReply = iNetworkMgr.deleteResource(*iNetworkRequest);

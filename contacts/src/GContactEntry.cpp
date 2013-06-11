@@ -44,6 +44,7 @@
 #include <QContactAddress>
 #include <QContactSyncTarget>
 #include <QContactTimestamp>
+#include <QContactAvatar>
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
@@ -666,6 +667,11 @@ void
 GContactEntry::setPhotoUrl (const QString photoUrl)
 {
     mPhotoUrl = photoUrl;
+
+    QContactAvatar avatar = mQContact.detail <QContactAvatar> ();
+    QUrl url (photoUrl);
+    avatar.setImageUrl (url);
+    mQContact.saveDetail (&avatar);
 }
 
 QString

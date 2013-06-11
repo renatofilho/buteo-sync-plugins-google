@@ -140,12 +140,6 @@ private:
                            Sync::TransferDatabase database,
                            QString modifiedDatabase);
 
-    /**
-     * \brief Subroutine for http transport initiation
-     * @return True is success, false if not
-     */
-    bool initHttpTransport();
-
     void generateResults( bool aSuccessful );
 
     void fetchRemoteContacts (const int startIndex);
@@ -178,6 +172,8 @@ private:
 
     void updateIdsToLocal (const QList<GContactEntry*> responseEntries);
 
+    void postAvatar (const QContactLocalId avatarUrl);
+
     GAuth*                      mGoogleAuth;
 
     bool                        mSlowSync;
@@ -209,6 +205,10 @@ private:
     QString mRemoteURI;
 
     Sync::SyncStatus mSyncStatus;
+
+    QList<QContactLocalId> mContactsWithAvatars;
+
+    bool mHasPhotosToStore;
 
 #ifndef QT_NO_DEBUG
     friend class GContactClientTest;

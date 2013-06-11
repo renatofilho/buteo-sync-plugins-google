@@ -35,6 +35,7 @@
 #include <QDateTime>
 #include <QContactGuid>
 #include <QContactDetailFilter>
+#include <QContactAvatar>
 
 #include <buteosyncfw/SyncCommonDefs.h>
 #include <buteosyncfw/PluginCbInterface.h>
@@ -56,7 +57,7 @@ GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
     ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true),
-            mTransport(0), mCommittedItems(0), mStartIndex (1)
+    mTransport(0), mCommittedItems(0), mStartIndex (1), mHasMoreContactsToStore (false)
 {
     FUNCTION_CALL_TRACE;
 }
@@ -129,8 +130,6 @@ GContactClient::startSync()
             this, SLOT(receiveStateChanged(Sync::SyncProgressDetail)));
 
     // Take necessary action when sync is finished
-    // FIXME: SyncStatus should reflect the status of the
-    // transaction. More status fields need to be added
     connect(this, SIGNAL(syncFinished(Sync::SyncStatus)),
             this, SLOT(receiveSyncFinished(Sync::SyncStatus)));
 
@@ -631,6 +630,12 @@ GContactClient::lastSyncTime ()
         return sp->lastSuccessfulSyncTime ();
 }
 
+/**
+  * The state machine is pretty much maintained in this method.
+  * Maybe it is better to create a separate class that can handle
+  * the sync state. It can act of Qt signals that will be emitted
+  * by this method
+  */
 void
 GContactClient::networkRequestFinished ()
 {
@@ -653,12 +658,6 @@ GContactClient::networkRequestFinished ()
             return;
         }
 
-        bool isPostResponse = false;
-        if (requestType == GTransport::GET)
-            isPostResponse = false;
-        else if (requestType == GTransport::POST)
-            isPostResponse = true;
-
         GParseStream parser (false);
         GAtom* atom = parser.parse (data);
 
@@ -668,7 +667,8 @@ GContactClient::networkRequestFinished ()
             emit syncFinished (Sync::SYNC_ERROR);
         }
 
-        if (requestType == GTransport::POST)
+        if ((requestType == GTransport::POST) ||
+            (requestType == GTransport::PUT))
         {
             LOG_DEBUG ("@@@PREVIOUS REQUEST TYPE=POST");
             // Check if there are any errors in the returned XML
@@ -691,11 +691,23 @@ GContactClient::networkRequestFinished ()
                 mSyncStatus = Sync::SYNC_PROGRESS;
                 storeToRemote ();
             } else
-                mSyncStatus = Sync::SYNC_DONE;
+            {
+                LOG_DEBUG ("***Avatar list size=" << mContactsWithAvatars.size ());
+                // Good time to store photos
+                if (mContactsWithAvatars.size () > 0)
+                {
+                    // If any of the contacts have photos,
+                    // spawn a new thread to store the photos
+                    postAvatar (mContactsWithAvatars.takeFirst ());
+                    mSyncStatus = Sync::SYNC_PROGRESS;
+                } else
+                    mSyncStatus = Sync::SYNC_DONE;
+            }
         } else if (requestType == GTransport::GET)
         {
             LOG_DEBUG ("@@@PREVIOUS REQUEST TYPE=GET");
             QList<GContactEntry*> remoteContacts = atom->entries ();
+
             if (remoteContacts.size () > 0)
                 storeToLocal (remoteContacts);
 
@@ -715,7 +727,8 @@ GContactClient::networkRequestFinished ()
                 // There are no more entries to be fetched from
                 // server. Continue with saving the local contacts to
                 // server
-                if (storeToRemote () == true)
+                if ((storeToRemote () == true) ||
+                    (mHasPhotosToStore == true))
                     mSyncStatus = Sync::SYNC_PROGRESS;
                 else
                     mSyncStatus = Sync::SYNC_DONE;
@@ -799,7 +812,6 @@ GContactClient::storeToRemote ()
 {
     FUNCTION_CALL_TRACE;
 
-    bool hasContactsToSend = false;
     QByteArray encodedContacts;
     if (mSlowSync == true)
     {
@@ -810,6 +822,7 @@ GContactClient::storeToRemote ()
             ws.encodeContacts (mAllLocalContactIds.mid (0, GConfig::MAX_RESULTS),
                            GConfig::ADD);
             encodedContacts = ws.encodedStream ();
+            mContactsWithAvatars.append (ws.contactsWithAvatars ());
 
             // Once the contacts have been encoded, remove them
             // from mAllLocalContactIds
@@ -820,8 +833,6 @@ GContactClient::storeToRemote ()
                 mHasMoreContactsToStore = true;
             else
                 mHasMoreContactsToStore = false;
-
-            hasContactsToSend = true;
         }
     } else
     {
@@ -871,6 +882,14 @@ GContactClient::storeToRemote ()
             ++iter;
         }
 
+        if (allChangedContactIds.size () > 0)
+        {
+            GWriteStream ws;
+
+            encodedContacts = ws.encodeContact (allChangedContactIds);
+            mContactsWithAvatars.append (ws.contactsWithAvatars ());
+        }
+
         if ((mAddedContactIds.size () +
              mModifiedContactIds.size () +
              mDeletedContactIds.size ()) > 0)
@@ -878,14 +897,10 @@ GContactClient::storeToRemote ()
         else
             mHasMoreContactsToStore = false;
 
-        if (allChangedContactIds.size () > 0)
-        {
-            GWriteStream ws;
-
-            encodedContacts = ws.encodeContact (allChangedContactIds);
-            hasContactsToSend = true;
-        }
     }
+
+    if (mContactsWithAvatars.size () > 0)
+        mHasPhotosToStore = true;
 
     if (!encodedContacts.isEmpty ())
     {
@@ -894,12 +909,13 @@ GContactClient::storeToRemote ()
         mTransport->setGDataVersionHeader ();
         mTransport->setAuthToken (mGoogleAuth->token ());
         mTransport->setData (encodedContacts);
+        mTransport->addHeader ("Content-Type", "application/atom+xml; charset=UTF-8; type=feed");
 
         LOG_DEBUG ("POST DATA:" << encodedContacts);
 
         mTransport->request (GTransport::POST);
     }
-    return hasContactsToSend;
+    return mHasMoreContactsToStore;
 }
 
 bool
@@ -1074,9 +1090,12 @@ GContactClient::resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
 void
 GContactClient::updateIdsToLocal (const QList<GContactEntry*> responseEntries)
 {
+    FUNCTION_CALL_TRACE;
+
     // Fetch only the ids from the contact entry list
     QStringList contactIdList;
-    foreach (GContactEntry* entry, responseEntries) {
+    foreach (GContactEntry* entry, responseEntries)
+    {
         // We will have to store the local id also to the server,
         // so that a mapping can be done while storing the remote id to
         // local
@@ -1084,4 +1103,37 @@ GContactClient::updateIdsToLocal (const QList<GContactEntry*> responseEntries)
     }
     QList<QContact> qContacts = toQContacts (responseEntries);
     mContactBackend->modifyContacts (qContacts, contactIdList);
+}
+
+/**
+  * The avatarUrl is of the format:
+  * file:////home/uesr/file.jpg#121460
+  * The fragment in the url is the contact local id, which is used
+  * to generate the PUT url
+  */
+void
+GContactClient::postAvatar (const QContactLocalId contactId)
+{
+    FUNCTION_CALL_TRACE;
+
+    mTransport->reset ();
+
+    QContact contact;
+    mContactBackend->getContact (contactId, contact);
+    QUrl url = contact.detail<QContactAvatar> ().imageUrl ();
+    qDebug () << "^^^^URL:" << url.toString ();
+    QString imageUrl = contact.detail<QContactAvatar> ().imageUrl ().toString ();
+    QString guid = contact.detail<QContactGuid> ().guid ();
+    QFile file (imageUrl);
+    file.open (QIODevice::ReadOnly);
+    mTransport->setData (file.readAll ());
+    file.close ();
+
+    mTransport->setUrl (mRemoteURI + "/photos/media/default/" + guid);
+    mTransport->setGDataVersionHeader ();
+    mTransport->setAuthToken (mGoogleAuth->token ());
+    mTransport->addHeader ("Content-Type", "image/*");
+    mTransport->addHeader ("If-Match", "*"); // We just override other clients updates
+
+    mTransport->request (GTransport::PUT);
 }

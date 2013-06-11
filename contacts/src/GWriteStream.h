@@ -25,6 +25,8 @@ public:
 
     QByteArray encodedStream ();
 
+    QList<QContactLocalId>& contactsWithAvatars ();
+
 private:
 
     QByteArray encodeContact (const QContact qContact,
@@ -50,7 +52,7 @@ private:
     void encodeHobby (const QContactDetail& detail);
     void encodeGeoLocation (const QContactDetail& detail);
     void encodeOrganization (const QContactDetail& detail);
-    void encodeAvatar (const QContactDetail &detail);
+    void encodeAvatar (const QContactDetail &detail, const QContact qContact);
     void encodeGender (const QContactDetail &detail);
     void encodeNickname (const QContactDetail &detail);
     void encodeAnniversary (const QContactDetail &detail);
@@ -63,6 +65,8 @@ private:
     QXmlStreamWriter mXmlWriter;
 
     GContactsBackend mContactsBackend;
+
+    QList<QContactLocalId>   mContactsWithAvatars;
 };
 
 #endif // GWRITESTREAM_H
