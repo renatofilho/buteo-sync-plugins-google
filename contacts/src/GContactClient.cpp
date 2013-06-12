@@ -57,7 +57,7 @@ GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
     ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true),
-    mTransport(0), mCommittedItems(0), mStartIndex (1), mHasMoreContactsToStore (false)
+    mTransport(0), mCommittedItems(0), mStartIndex (1), mHasMoreContactsToStore (false), mHasPhotosToStore (false)
 {
     FUNCTION_CALL_TRACE;
 }
@@ -731,7 +731,9 @@ GContactClient::networkRequestFinished ()
                     (mHasPhotosToStore == true))
                     mSyncStatus = Sync::SYNC_PROGRESS;
                 else
+                {
                     mSyncStatus = Sync::SYNC_DONE;
+                }
             }
         }
         delete atom;
@@ -833,7 +835,11 @@ GContactClient::storeToRemote ()
                 mHasMoreContactsToStore = true;
             else
                 mHasMoreContactsToStore = false;
+        } else
+        {
+            return false; // Function exit here, if there are no contacts to be sync'd
         }
+
     } else
     {
         QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> allChangedContactIds;
@@ -888,6 +894,9 @@ GContactClient::storeToRemote ()
 
             encodedContacts = ws.encodeContact (allChangedContactIds);
             mContactsWithAvatars.append (ws.contactsWithAvatars ());
+        } else
+        {
+            return false; // Function exit here, if there are no contacts to be sync'd
         }
 
         if ((mAddedContactIds.size () +
@@ -902,19 +911,17 @@ GContactClient::storeToRemote ()
     if (mContactsWithAvatars.size () > 0)
         mHasPhotosToStore = true;
 
-    if (!encodedContacts.isEmpty ())
-    {
-        mTransport->reset ();
-        mTransport->setUrl (mRemoteURI + "/batch");
-        mTransport->setGDataVersionHeader ();
-        mTransport->setAuthToken (mGoogleAuth->token ());
-        mTransport->setData (encodedContacts);
-        mTransport->addHeader ("Content-Type", "application/atom+xml; charset=UTF-8; type=feed");
+    mTransport->reset ();
+    mTransport->setUrl (mRemoteURI + "/batch");
+    mTransport->setGDataVersionHeader ();
+    mTransport->setAuthToken (mGoogleAuth->token ());
+    mTransport->setData (encodedContacts);
+    mTransport->addHeader ("Content-Type", "application/atom+xml; charset=UTF-8; type=feed");
 
-        LOG_DEBUG ("POST DATA:" << encodedContacts);
+    LOG_DEBUG ("POST DATA:" << encodedContacts);
 
-        mTransport->request (GTransport::POST);
-    }
+    mTransport->request (GTransport::POST);
+
     return mHasMoreContactsToStore;
 }
 

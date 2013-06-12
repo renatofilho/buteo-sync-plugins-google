@@ -22,6 +22,8 @@ VER_MAJ = 1
 VER_MIN = 0
 VER_PAT = 0
 
+#DEFINES += CUSTOM_DETAIL_IS_SUPPORTED
+
 QMAKE_CXXFLAGS = -Wall \
     -g \
     -Wno-cast-align \

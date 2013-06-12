@@ -256,11 +256,13 @@ GWriteStream::encodeUpdated (const QContact qContact)
 void
 GWriteStream::encodeEtag (const QContact qContact)
 {
+#ifdef CUSTOM_DETAIL_IS_SUPPORTED
     QString etag = qContact.detail (
         GContactCustomDetail::DefinitionName).value (GContactCustomDetail::FieldGContactETag);
 
     if (!etag.isNull ())
         mXmlWriter.writeAttribute ("gd:etag", etag);
+#endif
 }
 
 void

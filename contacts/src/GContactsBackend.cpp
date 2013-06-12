@@ -32,7 +32,7 @@
 #include <QHash>
 
 GContactsBackend::GContactsBackend(QObject* parent) :
-                    QObject (parent), iMgr(new QContactManager())
+                    QObject (parent), iMgr(new QContactManager ("org.nemomobile.contacts.sqlite"))
 {
     FUNCTION_CALL_TRACE;
 }
@@ -68,7 +68,6 @@ GContactsBackend::getAllContactIds()
     Q_ASSERT (iMgr);
 
     QList<QContactLocalId> idList = iMgr->contactIds ();
-    idList.removeFirst (); // The first contact is some fictious contact that is not required
     return idList;
 }
 
@@ -317,15 +316,15 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
     QContactChangeLogFilter filter(aEventType);
     filter.setSince(aTimeStamp);
 
-    localIdList = iMgr->contactIds(filter);
-    //localIdList = iMgr->contactIds(filter & getSyncTargetFilter());
+    //localIdList = iMgr->contactIds(filter);
+    localIdList = iMgr->contactIds(filter & getSyncTargetFilter());
 
     // Filter out ids for items that were added after the specified time.
     if (aEventType != QContactChangeLogFilter::EventAdded)
     {
         filter.setEventType(QContactChangeLogFilter::EventAdded);
-        QList<QContactLocalId> addedList = iMgr->contactIds (filter);
-        //QList<QContactLocalId> addedList = iMgr->contactIds(filter & getSyncTargetFilter());
+        //QList<QContactLocalId> addedList = iMgr->contactIds (filter);
+        QList<QContactLocalId> addedList = iMgr->contactIds(filter & getSyncTargetFilter());
         foreach (const QContactLocalId &id, addedList)
         {
             localIdList.removeAll(id);
@@ -508,8 +507,7 @@ GContactsBackend::getSyncTargetFilter() const
     QContactDetailFilter detailFilterDefaultSyncTarget;
     detailFilterDefaultSyncTarget.setDetailDefinitionName(QContactSyncTarget::DefinitionName,
                                          QContactSyncTarget::FieldSyncTarget);
-    detailFilterDefaultSyncTarget.setValue(QLatin1String("addressbook"));
-    // "addressbook" - "magic" string from qtcontacts-tracker plugin
+    detailFilterDefaultSyncTarget.setValue(QLatin1String("buteo-google-contacts"));
 
     // return the union
     return detailFilterDefaultSyncTarget;
@@ -528,7 +526,7 @@ GContactsBackend::entryExists (const QString entryGuid)
     guidFilter.setValue (entryGuid);
     guidFilter.setMatchFlags (QContactFilter::MatchExactly);
 
-    QList<QContactLocalId> idList = iMgr->contactIds (guidFilter);
+    QList<QContactLocalId> idList = iMgr->contactIds (guidFilter & getSyncTargetFilter ());
 
     if (idList.size () > 0)
         return idList.first ();
@@ -551,7 +549,7 @@ QStringList GContactsBackend::localIds(const QStringList guidList)
     {
         guidFilter.setValue (guidList.at (i));
         QList<QContact> tempContacts =
-                iMgr->contacts (guidFilter, QList<QContactSortOrder>(), hint);
+                iMgr->contacts (guidFilter & getSyncTargetFilter (), QList<QContactSortOrder>(), hint);
         if (tempContacts.size () > 0)
             localIdList.append (QString::number (tempContacts.at (0).localId ()));
     }
