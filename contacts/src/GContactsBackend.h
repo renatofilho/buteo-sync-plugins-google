@@ -30,7 +30,7 @@
 #include <qcontactid.h>
 #include <QStringList>
 
-QTM_USE_NAMESPACE;
+QTM_USE_NAMESPACE
 
 struct GContactsStatus
 {
@@ -77,14 +77,14 @@ public:
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QList<QPair<QContactLocalId, QString> > getAllNewContactIds(const QDateTime& aTimeStamp);
+    QHash<QString, QContactLocalId> getAllNewContactIds(const QDateTime& aTimeStamp);
 
     /*!
      * \brief Return all modified contact ids in a QList of QStrings
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QList<QPair<QContactLocalId, QString> > getAllModifiedContactIds(const QDateTime& aTimeStamp);
+    QHash<QString, QContactLocalId> getAllModifiedContactIds(const QDateTime& aTimeStamp);
 
 
     /*!
@@ -92,7 +92,7 @@ public:
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QList<QPair<QContactLocalId, QString> > getAllDeletedContactIds(const QDateTime& aTimeStamp);
+    QHash<QString, QContactLocalId> getAllDeletedContactIds(const QDateTime& aTimeStamp);
 
     /*!
      * \brief Get contact data for a given gontact ID as a QContact object
@@ -183,7 +183,7 @@ public:
      */
     QList<QDateTime> getCreationTimes( const QList<QContactLocalId>& aContactIds );
 
-    bool entryExists (const QString guid);
+    QContactLocalId entryExists(const QString guid);
 
     const QStringList localIds (const QStringList guid);
 
@@ -199,7 +199,7 @@ private: // functions
      */
     void getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
                                 const QDateTime &aTimeStamp,
-                                QList<QPair<QContactLocalId, QString> > &aIdList);
+                                QHash<QString, QContactLocalId> &aIdList);
 
     /*!
      * \brief Constructs and returns the filter for accessing only contacts allowed to be synchronized

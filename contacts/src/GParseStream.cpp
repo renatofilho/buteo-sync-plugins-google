@@ -22,16 +22,19 @@
  */
 
 #include "GParseStream.h"
-
+#include "GContactEntry.h"
 #include "GAtom.h"
 #include <LogMacros.h>
 
-GParseStream::GParseStream (QObject* parent) :
-                            mXml (NULL), mAtom (NULL)
+GParseStream::GParseStream (bool response, QObject* parent) :
+                            QObject (parent), mXml (NULL), mAtom (NULL)
 {
     FUNCTION_CALL_TRACE;
 
-    initFunctionMap ();
+    if (response == true)
+        initResponseFunctionMap ();
+    else
+        initFunctionMap ();
 }
 
 GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
@@ -40,7 +43,7 @@ GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
     FUNCTION_CALL_TRACE;
 
     mXml = new QXmlStreamReader (xmlStream);
-    mAtom = new GAtom (false);
+    mAtom = new GAtom ();
 
     initFunctionMap ();
 }
@@ -48,28 +51,11 @@ GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
 GParseStream::~GParseStream ()
 {
     FUNCTION_CALL_TRACE;
-
-    delete mAtom;
-    mAtom = NULL;
-
-    delete mXml;
-    mXml = NULL;
 }
 
 void
-GParseStream::setParseData (const QByteArray data)
+GParseStream::initAtomFunctionMap ()
 {
-    FUNCTION_CALL_TRACE;
-
-    mXml = new QXmlStreamReader (data);
-    mAtom = new GAtom (false);
-}
-
-void
-GParseStream::initFunctionMap ()
-{
-    FUNCTION_CALL_TRACE;
-
     // Initialize the function map
     mAtomFunctionMap.insert ("updated", &GParseStream::handleAtomUpdated);
     mAtomFunctionMap.insert ("category", &GParseStream::handleAtomCategory);
@@ -77,11 +63,35 @@ GParseStream::initFunctionMap ()
     mAtomFunctionMap.insert ("totalResults", &GParseStream::handleAtomOpenSearch);
     mAtomFunctionMap.insert ("startIndex", &GParseStream::handleAtomOpenSearch);
     mAtomFunctionMap.insert ("itemsPerPage", &GParseStream::handleAtomOpenSearch);
+    mAtomFunctionMap.insert ("link", &GParseStream::handleAtomLink);
     mAtomFunctionMap.insert ("entry", &GParseStream::handleAtomEntry);
+}
+
+void
+GParseStream::initResponseFunctionMap ()
+{
+    initAtomFunctionMap ();
+
+    mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
+    mContactFunctionMap.insert ("title", &GParseStream::handleEntryTitle);
+
+    mContactFunctionMap.insert ("gContact:userDefinedField", &GParseStream::handleEntryUserDefinedField);
+
+    mContactFunctionMap.insert ("batch:status", &GParseStream::handleEntryBatchStatus);
+    mContactFunctionMap.insert ("batch:operation", &GParseStream::handleEntryBatchOperation);
+}
+
+void
+GParseStream::initFunctionMap ()
+{
+    FUNCTION_CALL_TRACE;
+
+    initAtomFunctionMap ();
 
     mContactFunctionMap.insert ("id", &GParseStream::handleEntryId);
     mContactFunctionMap.insert ("content", &GParseStream::handleEntryContent);
     mContactFunctionMap.insert ("title", &GParseStream::handleEntryTitle);
+    mContactFunctionMap.insert ("link", &GParseStream::handleEntryLink);
     mContactFunctionMap.insert ("gContact:billingInformation", &GParseStream::handleEntryBillingInformation);
     mContactFunctionMap.insert ("gContact:birthday", &GParseStream::handleEntryBirthday);
     mContactFunctionMap.insert ("gContact:calendarLink", &GParseStream::handleEntryCalendarLink);
@@ -122,20 +132,21 @@ GParseStream::initFunctionMap ()
     mContactFunctionMap.insert ("gd:phoneNumber", &GParseStream::handleEntryPhoneNumber);
     mContactFunctionMap.insert ("gd:rating", &GParseStream::handleEntryRating);
     mContactFunctionMap.insert ("gd:structuredPostalAddress", &GParseStream::handleEntryStructuredPostalAddress);
+
+    mContactFunctionMap.insert ("batch:status", &GParseStream::handleEntryBatchStatus);
+    mContactFunctionMap.insert ("batch:operation", &GParseStream::handleEntryBatchOperation);
 }
 
 GAtom*
-GParseStream::atom ()
+GParseStream::parse (const QByteArray xmlBuffer)
 {
     FUNCTION_CALL_TRACE;
 
-    return mAtom;
-}
+    mXml = new QXmlStreamReader (xmlBuffer);
+    mAtom = new GAtom ();
 
-void
-GParseStream::parse ()
-{
-    FUNCTION_CALL_TRACE;
+    Q_CHECK_PTR (mXml);
+    Q_CHECK_PTR (mAtom);
 
     while (!mXml->atEnd () && !mXml->hasError ())
     {
@@ -146,12 +157,15 @@ GParseStream::parse ()
                 (*this.*handler) ();
         }
     }
+    delete mXml;
+
+    return mAtom;
 }
 
 void
 GParseStream::handleAtomUpdated ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "updated");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "updated");
 
     mAtom->setUpdated (mXml->readElementText ());
 }
@@ -159,22 +173,25 @@ GParseStream::handleAtomUpdated ()
 void
 GParseStream::handleAtomCategory ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "category");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "category");
 
     QXmlStreamAttributes attributes = mXml->attributes ();
+    QString schema, term;
     if (attributes.hasAttribute ("scheme"))
-        mAtom->setCategorySchema (attributes.value ("scheme").toString ());
+        schema = attributes.value ("scheme").toString ();
     else if (attributes.hasAttribute ("term"))
-        mAtom->setCategoryTerm (attributes.value ("term").toString ());
+        term = attributes.value ("term").toString ();
+
+    mAtom->setCategory (schema, term);
 }
 
 void
 GParseStream::handleAtomAuthor ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "author");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "author");
 
     while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
-             mXml->qualifiedName () == "author"))
+             mXml->name () == "author"))
     {
         if (mXml->tokenType () == QXmlStreamReader::StartElement)
         {
@@ -201,14 +218,53 @@ GParseStream::handleAtomOpenSearch ()
 }
 
 void
+GParseStream::handleAtomLink ()
+{
+    FUNCTION_CALL_TRACE;
+
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "link");
+    if (mXml->attributes ().hasAttribute ("rel") &&
+        (mXml->attributes ().value ("rel") == "next"))
+    {
+        mAtom->setNextEntriesUrl (mXml->attributes ().value ("href").toString ());
+    }
+}
+
+void
+GParseStream::handleEntryBatchStatus ()
+{
+    FUNCTION_CALL_TRACE;
+
+    Q_ASSERT(mXml->isStartElement () && (mXml->name () == "status"));
+
+    mContactEntry->setBatchResponseStatusCode (mXml->attributes ().value ("code").toString ().toInt ());
+    mContactEntry->setBatchResponseReason (mXml->attributes ().value ("reason").toString ());
+    mContactEntry->setBatchResponseReasonText (mXml->readElementText ());
+}
+
+void
+GParseStream::handleEntryBatchOperation ()
+{
+    FUNCTION_CALL_TRACE;
+
+    Q_ASSERT(mXml->isStartElement () && (mXml->name () == "operation"));
+
+    mContactEntry->setBatchResponseOpsType (mXml->readElementText ());
+}
+
+void
 GParseStream::handleAtomEntry ()
 {
     FUNCTION_CALL_TRACE;
 
     Q_ASSERT(mXml->isStartElement () && mXml->name () == "entry");
 
-    mContactEntry = new GContactEntry (false);
+    mContactEntry = new GContactEntry ();
     Q_CHECK_PTR (mContactEntry);
+
+    // TODO: Optimize the parsing of the entries for GET and POST
+    // responses. For POST response, there is no need for parsing the complete
+    // response, but just the id is enough
 
     // Store the etag value of the entry
     mContactEntry->setEtag (mXml->attributes ().value ("gd:etag").toString ());
@@ -232,7 +288,7 @@ void
 GParseStream::handleEntryId ()
 {
     QString idUrl = mXml->readElementText ();
-    mContactEntry->setId (idUrl.right (idUrl.lastIndexOf ('/')));
+    mContactEntry->setGuid (idUrl.remove (0, idUrl.lastIndexOf ('/') + 1));
 }
 
 void
@@ -245,9 +301,27 @@ GParseStream::handleEntryContent ()
 void
 GParseStream::handleEntryTitle ()
 {
-    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "title");
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "title");
 
+    QString title = mXml->readElementText ();
     mContactEntry->setFullName (mXml->readElementText ());
+
+    if (title.contains ("Error"))
+        mContactEntry->setError (true);
+}
+
+void
+GParseStream::handleEntryLink ()
+{
+    Q_ASSERT(mXml->isStartElement () && mXml->name () == "link");
+
+    if (mXml->attributes ().hasAttribute ("gd:etag") &&
+        (mXml->attributes ().value ("rel") == "http://schemas.google.com/contacts/2008/rel#photo"))
+    {
+        // the contact entry has a photo
+        mContactEntry->setHasPhoto (true);
+        mContactEntry->setPhotoUrl (mXml->attributes ().value ("href").toString ());
+    }
 }
 
 void
@@ -477,8 +551,12 @@ GParseStream::handleEntryUserDefinedField ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:userDefinedField");
 
-    mContactEntry->setUserDefinedField (mXml->attributes ().value ("key").toString (),
-                                        mXml->attributes ().value ("value").toString ());
+    QString key = mXml->attributes ().value ("key").toString ();
+    QString value = mXml->attributes ().value ("value").toString ();
+    if (key == "ButeoLocalId")
+    {
+        mContactEntry->setLocalId (value);
+    }
 }
 
 void
@@ -587,14 +665,13 @@ GParseStream::handleEntryMoney ()
 void
 GParseStream::handleEntryName ()
 {
-    //Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
+    Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:name");
 
     while (!(mXml->tokenType () == QXmlStreamReader::EndElement &&
              mXml->qualifiedName () == "gd:name"))
     {
         if (mXml->tokenType () == QXmlStreamReader::StartElement)
         {
-    qDebug() << mXml->qualifiedName ();
             if (mXml->qualifiedName () == "gd:givenName")
                 mContactEntry->setGivenName (mXml->readElementText ());
             else if (mXml->qualifiedName () == "gd:additionalName")

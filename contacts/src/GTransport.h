@@ -48,15 +48,9 @@ public:
 
     explicit GTransport(QObject *parent = 0);
 
-    /*! \brief Constructor to be used along with setUrl()
-      Same object can be used any number of time for
-      network request
-     */
-    GTransport(QList<QPair<QByteArray, QByteArray> > *headers);
+    GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers);
 
-    GTransport(QString url, QList<QPair<QByteArray, QByteArray> > *headers = 0);
-
-    GTransport(const QString url, QByteArray data, QList<QPair<QByteArray, QByteArray> > *headers = 0);
+    GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers, QByteArray data);
 
     virtual ~GTransport();
 
@@ -66,9 +60,11 @@ public:
 
     void setHeaders ();
 
-    void addHeader (const QPair<QByteArray, QByteArray> header);
+    void addHeader (const QByteArray first, const QByteArray second);
 
     void setAuthToken (const QString token);
+
+    void setGDataVersionHeader ();
 
     void setProxy (QString proxyHost, QString proxyPort);
 
@@ -79,6 +75,16 @@ public:
     const QByteArray replyBody() const;
 
     void setUpdatedMin (const QDateTime datetime);
+
+    void setMaxResults (unsigned int limit);
+
+    void setShowDeleted ();
+
+    void setStartIndex (const int index);
+
+    HTTP_REQUEST_TYPE requestType ();
+
+    void reset ();
 
     // Include "X-HTTP-Method-Override: DELETE" in the delete POST method to avoid blocking of HTTP DELETE message by firewalls
     //const void DELETE( const QString contactId );
@@ -94,17 +100,15 @@ public:
 
 private:
 
-    void encode(QUrl& url);
+    void construct (const QUrl &url);
 
     QUrl 									iUrl;
 
-    QList<QPair<QByteArray, QByteArray> > 	*iHeaders;
-
-    QByteArray 								*iAuthToken;
+    QList<QPair<QByteArray, QByteArray> > 	iHeaders;
 
     QNetworkAccessManager					iNetworkMgr;
 
-    QIODevice								*iPostData;
+    QByteArray								iPostData;
 
     QNetworkRequest							*iNetworkRequest;
 
@@ -120,11 +124,13 @@ private:
 
     QDateTime                               mUpdatedMin;
 
+    HTTP_REQUEST_TYPE                       mRequestType;
+
 signals:
 
     void finishedRequest ();
 
-    void error (QNetworkReply::NetworkError networkError);
+    void error (int errorCode);
 
 private slots:
 
@@ -132,7 +138,6 @@ private slots:
 
     virtual void readyRead();
 
-    void handleNetworkError (QNetworkReply::NetworkError networkError);
 };
 
 #endif // GTRANSPORT_H

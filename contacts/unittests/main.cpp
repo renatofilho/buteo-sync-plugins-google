@@ -27,6 +27,7 @@
 #include "GParseStreamTest.h"
 #include "GTransportTest.h"
 #include "GContactsBackendTest.h"
+#include "GWriteStreamTest.h"
 
 int main(int argc, char** argv)
 {
@@ -34,8 +35,9 @@ int main(int argc, char** argv)
     GParseStreamTest parseStreamTest;
     GTransportTest transportTest;
     GContactsBackendTest contactsBackendTest;
+    GWriteStreamTest writer;
 
-    QTest::qExec (&parseStreamTest, argc, argv);
+    QTest::qExec (&contactsBackendTest, argc, argv);
 
     return 0;
 }

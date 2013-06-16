@@ -29,9 +29,10 @@
 #include <QContactGuid>
 #include <QBuffer>
 #include <QSet>
+#include <QHash>
 
 GContactsBackend::GContactsBackend(QObject* parent) :
-                    QObject (parent), iMgr(new QContactManager())
+                    QObject (parent), iMgr(new QContactManager ("org.nemomobile.contacts.sqlite"))
 {
     FUNCTION_CALL_TRACE;
 }
@@ -66,17 +67,18 @@ GContactsBackend::getAllContactIds()
     FUNCTION_CALL_TRACE;
     Q_ASSERT (iMgr);
 
-    return iMgr->contactIds (getSyncTargetFilter ());
+    QList<QContactLocalId> idList = iMgr->contactIds ();
+    return idList;
 }
 
-QList<QPair<QContactLocalId, QString> >
+QHash<QString, QContactLocalId>
 GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Retrieve New Contacts Since " << aTimeStamp);
 
-    QList<QPair<QContactLocalId, QString> > idList;
+    QHash<QString, QContactLocalId> idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventAdded;
 
@@ -85,7 +87,7 @@ GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
     return idList;
 }
 
-QList<QPair<QContactLocalId, QString> >
+QHash<QString, QContactLocalId>
 GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
 {
 
@@ -93,7 +95,7 @@ GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
 
     LOG_DEBUG("Retrieve Modified Contacts Since " << aTimeStamp);
 
-    QList<QPair<QContactLocalId, QString> > idList;
+    QHash<QString, QContactLocalId> idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventChanged;
 
@@ -102,14 +104,21 @@ GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
     return idList;
 }
 
-QList<QPair<QContactLocalId, QString> >
+QHash<QString, QContactLocalId>
 GContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
+    // Getting the following error while retrieving deleted contacts
+    // So, it is not possible to sync deleted contacts
+
+    // "Warning: libqtcontacts-tracker: querybuilder.cpp:2127:
+    // QContactFilter::ChangeLogFilter: Unsupported event type:
+    // QContactChangeLogFilter::EventRemoved"
+
 
     LOG_DEBUG("Retrieve Deleted Contacts Since " << aTimeStamp);
 
-    QList<QPair<QContactLocalId, QString> > idList;
+    QHash<QString, QContactLocalId> idList;
     const QContactChangeLogFilter::EventType eventType =
             QContactChangeLogFilter::EventRemoved;
 
@@ -129,6 +138,8 @@ GContactsBackend::addContacts( QList<QContact>& aContactList,
     GContactsStatus status;
     QMap<int, QContactManager::Error> errorMap;
 
+    // TODO: Should a check be made for existing contacts based
+    // on guid and filter them out?
     bool retVal = iMgr->saveContacts (&aContactList, &errorMap);
 
     if (!retVal)
@@ -296,7 +307,7 @@ GContactsBackend::deleteContacts(const QStringList &aContactIDList)
 void
 GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
         const QDateTime& aTimeStamp,
-        QList<QPair<QContactLocalId, QString> >& aIdList)
+        QHash<QString, QContactLocalId>& aIdList)
 {
     FUNCTION_CALL_TRACE;
 
@@ -305,12 +316,14 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
     QContactChangeLogFilter filter(aEventType);
     filter.setSince(aTimeStamp);
 
+    //localIdList = iMgr->contactIds(filter);
     localIdList = iMgr->contactIds(filter & getSyncTargetFilter());
 
     // Filter out ids for items that were added after the specified time.
     if (aEventType != QContactChangeLogFilter::EventAdded)
     {
         filter.setEventType(QContactChangeLogFilter::EventAdded);
+        //QList<QContactLocalId> addedList = iMgr->contactIds (filter);
         QList<QContactLocalId> addedList = iMgr->contactIds(filter & getSyncTargetFilter());
         foreach (const QContactLocalId &id, addedList)
         {
@@ -339,10 +352,10 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
 
     QList<QContact> contacts = iMgr->contacts(localIdList, guidHint);
 
-    for (int i=0; i<contacts.size (); i++)
+    foreach (QContact contact, contacts)
     {
-        aIdList.append (QPair<QContactLocalId, QString> (contacts.at (i).localId (),
-                               contacts.at (i).detail<QContactGuid>().value (QContactGuid::FieldGuid)));
+        aIdList.insert (contact.detail<QContactGuid>().value (QContactGuid::FieldGuid),
+                        contact.localId ());
     }
 }
 
@@ -494,31 +507,35 @@ GContactsBackend::getSyncTargetFilter() const
     QContactDetailFilter detailFilterDefaultSyncTarget;
     detailFilterDefaultSyncTarget.setDetailDefinitionName(QContactSyncTarget::DefinitionName,
                                          QContactSyncTarget::FieldSyncTarget);
-    detailFilterDefaultSyncTarget.setValue(QLatin1String("addressbook"));
-    // "addressbook" - "magic" string from qtcontacts-tracker plugin
+    detailFilterDefaultSyncTarget.setValue(QLatin1String("buteo-google-contacts"));
 
     // return the union
     return detailFilterDefaultSyncTarget;
 }
 
-bool
+QContactLocalId
 GContactsBackend::entryExists (const QString entryGuid)
 {
+    /*
     QContactFetchHint hint;
     hint.setDetailDefinitionsHint (QStringList(QContactGuid::DefinitionName));
+    */
 
     QContactDetailFilter guidFilter;
     guidFilter.setDetailDefinitionName (QContactGuid::DefinitionName);
     guidFilter.setValue (entryGuid);
     guidFilter.setMatchFlags (QContactFilter::MatchExactly);
 
-    if (iMgr->contacts (guidFilter, QList<QContactSortOrder>(), hint).size () == 0)
-        return false;
+    QList<QContactLocalId> idList = iMgr->contactIds (guidFilter & getSyncTargetFilter ());
+
+    if (idList.size () > 0)
+        return idList.first ();
     else
-        return true;
+        return 0;
 }
 
-const QStringList GContactsBackend::localIds(const QStringList guidList)
+const
+QStringList GContactsBackend::localIds(const QStringList guidList)
 {
     QContactFetchHint hint;
     hint.setDetailDefinitionsHint (QStringList(QContactGuid::DefinitionName));
@@ -532,7 +549,7 @@ const QStringList GContactsBackend::localIds(const QStringList guidList)
     {
         guidFilter.setValue (guidList.at (i));
         QList<QContact> tempContacts =
-                iMgr->contacts (guidFilter, QList<QContactSortOrder>(), hint);
+                iMgr->contacts (guidFilter & getSyncTargetFilter (), QList<QContactSortOrder>(), hint);
         if (tempContacts.size () > 0)
             localIdList.append (QString::number (tempContacts.at (0).localId ()));
     }

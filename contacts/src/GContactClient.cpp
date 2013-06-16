@@ -23,12 +23,19 @@
 
 #include "GContactClient.h"
 #include "GTransport.h"
+#include "GParseStream.h"
+#include "GContactsBackend.h"
+#include "GAuth.h"
+#include "GContactEntry.h"
+#include "GWriteStream.h"
+#include "GConfig.h"
 
 #include <QLibrary>
 #include <QtNetwork>
 #include <QDateTime>
 #include <QContactGuid>
 #include <QContactDetailFilter>
+#include <QContactAvatar>
 
 #include <buteosyncfw/SyncCommonDefs.h>
 #include <buteosyncfw/PluginCbInterface.h>
@@ -49,17 +56,20 @@ extern "C" void destroyPlugin(GContactClient *aClient) {
 GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
-    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true), mParser(0),
-            mTransport(0), mCommittedItems(0) {
+    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true),
+    mTransport(0), mCommittedItems(0), mStartIndex (1), mHasMoreContactsToStore (false), mHasPhotosToStore (false)
+{
     FUNCTION_CALL_TRACE;
 }
 
-GContactClient::~GContactClient() {
+GContactClient::~GContactClient()
+{
     FUNCTION_CALL_TRACE;
 }
 
 bool
-GContactClient::init() {
+GContactClient::init()
+{
     FUNCTION_CALL_TRACE;
 
     if (lastSyncTime ().isNull ())
@@ -68,9 +78,11 @@ GContactClient::init() {
         mSlowSync = false;
 
     mContactBackend = new GContactsBackend ();
-    if (initConfig () && initTransport ()) {
+    if (initConfig () && initTransport ())
+    {
         return true;
-    } else {
+    } else
+    {
         // Uninitialize everything that was initialized before failure.
         uninit();
 
@@ -107,7 +119,7 @@ GContactClient::startSync()
 
     FUNCTION_CALL_TRACE;
 
-    if (!mContactBackend || !mGoogleAuth || !mParser || !mTransport)
+    if (!mContactBackend || !mGoogleAuth || !mTransport)
         return false;
 
     LOG_DEBUG ("Init done. Continuing with sync");
@@ -118,8 +130,6 @@ GContactClient::startSync()
             this, SLOT(receiveStateChanged(Sync::SyncProgressDetail)));
 
     // Take necessary action when sync is finished
-    // FIXME: SyncStatus should reflect the status of the
-    // transaction. More status fields need to be added
     connect(this, SIGNAL(syncFinished(Sync::SyncStatus)),
             this, SLOT(receiveSyncFinished(Sync::SyncStatus)));
 
@@ -154,7 +164,6 @@ GContactClient::start ()
 {
     FUNCTION_CALL_TRACE;
 
-    QList<QContact> deviceContacts;
     switch (mSyncDirection)
     {
     case Buteo::SyncProfile::SYNC_DIRECTION_TWO_WAY:
@@ -163,9 +172,7 @@ GContactClient::start ()
         else
             changedLocalContactIds ();
 
-        fetchRemoteContacts ();
-
-        //storeToRemote (deviceContacts);
+        fetchRemoteContacts (mStartIndex);
 
         break;
     case Buteo::SyncProfile::SYNC_DIRECTION_FROM_REMOTE:
@@ -187,7 +194,7 @@ GContactClient::start ()
 bool
 GContactClient::abort (Sync::SyncStatus status)
 {
-    // TODO: Implement
+    emit syncFinished (Sync::SYNC_ABORTED);
     return true;
 }
 
@@ -228,8 +235,9 @@ GContactClient::receiveStateChanged(Sync::SyncProgressDetail aState)
 #endif  //  QT_NO_DEBUG
 }
 
-void GContactClient::receiveSyncFinished(Sync::SyncStatus aState) {
-
+void
+GContactClient::receiveSyncFinished(Sync::SyncStatus aState)
+{
     FUNCTION_CALL_TRACE;
 
 #ifndef QT_NO_DEBUG
@@ -376,53 +384,59 @@ GContactClient::initTransport()
 
     LOG_DEBUG("Creating HTTP transport");
 
-    QString remoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
-    bool success = false;
+    mRemoteURI = iProfile.key(Buteo::KEY_REMOTE_DATABASE);
+    if (mRemoteURI.isEmpty ())
+    {
+        // Set to the default value
+        mRemoteURI = "https://www.google.com/m8/feeds/contacts/default/full/";
+    }
 
-    //if (!remoteURI.isEmpty()) {
+    mTransport = new GTransport ();
+    Q_CHECK_PTR (mTransport);
 
-        mTransport = new GTransport ();
-        Q_CHECK_PTR (mTransport);
+    connect (mTransport, SIGNAL (finishedRequest ()),
+             this, SLOT (networkRequestFinished ()));
 
-        LOG_DEBUG("Setting remote URI to" << remoteURI);
-        mTransport->setUrl (remoteURI);
+    connect (mTransport, SIGNAL (error (int)),
+             this, SLOT (networkError (int)));
 
-        QString proxyHost = iProfile.key(Buteo::KEY_HTTP_PROXY_HOST);
-        if (!proxyHost.isEmpty()) {
+    LOG_DEBUG("Setting remote URI to" << mRemoteURI);
+    mTransport->setUrl (mRemoteURI);
 
-            QString proxyPort = iProfile.key(Buteo::KEY_HTTP_PROXY_PORT);
+    QString proxyHost = iProfile.key(Buteo::KEY_HTTP_PROXY_HOST);
+    // Set proxy, if available
+    if (!proxyHost.isEmpty()) {
 
-            mTransport->setProxy (proxyHost, proxyPort);
+        QString proxyPort = iProfile.key(Buteo::KEY_HTTP_PROXY_PORT);
 
-            LOG_DEBUG("Proxy host:" << proxyHost);
-            LOG_DEBUG("Proxy port:" << proxyPort);
-        } else {
-            LOG_DEBUG("Not using proxy");
-        }
+        mTransport->setProxy (proxyHost, proxyPort);
 
-        success = true;
-    //} else {
-    //    LOG_DEBUG("Could not find 'Remote database' property");
-    //}
+        LOG_DEBUG("Proxy host:" << proxyHost);
+        LOG_DEBUG("Proxy port:" << proxyPort);
+    } else {
+        LOG_DEBUG("Not using proxy");
+    }
 
-    return success;
+    return true;
 }
 
-void GContactClient::closeTransport() {
+void
+GContactClient::closeTransport()
+{
 
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Closing transport...");
 
-    delete mTransport;
+    mTransport->deleteLater ();
     mTransport = NULL;
 
     LOG_DEBUG("Transport closed");
-
 }
 
 bool
-GContactClient::initConfig () {
+GContactClient::initConfig ()
+{
 
     FUNCTION_CALL_TRACE;
 
@@ -430,23 +444,25 @@ GContactClient::initConfig () {
 
     mGoogleAuth = new GAuth ();
 
-    mParser = new GParseStream ();
+    mSyncDirection = iProfile.syncDirection();
 
-    mSyncDirection = syncDirection ();
-
-    mConflictResPolicy = conflictResolutionPolicy ();
+    mConflictResPolicy = iProfile.conflictResolutionPolicy();
 
     return true;
 }
 
-void GContactClient::closeConfig() {
+void
+GContactClient::closeConfig()
+{
 
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Closing config...");
 }
 
-Buteo::SyncResults GContactClient::getSyncResults() const {
+Buteo::SyncResults
+GContactClient::getSyncResults() const
+{
     FUNCTION_CALL_TRACE;
 
     return mResults;
@@ -454,7 +470,8 @@ Buteo::SyncResults GContactClient::getSyncResults() const {
 
 void
 GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
-        bool aState) {
+        bool aState)
+{
     FUNCTION_CALL_TRACE;
 
     LOG_DEBUG("Received connectivity change event:" << aType << " changed to "
@@ -462,23 +479,19 @@ GContactClient::connectivityStateChanged(Sync::ConnectivityType aType,
 }
 
 Buteo::SyncProfile::SyncDirection
-GContactClient::syncDirection () {
+GContactClient::syncDirection ()
+{
     FUNCTION_CALL_TRACE;
 
-    Buteo::SyncProfile::SyncDirection direction =
-            iProfile.syncDirection();
-
-    return direction;
+    return mSyncDirection;
 }
 
 Buteo::SyncProfile::ConflictResolutionPolicy
-GContactClient::conflictResolutionPolicy () {
+GContactClient::conflictResolutionPolicy ()
+{
     FUNCTION_CALL_TRACE;
 
-    Buteo::SyncProfile::ConflictResolutionPolicy crPolicy =
-            iProfile.conflictResolutionPolicy();
-
-    return crPolicy;
+    return mConflictResPolicy;
 }
 
 void
@@ -523,7 +536,7 @@ GContactClient::generateResults( bool aSuccessful )
 }
 
 void
-GContactClient::fetchRemoteContacts ()
+GContactClient::fetchRemoteContacts (const int startIndex)
 {
     FUNCTION_CALL_TRACE;
 
@@ -537,25 +550,29 @@ GContactClient::fetchRemoteContacts ()
     if (!syncTime.isNull ())
         mTransport->setUpdatedMin (syncTime);
 
+    if (startIndex != 1)
+    {
+        mTransport->setStartIndex (startIndex);
+    }
+    mTransport->setMaxResults (GConfig::MAX_RESULTS);
+    if (mSlowSync == false)
+        mTransport->setShowDeleted ();
+
     // FIXME: Fetching contacts using etag value as described in Google
     // data API does not seem to work
     // https://developers.google.com/gdata/docs/2.0/reference
-    // The etag value has to be handled later
 
     QString token = authToken ();
     if (token.isNull () || token.isEmpty ())
     {
         LOG_CRITICAL ("Auth token is null");
+        // Better error would be SYNC_CONFIG_ERROR
+        emit syncFinished (Sync::SYNC_ERROR);
         return;
     }
-    LOG_DEBUG ("++ Auth token" << token);
-    mTransport->setAuthToken (token);
-
-    connect (mTransport, SIGNAL (finishedRequest ()),
-             this, SLOT (networkRequestFinished ()));
-
-    connect (mTransport, SIGNAL (error (QNetworkReply::NetworkError)),
-             this, SLOT (networkError (QNetworkReply::NetworkError)));
+    mTransport->setGDataVersionHeader ();
+    mTransport->addHeader (QByteArray ("Authorization"),
+                           QByteArray (QString ("Bearer " + token).toAscii ()));
 
     mTransport->request (GTransport::GET);
 }
@@ -571,14 +588,10 @@ GContactClient::changedLocalContactIds ()
      */
 
     QDateTime syncTime = lastSyncTime ();
-    mLocalAddedContacts =
-            mContactBackend->getAllNewContactIds (syncTime);
 
-    mLocalModifiedContacts =
-            mContactBackend->getAllModifiedContactIds (syncTime);
-
-    mLocalDeletedContacts =
-            mContactBackend->getAllDeletedContactIds (syncTime);
+    mAddedContactIds = mContactBackend->getAllNewContactIds (syncTime);
+    mModifiedContactIds = mContactBackend->getAllModifiedContactIds (syncTime);
+    mDeletedContactIds = mContactBackend->getAllDeletedContactIds (syncTime);
 }
 
 void
@@ -586,8 +599,8 @@ GContactClient::allLocalContactIds ()
 {
     FUNCTION_CALL_TRACE;
 
-    mAllLocalContacts = mContactBackend->getAllContactIds ();
-    LOG_DEBUG ("Number of contacts:" << mAllLocalContacts.size ());
+    mAllLocalContactIds = mContactBackend->getAllContactIds ();
+    LOG_DEBUG ("Number of contacts:" << mAllLocalContactIds.size ());
 }
 
 const QString
@@ -595,7 +608,9 @@ GContactClient::authToken ()
 {
     FUNCTION_CALL_TRACE;
 
-    return mGoogleAuth->token ();
+    QString token = mGoogleAuth->token ();
+
+    return token;
 }
 
 const QDateTime
@@ -605,9 +620,22 @@ GContactClient::lastSyncTime ()
 
     Buteo::ProfileManager pm;
     Buteo::SyncProfile* sp = pm.syncProfile (iProfile.name ());
-    return sp->lastSuccessfulSyncTime ();
+    // Without the hack (adding 5 secs), the qttracker engine contact storage
+    // time is greater than the sync finish time
+    // Because of this, the already added contacts are being sync'd again
+    // for consecutive sync's
+    if (!sp->lastSuccessfulSyncTime ().isNull ())
+        return sp->lastSuccessfulSyncTime ().addSecs (5);
+    else
+        return sp->lastSuccessfulSyncTime ();
 }
 
+/**
+  * The state machine is pretty much maintained in this method.
+  * Maybe it is better to create a separate class that can handle
+  * the sync state. It can act of Qt signals that will be emitted
+  * by this method
+  */
 void
 GContactClient::networkRequestFinished ()
 {
@@ -616,10 +644,10 @@ GContactClient::networkRequestFinished ()
     // o Error - if network error, set the sync results with the code
     // o Call uninit
     // o Stop sync
-    // o If success, invoke the mParser->parse () and connect
-    // to the parse complete signal
+    // o If success, invoke the mParser->parse ()
 
     const QNetworkReply* reply = mTransport->reply ();
+    GTransport::HTTP_REQUEST_TYPE requestType = mTransport->requestType ();
     if (reply)
     {
         QByteArray data = mTransport->replyBody ();
@@ -629,144 +657,370 @@ GContactClient::networkRequestFinished ()
             LOG_DEBUG ("Nothing returned from server");
             return;
         }
-        mParser->setParseData (data);
 
-        mParser->parse ();
+        GParseStream parser (false);
+        GAtom* atom = parser.parse (data);
 
-        // Get the atom object
-        GAtom* atom = mParser->atom ();
-        if (atom)
+        if (!atom)
         {
-            QList<GContactEntry*> remoteContacts = atom->entries ();
-            if (remoteContacts.size () > 0)
+            LOG_CRITICAL ("NULL atom object. Something wrong with parsing");
+            emit syncFinished (Sync::SYNC_ERROR);
+        }
+
+        if ((requestType == GTransport::POST) ||
+            (requestType == GTransport::PUT))
+        {
+            LOG_DEBUG ("@@@PREVIOUS REQUEST TYPE=POST");
+            // Check if there are any errors in the returned XML
+            // buffer
+            if (atom->title () == "Error")
             {
-                QList<QContact> remoteQContacts = toQContacts (remoteContacts);
-                if (mSlowSync == true)
+                LOG_CRITICAL ("Error in the request message. Check the data format");
+                LOG_CRITICAL (data);
+                // No need to signal error for the entire sync.
+                // It might be a problem in a specific batch POST request
+            }
+
+            updateIdsToLocal (atom->entries ());
+
+            // Since we are POSTing a batch of MAX_RESULTS to
+            // the server, we will continue with the next batch
+            // if there are any
+            if (mHasMoreContactsToStore == true)
+            {
+                mSyncStatus = Sync::SYNC_PROGRESS;
+                storeToRemote ();
+            } else
+            {
+                LOG_DEBUG ("***Avatar list size=" << mContactsWithAvatars.size ());
+                // Good time to store photos
+                if (mContactsWithAvatars.size () > 0)
                 {
-                    storeToLocal (remoteQContacts);
+                    // If any of the contacts have photos,
+                    // spawn a new thread to store the photos
+                    postAvatar (mContactsWithAvatars.takeFirst ());
+                    mSyncStatus = Sync::SYNC_PROGRESS;
                 } else
+                    mSyncStatus = Sync::SYNC_DONE;
+            }
+        } else if (requestType == GTransport::GET)
+        {
+            LOG_DEBUG ("@@@PREVIOUS REQUEST TYPE=GET");
+            QList<GContactEntry*> remoteContacts = atom->entries ();
+
+            if (remoteContacts.size () > 0)
+                storeToLocal (remoteContacts);
+
+            if ((!atom->nextEntriesUrl ().isNull () ||
+                !atom->nextEntriesUrl ().isEmpty ()))
+            {
+                // Request for the next batch
+                // This condition will make this slot to be
+                // called again and again until there are no more
+                // entries left to be fetched from the server
+                mStartIndex += GConfig::MAX_RESULTS;
+                //mTransport->setUrl (atom->nextEntriesUrl ());
+                fetchRemoteContacts (mStartIndex);
+                mSyncStatus = Sync::SYNC_PROGRESS;
+            } else
+            {
+                // There are no more entries to be fetched from
+                // server. Continue with saving the local contacts to
+                // server
+                if ((storeToRemote () == true) ||
+                    (mHasPhotosToStore == true))
+                    mSyncStatus = Sync::SYNC_PROGRESS;
+                else
                 {
-                    // Filter added/modified/deleted entries from the list
-                    remoteAddedModifiedDeletedContacts (remoteContacts);
-
-                    // Resolve conflicts
-                    resolveConflicts ();
-
-                    // Store the rest of the contacts to device
-                    storeToLocal ();
+                    mSyncStatus = Sync::SYNC_DONE;
                 }
             }
         }
-    }
-}
-
-void
-GContactClient::networkError (QNetworkReply::NetworkError error)
-{
-    FUNCTION_CALL_TRACE;
-
-    // TODO: Handle the error and close the sync requests
-}
-
-void
-GContactClient::remoteAddedModifiedDeletedContacts (const QList<GContactEntry *> remoteContacts)
-{
-    FUNCTION_CALL_TRACE;
-
-    for (int i=0; i<remoteContacts.size (); i++)
-    {
-        if (remoteContacts.at (i)->deleted ())
-        {
-            mRemoteDeletedContacts.append (remoteContacts.at (i));
-        }
-
-        if (mContactBackend->entryExists (remoteContacts.at (i)->id ()))
-            mRemoteModifiedContacts.append (remoteContacts.at (i));
-        else
-            mRemoteAddedContacts.append (remoteContacts.at (i));
-    }
-}
-
-void
-GContactClient::storeToRemote (QList<QContact> deviceContacts)
-{
-    FUNCTION_CALL_TRACE;
-
-    // TODO: Use GContactEntry and GAtom to set the local values
-    // and then use GTransport to PUT the contacts to server
-    // Have the necessary signals/slots to handle the network
-    // communication
-}
-
-void
-GContactClient::storeToLocal (QList<QContact> serverContacts)
-{
-    FUNCTION_CALL_TRACE;
-
-    QMap<int, GContactsStatus> statusMap;
-    LOG_DEBUG ("TOTAL SERVER CONTACTS:" << serverContacts.size ());
-
-    if (mContactBackend->addContacts (serverContacts, statusMap))
-    {
-        // TODO: Saving succeeded. Update sync results
+        delete atom;
     } else
     {
-        // TODO: Saving failed. Update sync results and probably stop sync
+        mSyncStatus = Sync::SYNC_ERROR;
     }
 
-    emit syncFinished (Sync::SYNC_DONE);
+    if (mSyncStatus == Sync::SYNC_DONE ||
+        mSyncStatus == Sync::SYNC_ERROR)
+    {
+        emit syncFinished (mSyncStatus);
+    }
 }
 
 void
-GContactClient::storeToLocal ()
+GContactClient::networkError (int errorCode)
 {
     FUNCTION_CALL_TRACE;
 
-    if (mRemoteAddedContacts.size () > 0)
+    // TODO: If interested, check the value of error. But
+    // it is enough to say that it is a SYNC_CONNECTION_ERROR
+    //emit syncFinished (Sync::SYNC_CONNECTION_ERROR);
+    switch (errorCode)
     {
-        QList<QContact> addedContacts = toQContacts (mRemoteAddedContacts);
-        QMap<int, GContactsStatus> addedStatusMap;
-        if (mContactBackend->addContacts (addedContacts, addedStatusMap))
+    case 400:
+        // Bad request. Better to bail out, since it could be a problem with the
+        // data format of the request/response
+        mSyncStatus = Sync::SYNC_BAD_REQUEST;
+        break;
+    case 401:
+        mSyncStatus = Sync::SYNC_AUTHENTICATION_FAILURE;
+        break;
+    case 403:
+    case 408:
+        mSyncStatus = Sync::SYNC_ERROR;
+        break;
+    case 500:
+    case 503:
+    case 504:
+        // Server failures
+        mSyncStatus = Sync::SYNC_SERVER_FAILURE;
+        break;
+    default:
+        break;
+    };
+
+    emit syncFinished (mSyncStatus);
+}
+
+void
+GContactClient::filterRemoteAddedModifiedDeletedContacts (const QList<GContactEntry *> remoteContacts,
+                                                          QList<GContactEntry*>& remoteAddedContacts,
+                                                          QList<GContactEntry*>& remoteModifiedContacts,
+                                                          QList<GContactEntry*>& remoteDeletedContacts)
+{
+    FUNCTION_CALL_TRACE;
+
+    foreach (GContactEntry* entry, remoteContacts)
+    {
+        QContactLocalId localId = mContactBackend->entryExists (entry->guid ());
+        if (localId != 0)
+            entry->setLocalId (QString::number (localId));
+
+        if (localId != 0)
         {
+            if (entry->deleted () == true)
+                remoteDeletedContacts.append (entry);
+            else
+                remoteModifiedContacts.append (entry);
+        } else
+            remoteAddedContacts.append (entry);
+    }
+}
+
+bool
+GContactClient::storeToRemote ()
+{
+    FUNCTION_CALL_TRACE;
+
+    QByteArray encodedContacts;
+    if (mSlowSync == true)
+    {
+        LOG_DEBUG ("TOTAL LOCAL CONTACTS FOR REMOTE STORAGE:" << mAllLocalContactIds.size ());
+        if (!mAllLocalContactIds.isEmpty ())
+        {
+            GWriteStream ws;
+            ws.encodeContacts (mAllLocalContactIds.mid (0, GConfig::MAX_RESULTS),
+                           GConfig::ADD);
+            encodedContacts = ws.encodedStream ();
+            mContactsWithAvatars.append (ws.contactsWithAvatars ());
+
+            // Once the contacts have been encoded, remove them
+            // from mAllLocalContactIds
+            for (int i=0; i<GConfig::MAX_RESULTS; i++)
+                mAllLocalContactIds.removeAt (i);
+
+            if (mAllLocalContactIds.size () > 0)
+                mHasMoreContactsToStore = true;
+            else
+                mHasMoreContactsToStore = false;
         } else
         {
+            return false; // Function exit here, if there are no contacts to be sync'd
         }
-    }
 
-    if (mRemoteModifiedContacts.size () > 0)
+    } else
     {
-        QList<QContact> modifiedContacts = toQContacts (mRemoteModifiedContacts);
+        QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> allChangedContactIds;
 
-        QStringList modifiedIdsList;
-        for (int i=0; i<modifiedContacts.size (); i++)
-            modifiedIdsList << QString (modifiedContacts.at (i).localId ());
+        /*
+         * Create a new list of contact ids that are added/modified/deleted
+         * The ids added to this list need to be deleted from the
+         * member attributes so that the sync'd entries would nto be present
+         * the next time, this method is invoked
+         */
+        int totalCount = 0;
+        QHash<QString, QContactLocalId>::iterator iter = mAddedContactIds.begin ();
 
-        QMap<int, GContactsStatus> modifiedStatusMap =
-        mContactBackend->modifyContacts (modifiedContacts, modifiedIdsList);
-
-        if (modifiedStatusMap.size () > 0)
+        while (iter != mAddedContactIds.end ())
         {
+            allChangedContactIds.insert (iter.value (), GConfig::ADD);
+            iter = mAddedContactIds.erase (iter);
+            totalCount++;
+            if ((iter == mAddedContactIds.end ()) ||
+                (totalCount > GConfig::MAX_RESULTS))
+                break;
+            ++iter;
+        }
+
+        iter = mModifiedContactIds.begin ();
+        while (iter != mModifiedContactIds.end ())
+        {
+            allChangedContactIds.insert (iter.value (), GConfig::UPDATE);
+            iter = mModifiedContactIds.erase (iter);
+            totalCount++;
+            if ((iter == mModifiedContactIds.end ()) ||
+                (totalCount > GConfig::MAX_RESULTS))
+                break;
+            ++iter;
+        }
+
+        iter = mDeletedContactIds.begin ();
+        while (iter != mDeletedContactIds.end ())
+        {
+            allChangedContactIds.insert (iter.value (), GConfig::DELETE);
+            iter = mDeletedContactIds.erase (iter);
+            totalCount++;
+            if ((iter == mDeletedContactIds.end ()) ||
+                (totalCount > GConfig::MAX_RESULTS))
+                break;
+            ++iter;
+        }
+
+        if (allChangedContactIds.size () > 0)
+        {
+            GWriteStream ws;
+
+            encodedContacts = ws.encodeContact (allChangedContactIds);
+            mContactsWithAvatars.append (ws.contactsWithAvatars ());
         } else
         {
+            return false; // Function exit here, if there are no contacts to be sync'd
         }
+
+        if ((mAddedContactIds.size () +
+             mModifiedContactIds.size () +
+             mDeletedContactIds.size ()) > 0)
+            mHasMoreContactsToStore = true;
+        else
+            mHasMoreContactsToStore = false;
+
     }
 
-    if (mRemoteDeletedContacts.size () > 0)
+    if (mContactsWithAvatars.size () > 0)
+        mHasPhotosToStore = true;
+
+    mTransport->reset ();
+    mTransport->setUrl (mRemoteURI + "/batch");
+    mTransport->setGDataVersionHeader ();
+    mTransport->setAuthToken (mGoogleAuth->token ());
+    mTransport->setData (encodedContacts);
+    mTransport->addHeader ("Content-Type", "application/atom+xml; charset=UTF-8; type=feed");
+
+    LOG_DEBUG ("POST DATA:" << encodedContacts);
+
+    mTransport->request (GTransport::POST);
+
+    return mHasMoreContactsToStore;
+}
+
+bool
+GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
+{
+    FUNCTION_CALL_TRACE;
+
+    bool syncSuccess = false;
+    if (mSlowSync == true)
     {
-        QStringList guidList;
-        for (int i=0; i<mRemoteDeletedContacts.size (); i++)
-            guidList << mRemoteDeletedContacts.at (i)->id ();
-
-        QStringList localIdList = mContactBackend->localIds (guidList);
-
-        QMap<int, GContactsStatus> deletedStatusMap =
-                mContactBackend->deleteContacts (localIdList);
-        if (deletedStatusMap.size () > 0)
+        LOG_DEBUG ("@@@storeToLocal#SLOW SYNC");
+        // Since we request for all the deleted contacts, if
+        // slow sync is performed many times, even deleted contacts
+        // will appear in *remoteContacts. Filter them out while
+        // saving them to device
+        LOG_DEBUG ("TOTAL REMOTE CONTACTS:" << remoteContacts.size ());
+        if (remoteContacts.size () > 0)
         {
-        } else
+            QList<QContact> remoteQContacts = toQContacts (remoteContacts);
+            QMap<int, GContactsStatus> statusMap;
+
+            if (mContactBackend->addContacts (remoteQContacts, statusMap))
+            {
+                // TODO: Saving succeeded. Update sync results
+                syncSuccess = true;
+            } else
+            {
+                // TODO: Saving failed. Update sync results and probably stop sync
+                syncSuccess = false;
+            }
+        }
+    } else if (mSlowSync == false)
+    {
+        LOG_DEBUG ("@@@storeToLocal#FAST SYNC");
+        QList<GContactEntry*> remoteAddedContacts, remoteModifiedContacts, remoteDeletedContacts;
+        filterRemoteAddedModifiedDeletedContacts (remoteContacts,
+                                                  remoteAddedContacts,
+                                                  remoteModifiedContacts,
+                                                  remoteDeletedContacts);
+
+        resolveConflicts (remoteModifiedContacts, remoteDeletedContacts);
+
+        LOG_DEBUG ("###REMOTED ADDED=" << remoteAddedContacts.size ());
+        LOG_DEBUG ("###REMOTED MODIFIED=" << remoteModifiedContacts.size ());
+        LOG_DEBUG ("###REMOTED DELETED=" << remoteDeletedContacts.size ());
+        if (remoteAddedContacts.size () > 0)
         {
+            LOG_DEBUG ("***Adding " << remoteAddedContacts.size () << " contacts");
+            QList<QContact> addedContacts = toQContacts (remoteAddedContacts);
+            QMap<int, GContactsStatus> addedStatusMap;
+            if (mContactBackend->addContacts (addedContacts, addedStatusMap))
+                syncSuccess = true;
+            else
+                syncSuccess = false;
+        }
+
+        if (remoteModifiedContacts.size () > 0)
+        {
+            LOG_DEBUG ("***Modifying " << remoteModifiedContacts.size () << " contacts");
+            QList<QContact> modifiedContacts = toQContacts (remoteModifiedContacts);
+
+            QStringList modifiedIdsList;
+            for (int i=0; i<modifiedContacts.size (); i++)
+                modifiedIdsList << QString (modifiedContacts.at (i).localId ());
+
+            QMap<int, GContactsStatus> modifiedStatusMap =
+            mContactBackend->modifyContacts (modifiedContacts, modifiedIdsList);
+
+            if (modifiedStatusMap.size () > 0)
+            {
+                syncSuccess = true;
+            } else
+            {
+                syncSuccess = false;
+            }
+        }
+
+        if (remoteDeletedContacts.size () > 0)
+        {
+            LOG_DEBUG ("***Deleting " << remoteModifiedContacts.size () << " contacts");
+            QStringList guidList;
+            for (int i=0; i<remoteDeletedContacts.size (); i++)
+                guidList << remoteDeletedContacts.at (i)->guid ();
+
+            QStringList localIdList = mContactBackend->localIds (guidList);
+
+            QMap<int, GContactsStatus> deletedStatusMap =
+                    mContactBackend->deleteContacts (localIdList);
+            if (deletedStatusMap.size () > 0)
+            {
+                syncSuccess = true;
+            } else
+            {
+                syncSuccess = false;
+            }
         }
     }
+    return syncSuccess;
 }
 
 QList<QContact>
@@ -776,15 +1030,15 @@ GContactClient::toQContacts (const QList<GContactEntry*> gContactList)
 
     QList<QContact> qContactList;
 
-    for (int i=0; i<gContactList.size (); i++)
-    {
-        qContactList.append (gContactList.at (i)->qContact ());
-    }
+    foreach (GContactEntry* gContact, gContactList)
+        qContactList.append (gContact->qContact ());
+
     return qContactList;
 }
 
 void
-GContactClient::resolveConflicts ()
+GContactClient::resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
+                                  QList<GContactEntry*>& deletedRemoteContacts)
 {
     FUNCTION_CALL_TRACE;
 
@@ -795,4 +1049,98 @@ GContactClient::resolveConflicts ()
     //   be modified/deleted using the conflict resolution policy
     //   (server-wins, client-wins, add-new)
     // o Return the list
+
+    //QListIterator<GContactEntry*> iter (modifiedRemoteContacts);
+    QList<GContactEntry*>::iterator iter;
+    for (iter = modifiedRemoteContacts.begin (); iter != modifiedRemoteContacts.end (); ++iter)
+    {
+        GContactEntry* entry = *iter;
+        if (mModifiedContactIds.contains (entry->guid ()))
+        {
+            if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
+                modifiedRemoteContacts.erase (iter);
+            else
+                mModifiedContactIds.remove (entry->guid ());
+        }
+
+        if (mDeletedContactIds.contains (entry->guid ()))
+        {
+            if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
+                modifiedRemoteContacts.erase (iter);
+            else
+                mDeletedContactIds.remove (entry->guid ());
+        }
+    }
+
+    for (iter = deletedRemoteContacts.begin (); iter != deletedRemoteContacts.end (); ++iter)
+    {
+        GContactEntry* entry = *iter;
+        if (mModifiedContactIds.contains (entry->guid ()))
+        {
+            if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
+                deletedRemoteContacts.erase (iter);
+            else
+                mModifiedContactIds.remove (entry->guid ());
+        }
+
+        if (mDeletedContactIds.contains (entry->guid ()))
+        {
+            // If the entry is deleted both at the server and
+            // locally, then just remove it from the lists
+            // so that no further action need to be taken
+            deletedRemoteContacts.erase (iter);
+            mDeletedContactIds.remove (entry->guid ());
+        }
+    }
+}
+
+void
+GContactClient::updateIdsToLocal (const QList<GContactEntry*> responseEntries)
+{
+    FUNCTION_CALL_TRACE;
+
+    // Fetch only the ids from the contact entry list
+    QStringList contactIdList;
+    foreach (GContactEntry* entry, responseEntries)
+    {
+        // We will have to store the local id also to the server,
+        // so that a mapping can be done while storing the remote id to
+        // local
+        contactIdList << entry->localId ();
+    }
+    QList<QContact> qContacts = toQContacts (responseEntries);
+    mContactBackend->modifyContacts (qContacts, contactIdList);
+}
+
+/**
+  * The avatarUrl is of the format:
+  * file:////home/uesr/file.jpg#121460
+  * The fragment in the url is the contact local id, which is used
+  * to generate the PUT url
+  */
+void
+GContactClient::postAvatar (const QContactLocalId contactId)
+{
+    FUNCTION_CALL_TRACE;
+
+    mTransport->reset ();
+
+    QContact contact;
+    mContactBackend->getContact (contactId, contact);
+    QUrl url = contact.detail<QContactAvatar> ().imageUrl ();
+    qDebug () << "^^^^URL:" << url.toString ();
+    QString imageUrl = contact.detail<QContactAvatar> ().imageUrl ().toString ();
+    QString guid = contact.detail<QContactGuid> ().guid ();
+    QFile file (imageUrl);
+    file.open (QIODevice::ReadOnly);
+    mTransport->setData (file.readAll ());
+    file.close ();
+
+    mTransport->setUrl (mRemoteURI + "/photos/media/default/" + guid);
+    mTransport->setGDataVersionHeader ();
+    mTransport->setAuthToken (mGoogleAuth->token ());
+    mTransport->addHeader ("Content-Type", "image/*");
+    mTransport->addHeader ("If-Match", "*"); // We just override other clients updates
+
+    mTransport->request (GTransport::PUT);
 }

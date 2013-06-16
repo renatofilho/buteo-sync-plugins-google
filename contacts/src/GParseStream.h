@@ -29,23 +29,20 @@
 #include <QXmlStreamReader>
 #include <QMap>
 
-#include "GAtom.h"
+class GAtom;
+class GContactEntry;
 
 class GParseStream : public QObject
 {
     Q_OBJECT
 public:
-    explicit GParseStream (QObject* parent = 0);
+    explicit GParseStream (bool response, QObject* parent = 0);
 
     explicit GParseStream (QByteArray xmlStream, QObject *parent = 0);
 
     ~GParseStream ();
 
-    void setParseData (const QByteArray data);
-
-    void parse();
-
-    GAtom* atom();
+    GAtom* parse(const QByteArray xmlBuffer);
 
 signals:
 
@@ -55,19 +52,30 @@ public slots:
 
 private:
 
+    void initAtomFunctionMap ();
+
+    void initResponseFunctionMap ();
+
     void initFunctionMap();
 
     // Atom feed elements handler methods
-    void handleAtomUpdated();
-    void handleAtomCategory();
-    void handleAtomAuthor();
-    void handleAtomOpenSearch();
-    void handleAtomEntry();
+    void handleAtomUpdated ();
+    void handleAtomCategory ();
+    void handleAtomAuthor ();
+    void handleAtomOpenSearch ();
+    void handleAtomEntry ();
+    void handleAtomLink ();
+
+    // Following are for the response received from the server
+    // incase of failures
+    void handleEntryBatchStatus ();
+    void handleEntryBatchOperation ();
 
     // gContact:xxx schema handler methods
     void handleEntryContent();
     void handleEntryId();
     void handleEntryTitle();
+    void handleEntryLink ();
     void handleEntryBillingInformation();
     void handleEntryBirthday();
     void handleEntryCalendarLink();

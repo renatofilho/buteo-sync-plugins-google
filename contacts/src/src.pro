@@ -13,7 +13,7 @@ TEMPLATE = lib
 
 #$$PKG_CONFIG_PATH = $$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/
 
-CONFIG += link_pkgconfig plugin mobility debug
+CONFIG += link_pkgconfig plugin mobility debug console
 PKGCONFIG += buteosyncfw
 
 MOBILITY += contacts
@@ -21,6 +21,8 @@ MOBILITY += contacts
 VER_MAJ = 1
 VER_MIN = 0
 VER_PAT = 0
+
+#DEFINES += CUSTOM_DETAIL_IS_SUPPORTED
 
 QMAKE_CXXFLAGS = -Wall \
     -g \
@@ -36,7 +38,8 @@ SOURCES += GContactClient.cpp \
     GParseStream.cpp \
     GAtom.cpp \
     GContactsBackend.cpp \
-    GContactCustomDetail.cpp
+    GContactCustomDetail.cpp \
+    GWriteStream.cpp
 
 HEADERS += GContactClient.h\
         buteo-gcontact-plugin_global.h \
@@ -47,7 +50,9 @@ HEADERS += GContactClient.h\
     GAtom.h \
     GContactsBackend.h \
     GContactDetail.h \
-    GContactCustomDetail.h
+    GContactCustomDetail.h \
+    GWriteStream.h \
+    GConfig.h
 
 target.path = /usr/lib/buteo-plugins
 

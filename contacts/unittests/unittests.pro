@@ -1,7 +1,7 @@
 TEMPLATE = app
 
 QT += network
-CONFIG += qtestlib mobility debug link_pkgconfig
+CONFIG += qtestlib mobility debug link_pkgconfig console
 MOBILITY += contacts
 
 PKGCONFIG += buteosyncfw
@@ -17,14 +17,16 @@ SOURCES +=  \
     GParseStreamTest.cpp \
     GTransportTest.cpp \
     GContactClientTest.cpp \
-    GContactsBackendTest.cpp
+    GContactsBackendTest.cpp \
+    GWriteStreamTest.cpp
 
 HEADERS += \
     GAtomTest.h \
     GParseStreamTest.h \
     GTransportTest.h \
     GContactClientTest.h \
-    GContactsBackendTest.h
+    GContactsBackendTest.h \
+    GWriteStreamTest.h
 
 QMAKE_CXXFLAGS = -Wall \
     -Wno-cast-align \

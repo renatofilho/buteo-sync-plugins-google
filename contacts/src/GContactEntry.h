@@ -27,16 +27,25 @@
 #include <QObject>
 #include <QContactManager>
 
+#include "GAtom.h"
+
 QTM_USE_NAMESPACE
 
 class GContactEntry
 {
 public:
 
-    explicit GContactEntry (bool generateXmlFlag);
+    explicit GContactEntry ();
 
-    void setId (const QString id);
-    QString id ();
+    void setUpdated (QDateTime updated);
+
+    void setGuid (const QString id);
+
+    QString guid ();
+
+    void setLocalId (const QString localId);
+
+    QString localId ();
 
     void setEtag (const QString etag);
 
@@ -162,17 +171,51 @@ public:
 
     void setSyncTarget ();
 
+    void setBatchResponseStatusCode (const int code);
+
+    void setBatchResponseReason (const QString reason);
+
+    void setBatchResponseReasonText (const QString reasonText);
+
+    void setBatchResponseOpsType (const QString opsType);
+
     QContact qContact ();
+
+    void setError (const bool errorFlag);
+
+    bool error ();
+
+    void setHasPhoto (const bool hasPhotoFlag);
+
+    bool hasPhoto ();
+
+    void setPhotoUrl (const QString photoUrl);
+
+    QString photoUrl ();
 
 private:
 
-    bool mGenerateXmlFlag;
-
     QString mId;
+
+    QString mLocalId;
 
     QContact mQContact;
 
     bool mDeleted;
+
+    bool mError;
+
+    int mResponseCode;
+
+    QString mReason;
+
+    QString mReasonText;
+
+    QString mOpsType;
+
+    bool mHasPhoto;
+
+    QString mPhotoUrl;
 };
 
 #endif // GCONTACT_H

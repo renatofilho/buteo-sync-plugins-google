@@ -42,6 +42,13 @@ GContactsBackendTest::testAllLocalContactIds ()
 }
 
 void
-GContactsBackendTest::testChangedLocalContactIds ()
+GContactsBackendTest::testLocalIdsGivenGuids ()
 {
+    QStringList guids;
+    guids << "4bd9135e89e4e925" << "6ba8cd628dea9945";
+    GContactsBackend cb;
+    QStringList localIds = cb.localIds (guids);
+    foreach (QString localId, localIds) {
+        std::cout << localId.toStdString () << "\n";
+    }
 }

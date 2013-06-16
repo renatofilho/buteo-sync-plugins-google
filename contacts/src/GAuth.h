@@ -61,9 +61,9 @@ private slots:
     void deviceCodeResponse();
 
     void tokenResponse();
-    
+
 public slots:
-    
+
 };
 
 #endif // GAUTH_H

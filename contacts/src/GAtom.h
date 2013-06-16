@@ -29,35 +29,15 @@
 #include <QMetaEnum>
 #include <QMap>
 #include <QList>
+#include <QXmlStreamWriter>
 
-#include "GContactEntry.h"
+class GContactEntry;
 
 class GAtom
 {
 
 public:
-    GAtom(bool generateXmlFlag);
-
-    typedef enum
-    {
-        feed,
-        id,
-        updated,
-        category,
-        title,
-        link,
-        author,
-        contributor,
-        generator,
-        logo,
-        icon,
-        rights,
-        subtitel,
-        entry,
-        totalResults,
-        startIndex,
-        itemsPerPage
-    } GAtomFeed;
+    GAtom ();
 
     typedef enum
     {
@@ -66,50 +46,51 @@ public:
         xhtml
     } TYPE;
 
-    void setGenerateXml(bool flag);
-
     void setAuthorName(QString authorName);
-    QString getAuthorName();
+    QString authorName();
 
     void setAuthorEmail(QString authorEmail);
-    QString getAuthorEmail();
+    QString authorEmail();
 
     void setId(const QString id);
-    QString getId();
+    QString id();
 
     void setUpdated(QString updated);
-    QString getUpdated();
+    QString updated();
 
-    void setCategorySchema (QString schema = "http://schemas.google.com/g/2005#kind");
-    QString getCategorySchema();
-
-    void setCategoryTerm (QString term = "http://schemas.google.com/contact/2008#contact");
-    QString getCategoryTerm();
+    void setCategory (const QString schema = "http://schemas.google.com/g/2005#kind",
+                      const QString term = "http://schemas.google.com/contact/2008#contact");
 
     void setTitle(QString title);
-    QString getTitle();
+    QString title();
+
+    void setContent (const QString note, const QString type="text");
 
     void setGenerator(QString name = "Contacts",
                       QString version = "1.0",
                       QString uri = "http://sailfish.org");
-    QString getGeneratorName();
-    QString getGeneratorVersion();
-    QString getGeneratorUri();
+    QString generatorName();
+    QString generatorVersion();
+    QString generatorUri();
 
     void setTotalResults(int totalResults);
-    int getTotalResults();
+    int totalResults();
 
     void setStartIndex(int startIndex);
-    int getStartIndex();
+    int startIndex();
 
     void setItemsPerPage(int itemsPerPage);
-    int getItemsPerPage();
-
-    QString toString();
+    int itemsPerPage();
 
     void addEntry(GContactEntry* entry);
 
     QList<GContactEntry*> entries();
+
+    void setNextEntriesUrl (const QString nextUrl);
+
+    const QString nextEntriesUrl ();
+
+    const QList<GContactEntry*> responseErrorEntries ();
 
 private:
 
@@ -155,7 +136,7 @@ private:
 
     QList<GContactEntry*> mContactList;
 
-    bool mGenerateXml;
+    QString mNextEntriesUrl;
 };
 
 #endif // ATOM_H

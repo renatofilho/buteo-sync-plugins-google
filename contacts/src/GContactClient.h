@@ -26,16 +26,26 @@
 
 #include "buteo-gcontact-plugin_global.h"
 #include <ClientPlugin.h>
-#include "GTransport.h"
-#include "GParseStream.h"
-#include "GContactsBackend.h"
-#include "GAuth.h"
 
+#include <QNetworkReply>
+#include <QContact>
 #include <QList>
 #include <QPair>
 
 #include <buteosyncfw/SyncResults.h>
 #include <buteosyncfw/SyncCommonDefs.h>
+
+#include "GConfig.h"
+#include "GTransport.h"
+
+QTM_USE_NAMESPACE
+
+class GContactEntry;
+class GTransport;
+class GContactsBackend;
+class GParseStream;
+class GAuth;
+class GWriteStream;
 
 class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : Buteo::ClientPlugin
 {
@@ -106,7 +116,7 @@ protected slots:
 
     void networkRequestFinished ();
 
-    void networkError (QNetworkReply::NetworkError error);
+    void networkError (int errorCode);
 
     bool start ();
 
@@ -130,15 +140,9 @@ private:
                            Sync::TransferDatabase database,
                            QString modifiedDatabase);
 
-    /**
-     * \brief Subroutine for http transport initiation
-     * @return True is success, false if not
-     */
-    bool initHttpTransport();
-
     void generateResults( bool aSuccessful );
 
-    void fetchRemoteContacts ();
+    void fetchRemoteContacts (const int startIndex);
 
     void changedLocalContactIds ();
 
@@ -152,29 +156,35 @@ private:
      */
     const QDateTime lastSyncTime ();
 
-    void remoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts);
+    void filterRemoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts,
+                                             QList<GContactEntry*>& remoteAddedContacts,
+                                             QList<GContactEntry*>& remoteModifiedContacts,
+                                             QList<GContactEntry*>& remoteDeletedContacts);
 
-    void storeToRemote (QList<QContact> deviceContacts);
+    bool storeToRemote ();
 
-    void storeToLocal (QList<QContact> serverContacts);
-
-    void storeToLocal ();
+    bool storeToLocal (const QList<GContactEntry*> remoteContacts);
 
     QList<QContact> toQContacts (const QList<GContactEntry*> gContactList);
 
-    void resolveConflicts ();
+    void resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
+                           QList<GContactEntry*>& deletedRemoteContacts);
 
-    GAuth*                     mGoogleAuth;
+    void updateIdsToLocal (const QList<GContactEntry*> responseEntries);
+
+    void postAvatar (const QContactLocalId avatarUrl);
+
+    GAuth*                      mGoogleAuth;
 
     bool                        mSlowSync;
+
+    bool                        mHasMoreContactsToStore;
 
     Buteo::SyncProfile::SyncDirection mSyncDirection;
 
     Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;
 
     GContactsBackend*           mContactBackend;
-
-    GParseStream*               mParser;
 
     GTransport*                 mTransport;
 
@@ -184,21 +194,21 @@ private:
 
     QMap<QString, Buteo::DatabaseResults> mItemResults;
 
-    QList<QContactLocalId>                  mAllLocalContacts;
-    QList<QPair<QContactLocalId, QString> > mLocalAddedContacts;
-    QList<QPair<QContactLocalId, QString> > mLocalModifiedContacts;
-    QList<QPair<QContactLocalId, QString> > mLocalDeletedContacts;
+    QList<QContactLocalId>          mAllLocalContactIds;
 
-    QList<GContactEntry*> mRemoteAddedContacts;
-    QList<GContactEntry*> mRemoteModifiedContacts;
-    QList<GContactEntry*> mRemoteDeletedContacts;
+    QHash<QString, QContactLocalId> mAddedContactIds;
+    QHash<QString, QContactLocalId> mModifiedContactIds;
+    QHash<QString, QContactLocalId> mDeletedContactIds;
 
-    enum TRANS_TYPE
-    {
-        ADD = 0,
-        MODIFY,
-        DELETE
-    };
+    int mStartIndex;
+
+    QString mRemoteURI;
+
+    Sync::SyncStatus mSyncStatus;
+
+    QList<QContactLocalId> mContactsWithAvatars;
+
+    bool mHasPhotosToStore;
 
 #ifndef QT_NO_DEBUG
     friend class GContactClientTest;

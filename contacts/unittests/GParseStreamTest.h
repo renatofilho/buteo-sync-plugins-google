@@ -25,7 +25,9 @@
 #define PARSESTREAMTEST_H
 
 #include <QObject>
-#include "GParseStream.h"
+
+class GParseStream;
+class GAtom;
 
 class GParseStreamTest : public QObject
 {

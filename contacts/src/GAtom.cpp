@@ -21,22 +21,13 @@
  *
  */
 
+#include "GContactEntry.h"
 #include "GAtom.h"
 #include <LogMacros.h>
 
-GAtom::GAtom(bool generateXmlFlag) :
-    mGenerateXml(generateXmlFlag)
+GAtom::GAtom()
 {
     FUNCTION_CALL_TRACE;
-
-}
-
-void
-GAtom::setGenerateXml (bool flag)
-{
-    FUNCTION_CALL_TRACE;
-
-    mGenerateXml = flag;
 }
 
 void
@@ -45,12 +36,10 @@ GAtom::setAuthorEmail (QString authorEmail)
     FUNCTION_CALL_TRACE;
 
     mAuthorEmail = authorEmail;
-    if (mGenerateXml) {}
-        // TODO: Write to XML
 }
 
 QString
-GAtom::getAuthorEmail()
+GAtom::authorEmail()
 {
     return mAuthorEmail;
 }
@@ -62,7 +51,7 @@ GAtom::setAuthorName (QString authorName)
 }
 
 QString
-GAtom::getAuthorName()
+GAtom::authorName()
 {
     return mAuthorName;
 }
@@ -74,7 +63,7 @@ GAtom::setId(const QString id)
 }
 
 QString
-GAtom::getId()
+GAtom::id()
 {
     return mId;
 }
@@ -86,32 +75,14 @@ GAtom::setUpdated(QString updated)
 }
 
 QString
-GAtom::getUpdated()
+GAtom::updated()
 {
     return mUpdated;
 }
 
 void
-GAtom::setCategorySchema (QString schema)
+GAtom::setCategory (const QString schema, const QString term)
 {
-    mSchema = schema;
-}
-
-QString
-GAtom::getCategorySchema()
-{
-    return mCategory;
-}
-
-void
-GAtom::setCategoryTerm (QString term)
-{
-}
-
-QString
-GAtom::getCategoryTerm()
-{
-    return mCategoryTerm;
 }
 
 void
@@ -121,7 +92,7 @@ GAtom::setTitle(QString title)
 }
 
 QString
-GAtom::getTitle()
+GAtom::title()
 {
     return mTitle;
 }
@@ -136,20 +107,25 @@ GAtom::setGenerator(QString name,
     mGeneratorUri = uri;
 }
 
+void
+GAtom::setContent (const QString note, const QString type)
+{
+}
+
 QString
-GAtom::getGeneratorName()
+GAtom::generatorName()
 {
     return mGeneratorName;
 }
 
 QString
-GAtom::getGeneratorVersion()
+GAtom::generatorVersion()
 {
     return mGeneratorVersion;
 }
 
 QString
-GAtom::getGeneratorUri()
+GAtom::generatorUri()
 {
     return mGeneratorUri;
 }
@@ -161,7 +137,7 @@ GAtom::setTotalResults(int totalResults)
 }
 
 int
-GAtom::getTotalResults()
+GAtom::totalResults()
 {
     return mTotalResults;
 }
@@ -173,7 +149,7 @@ GAtom::setStartIndex(int startIndex)
 }
 
 int
-GAtom::getStartIndex()
+GAtom::startIndex()
 {
     return mStartIndex;
 }
@@ -185,15 +161,9 @@ GAtom::setItemsPerPage(int itemsPerPage)
 }
 
 int
-GAtom::getItemsPerPage()
+GAtom::itemsPerPage()
 {
     return mItemsPerPage;
-}
-
-QString
-GAtom::toString()
-{
-    return "";
 }
 
 void
@@ -206,4 +176,28 @@ QList<GContactEntry*>
 GAtom::entries()
 {
     return mContactList;
+}
+
+void
+GAtom::setNextEntriesUrl (const QString nextUrl)
+{
+    mNextEntriesUrl = nextUrl;
+}
+
+const QString
+GAtom::nextEntriesUrl ()
+{
+    return mNextEntriesUrl;
+}
+
+const QList<GContactEntry*>
+GAtom::responseErrorEntries ()
+{
+    QList<GContactEntry*> errorEntries;
+    foreach (GContactEntry* entry, mContactList)
+    {
+        if (entry->error () == true)
+            errorEntries.append (entry);
+    }
+    return errorEntries;
 }
