@@ -9,8 +9,10 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: buteo-syncfw-devel
-BuildRequires: qt4-devel, qtcontacts-sqlite
-BuildRequires: libqtcontacts-devel
+BuildRequires: pkgconfig(QtCore)
+BuildRequires: pkgconfig(QJson)
+BuildRequires: pkgconfig(QtContacts)
+BuildRequires: qtcontacts-sqlite
 
 %description
 %{summary}.
@@ -52,15 +54,9 @@ Requires: %{name} = %{version}-%{release}
 
 
 %build
-qmake
+%qmake
 make %{?_smp_mflags}
 
 
 %install
-rm -rf %{buildroot}
-
 make INSTALL_ROOT=%{buildroot} install
-
-
-%clean
-rm -rf %{buildroot}
