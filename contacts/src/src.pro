@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += network sql xml
+QT       += network sql xml contacts
 
 QT       -= gui
 
@@ -17,6 +17,14 @@ CONFIG += link_pkgconfig plugin mobility debug console
 PKGCONFIG += buteosyncfw
 
 MOBILITY += contacts
+
+LIBS += -lsignon-qt \
+        -laccounts-qt
+
+INCLUDEPATH += /usr/include/signon-qt \
+               /usr/include/accounts-qt \
+               /usr/include/signon-plugins \
+               /usr/include/signon-qt/SignOn
 
 VER_MAJ = 1
 VER_MIN = 0

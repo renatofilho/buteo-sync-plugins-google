@@ -29,6 +29,17 @@
 
 #include <QTextStream>
 #include <QFile>
+#include <QStringList>
+#include <QDebug>
+
+#include <Accounts/Manager>
+
+#include <oauth2data.h>
+
+#include <buteosyncfw/ProfileEngineDefs.h>
+
+using namespace Accounts;
+using namespace SignOn;
 
 /* Values obtained after registering with Google */
 const QString CODE_TAG            	("code");
@@ -40,37 +51,117 @@ const QString CLIENT_SECRET_TAG		("client_secret");
 const QString CLIENT_SECRET			("cE6huV6DyPQCKXo5AOg5Balm");
 const QString GRANT_TYPE_TAG		("grant_type");
 const QString GRANT_TYPE			("http://oauth.net/grant_type/device/1.0");
-const QString AUTH_URL				("https://accounts.google.com/o/oauth2/auth");
-const QString TOKEN_URI				("https://accounts.google.com/o/oauth2/token");
+const QString AUTH_URL				("o/oauth2/auth");
+const QString TOKEN_URI				("o/oauth2/token");
 const QString OAUTH_DEVICE_CODE_URL ("https://accounts.google.com/o/oauth2/device/code");
 const QString USER_INFO_PROFILE		("https://www.googleapis.com/auth/userinfo.profile");
 const QString AND					("&");
 const QString EQUALS				("=");
+const QString REDIRECT_URI          ("http://localhost/login_success.html");
+const QString HOST                  ("accounts.google.com");
 
-GAuth::GAuth(QObject *parent) :
+GAuth::GAuth(const Buteo::SyncProfile &aProfile, QObject *parent) :
     QObject(parent)
 {
+    m_syncProfile = aProfile.clone();
+
+    QStringList accountList = aProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
+    QString accountId = accountList.first();
+
+    Manager *manager = new Manager();
+    m_account = manager->account(accountId.toInt());
+    if (m_account == NULL) {
+        qDebug() << "Account is not created... Cannot authenticate";
+        return;
+    }
+
+    qint32 cId = m_account->credentialsId();
+    if (cId == 0) {
+        QMap<MethodName,MechanismsList> methods;
+        methods.insert(QLatin1String("oauth2"), QStringList()  << QString::fromLatin1("web_server")
+                                                               << QString::fromLatin1("user_agent"));
+        IdentityInfo *info = new IdentityInfo(m_syncProfile->displayname(), "", methods);
+        info->setRealms(QStringList() << HOST);
+        info->setType(IdentityInfo::Application);
+
+        m_identity = Identity::newIdentity(*info);
+
+        connect(m_identity, SIGNAL(credentialsStored(const quint32)),
+                this, SLOT(credentialsStored(const quint32)));
+        connect(m_identity, SIGNAL(error(const SignOn::Error &)),
+                this, SLOT(error(const SignOn::Error &)));
+
+        m_identity->storeCredentials();
+    } else {
+        m_identity = Identity::existingIdentity(cId);
+    }
+
+    m_session = m_identity->createSession(QLatin1String("oauth2"));
+
+    connect(m_session, SIGNAL(response(const SignOn::SessionData &)),
+            this, SLOT(sessionResponse(const SignOn::SessionData &)));
+
+    connect(m_session, SIGNAL(error(const SignOn::Error &)),
+            this, SLOT(error(const SignOn::Error &)));
+
+    OAuth2PluginNS::OAuth2PluginData data;
+    data.setClientId(CLIENT_ID);
+    data.setClientSecret(CLIENT_SECRET);
+    data.setHost(HOST);
+    data.setAuthPath(AUTH_URL);
+    data.setTokenPath(TOKEN_URI);
+    data.setRedirectUri(REDIRECT_URI);
+    data.setResponseType(QStringList() << CODE_TAG);
+    data.setScope(QStringList() << CONTACTS_SCOPE_URL);
+
+    m_session->process(data , QLatin1String("web_server"));
+}
+
+void GAuth::sessionResponse(const SessionData &sessionData) {
+    OAuth2PluginNS::OAuth2PluginTokenData response = sessionData.data<OAuth2PluginNS::OAuth2PluginTokenData>();
+    m_token = response.AccessToken();
+    qDebug() << "Authenticated !!!";
 }
 
 const QString GAuth::token()
 {
-    // FIXME: Read the token from file until accounts&sso
-    // integration is done
-    QFile file ("/tmp/access_token.txt");
-    file.open(QIODevice::ReadOnly | QIODevice::Text);
-    QTextStream in (&file);
-    iToken = in.readAll ();
-    if (iToken.endsWith ('\n'))
-        iToken.chop (1);
-    file.close ();
-    LOG_DEBUG("Token:" << iToken);
-    return iToken;
+    return m_token;
+//    // FIXME: Read the token from file until accounts&sso
+//    // integration is done
+//    QFile file ("/tmp/access_token.txt");
+//    file.open(QIODevice::ReadOnly | QIODevice::Text);
+//    QTextStream in (&file);
+//    iToken = in.readAll ();
+//    if (iToken.endsWith ('\n'))
+//        iToken.chop (1);
+//    file.close ();
+//    LOG_DEBUG("Token:" << iToken);
+//    return iToken;
 }
 
 void GAuth::authenticate()
 {
-    deviceAuth();
-    getToken();
+    OAuth2PluginNS::OAuth2PluginData data;
+    data.setClientId(CLIENT_ID);
+    data.setClientSecret(CLIENT_SECRET);
+    data.setHost(HOST);
+    data.setAuthPath(AUTH_URL);
+    data.setTokenPath(TOKEN_URI);
+    data.setRedirectUri(REDIRECT_URI);
+    data.setResponseType(QStringList() << CODE_TAG);
+    data.setScope(QStringList() << CONTACTS_SCOPE_URL);
+
+    m_session->challenge(data, QLatin1String("web_server"));
+//    deviceAuth();
+//    getToken();
+}
+
+void GAuth::credentialsStored(const qint32 id) {
+    m_account->setCredentialsId(id);
+}
+
+void GAuth::error(const SignOn::Error & error) {
+    qDebug() << error.message();
 }
 
 void GAuth::getToken()

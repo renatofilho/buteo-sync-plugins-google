@@ -442,7 +442,7 @@ GContactClient::initConfig ()
 
     LOG_DEBUG("Initiating config...");
 
-    mGoogleAuth = new GAuth ();
+    mGoogleAuth = new GAuth (iProfile);
 
     mSyncDirection = iProfile.syncDirection();
 
@@ -762,7 +762,8 @@ GContactClient::networkError (int errorCode)
     case 400:
         // Bad request. Better to bail out, since it could be a problem with the
         // data format of the request/response
-        mSyncStatus = Sync::SYNC_BAD_REQUEST;
+//        mSyncStatus = Sync::SYNC_BAD_REQUEST;
+        mSyncStatus = Sync::SYNC_ERROR;
         break;
     case 401:
         mSyncStatus = Sync::SYNC_AUTHENTICATION_FAILURE;
@@ -775,7 +776,8 @@ GContactClient::networkError (int errorCode)
     case 503:
     case 504:
         // Server failures
-        mSyncStatus = Sync::SYNC_SERVER_FAILURE;
+//        mSyncStatus = Sync::SYNC_SERVER_FAILURE;
+        mSyncStatus = Sync::SYNC_ERROR;
         break;
     default:
         break;

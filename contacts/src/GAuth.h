@@ -27,11 +27,19 @@
 #include <QObject>
 #include "GTransport.h"
 
+#include <buteosyncfw/SyncCommonDefs.h>
+#include <SyncCommonDefs.h>
+#include <SyncProfile.h>
+#include <SignOn/AuthService>
+#include <SignOn/Identity>
+
+#include <Accounts/Account>
+
 class GAuth : public QObject
 {
     Q_OBJECT
 public:
-    explicit GAuth(QObject *parent = 0);
+    explicit GAuth(const Buteo::SyncProfile &aProfile, QObject *parent = 0);
 
     void authenticate();
 
@@ -62,8 +70,21 @@ private slots:
 
     void tokenResponse();
 
+    void credentialsStored(const qint32);
+
+    void error(const SignOn::Error &);
+
+    void sessionResponse(const SignOn::SessionData &);
+
 public slots:
 
+private:
+    SignOn::Identity    *m_identity;
+    SignOn::AuthSession *m_session;
+    Buteo::SyncProfile  *m_syncProfile;
+    Accounts::Account   *m_account;
+
+    QString m_token;
 };
 
 #endif // GAUTH_H
