@@ -120,6 +120,8 @@ protected slots:
 
     bool start ();
 
+    void authenticationError();
+
 private:
 
     bool initConfig ();

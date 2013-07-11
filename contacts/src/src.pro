@@ -70,4 +70,7 @@ sync.files = xmls/sync/*
 client.path = /etc/buteo/profiles/client
 client.files = xmls/client/*
 
-INSTALLS += target sync client
+services.path = /usr/share/accounts/services
+services.files = xmls/services/*
+
+INSTALLS += target sync client services

@@ -133,7 +133,7 @@ GContactClient::startSync()
     connect(this, SIGNAL(syncFinished(Sync::SyncStatus)),
             this, SLOT(receiveSyncFinished(Sync::SyncStatus)));
 
-    QTimer::singleShot (0, this, SLOT (start ()));
+    mGoogleAuth->authenticate();
     return true;
 }
 
@@ -443,12 +443,18 @@ GContactClient::initConfig ()
     LOG_DEBUG("Initiating config...");
 
     mGoogleAuth = new GAuth (iProfile);
+    connect(mGoogleAuth, SIGNAL(success()), this, SLOT(start()));
+    connect(mGoogleAuth, SIGNAL(failed()), this, SLOT(authenticationError()));
 
     mSyncDirection = iProfile.syncDirection();
 
     mConflictResPolicy = iProfile.conflictResolutionPolicy();
 
     return true;
+}
+
+void GContactClient::authenticationError() {
+    emit syncFinished (Sync::SYNC_AUTHENTICATION_FAILURE);
 }
 
 void

@@ -45,6 +45,10 @@ public:
 
     const QString token();
 
+signals:
+    void success();
+    void failed();
+
 private:
     void getToken();
 
@@ -64,19 +68,13 @@ private:
 
     QString iToken;
 
-private slots:
+public slots:
 
-    void deviceCodeResponse();
-
-    void tokenResponse();
-
-    void credentialsStored(const qint32);
+    void credentialsStored(const quint32);
 
     void error(const SignOn::Error &);
 
     void sessionResponse(const SignOn::SessionData &);
-
-public slots:
 
 private:
     SignOn::Identity    *m_identity;
