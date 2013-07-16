@@ -39,11 +39,13 @@ class GAuth : public QObject
 {
     Q_OBJECT
 public:
-    explicit GAuth(const Buteo::SyncProfile &aProfile, QObject *parent = 0);
+    explicit GAuth(const quint32 accountId, const QString scope, QObject *parent = 0);
 
     void authenticate();
 
     const QString token();
+
+    bool init();
 
 signals:
     void success();
@@ -77,12 +79,11 @@ public slots:
     void sessionResponse(const SignOn::SessionData &);
 
 private:
-    SignOn::Identity    *m_identity;
-    SignOn::AuthSession *m_session;
-    Buteo::SyncProfile  *m_syncProfile;
-    Accounts::Account   *m_account;
-
-    QString m_token;
+    SignOn::Identity    *mIdentity;
+    SignOn::AuthSession *mSession;
+    Accounts::Account   *mAccount;
+    QString mToken;
+    QString mScope;
 };
 
 #endif // GAUTH_H

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += network sql xml contacts
+QT       += network sql xml
 
 QT       -= gui
 
@@ -14,17 +14,9 @@ TEMPLATE = lib
 #$$PKG_CONFIG_PATH = $$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/
 
 CONFIG += link_pkgconfig plugin mobility debug console
-PKGCONFIG += buteosyncfw
+PKGCONFIG += buteosyncfw signon-plugins libsignon-qt accounts-qt
 
 MOBILITY += contacts
-
-LIBS += -lsignon-qt \
-        -laccounts-qt
-
-INCLUDEPATH += /usr/include/signon-qt \
-               /usr/include/accounts-qt \
-               /usr/include/signon-plugins \
-               /usr/include/signon-qt/SignOn
 
 VER_MAJ = 1
 VER_MIN = 0
@@ -70,7 +62,4 @@ sync.files = xmls/sync/*
 client.path = /etc/buteo/profiles/client
 client.files = xmls/client/*
 
-services.path = /usr/share/accounts/services
-services.files = xmls/services/*
-
-INSTALLS += target sync client services
+INSTALLS += target sync client

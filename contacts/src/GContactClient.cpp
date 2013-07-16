@@ -442,7 +442,27 @@ GContactClient::initConfig ()
 
     LOG_DEBUG("Initiating config...");
 
-    mGoogleAuth = new GAuth (iProfile);
+    quint32 accountId = 0;
+    QString scope = "";
+    QStringList accountList = iProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
+    QStringList scopeList   = iProfile.keyValues(Buteo::KEY_REMOTE_DATABASE);
+    if (!accountList.isEmpty()) {
+        QString aId = accountList.first();
+        if (aId != NULL) {
+            accountId = aId.toInt();
+        }
+    } else {
+        return false;
+    }
+
+    if (!scopeList.isEmpty()) {
+        scope = scopeList.first();
+    }
+    mGoogleAuth = new GAuth (accountId, scope);
+    if (!mGoogleAuth->init()) {
+        return false;
+    }
+
     connect(mGoogleAuth, SIGNAL(success()), this, SLOT(start()));
     connect(mGoogleAuth, SIGNAL(failed()), this, SLOT(authenticationError()));
 

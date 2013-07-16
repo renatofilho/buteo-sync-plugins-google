@@ -23,7 +23,6 @@
 
 #include "GAuth.h"
 #include "GTransport.h"
-#include <qjson/parser.h>
 #include <QVariantMap>
 #include <LogMacros.h>
 
@@ -56,102 +55,102 @@ const QString AUTH                  ("auth");
 const QString AUTH_METHOD           ("method");
 const QString MECHANISM             ("mechanism");
 
-GAuth::GAuth(const Buteo::SyncProfile &aProfile, QObject *parent) :
+GAuth::GAuth(const quint32 accountId, const QString scope, QObject *parent) :
     QObject(parent)
 {
-    m_syncProfile = aProfile.clone();
-    quint32 accountId = 1;
-    QStringList accountList = aProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
-    if (!accountList.isEmpty()) {
-        QString aId = accountList.first();
-        if (aId != NULL) {
-            accountId = aId.toInt();
-        }
-    }
-
     Manager *manager = new Manager();
-    m_account = manager->account(accountId);
-    if (m_account == NULL) {
-        qDebug() << "Account is not created... Cannot authenticate";
-        return;
+    mAccount = manager->account(accountId);
+    mScope = scope;
+}
+
+bool GAuth::init() {
+    if (mAccount == NULL) {
+        LOG_DEBUG("Account is not created... Cannot authenticate");
+        return false;
     }
 
     QVariant val = QVariant::String;
-    m_account->value(AUTH + SLASH + AUTH_METHOD, val);
+    mAccount->value(AUTH + SLASH + AUTH_METHOD, val);
     QString method = val.toString();
-    m_account->value(AUTH + SLASH + MECHANISM, val);
+    mAccount->value(AUTH + SLASH + MECHANISM, val);
     QString mechanism = val.toString();
 
-    qint32 cId = m_account->credentialsId();
-    qDebug() << "Got Credentials ID = " << cId;
+    qint32 cId = mAccount->credentialsId();
+    //LOG_DEBUG("Got Credentials ID = " + cId);
     if (cId == 0) {
         QMap<MethodName,MechanismsList> methods;
         methods.insert(method, QStringList()  << mechanism);
-        IdentityInfo *info = new IdentityInfo(m_syncProfile->displayname(), "", methods);
+        IdentityInfo *info = new IdentityInfo(mAccount->displayName(), "", methods);
         info->setRealms(QStringList() << HOST);
         info->setType(IdentityInfo::Application);
 
-        m_identity = Identity::newIdentity(*info);
-
-        connect(m_identity, SIGNAL(credentialsStored(const quint32)),
+        mIdentity = Identity::newIdentity(*info);
+        connect(mIdentity, SIGNAL(credentialsStored(const quint32)),
                 this, SLOT(credentialsStored(const quint32)));
-        connect(m_identity, SIGNAL(error(const SignOn::Error &)),
+        connect(mIdentity, SIGNAL(error(const SignOn::Error &)),
                 this, SLOT(error(const SignOn::Error &)));
 
-        m_identity->storeCredentials();
+        mIdentity->storeCredentials();
     } else {
-        m_identity = Identity::existingIdentity(cId);
+        mIdentity = Identity::existingIdentity(cId);
     }
 
-    m_session = m_identity->createSession(QLatin1String("oauth2"));
+    mSession = mIdentity->createSession(QLatin1String("oauth2"));
 
-    connect(m_session, SIGNAL(response(const SignOn::SessionData &)),
+    connect(mSession, SIGNAL(response(const SignOn::SessionData &)),
             this, SLOT(sessionResponse(const SignOn::SessionData &)));
 
-    connect(m_session, SIGNAL(error(const SignOn::Error &)),
+    connect(mSession, SIGNAL(error(const SignOn::Error &)),
             this, SLOT(error(const SignOn::Error &)));
+
+    return true;
 }
 
 void GAuth::sessionResponse(const SessionData &sessionData) {
     OAuth2PluginNS::OAuth2PluginTokenData response = sessionData.data<OAuth2PluginNS::OAuth2PluginTokenData>();
-    m_token = response.AccessToken();
-    qDebug() << "Authenticated !!!";
+    mToken = response.AccessToken();
+    LOG_DEBUG("Authenticated !!!");
 
     emit success();
 }
 
 const QString GAuth::token()
 {
-    qDebug() << "Returning token.........." << m_token;
-    if (m_token.isEmpty()) {
+    //LOG_DEBUG("Returning token.........." + mToken);
+    if (mToken.isEmpty()) {
         authenticate();
     }
 
-    return m_token;
+    return mToken;
 }
 
 void GAuth::authenticate()
 {
     QVariant val = QVariant::String;
-    m_account->value(AUTH + SLASH + AUTH_METHOD, val);
+    mAccount->value(AUTH + SLASH + AUTH_METHOD, val);
     QString method = val.toString();
-    m_account->value(AUTH + SLASH + MECHANISM, val);
+    mAccount->value(AUTH + SLASH + MECHANISM, val);
     QString mechanism = val.toString();
 
-    m_account->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + HOST, val);
+    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + HOST, val);
     QString host = val.toString();
-    m_account->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + AUTH_PATH, val);
+    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + AUTH_PATH, val);
     QString auth_url = val.toString();
-    m_account->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + TOKEN_PATH, val);
+    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + TOKEN_PATH, val);
     QString token_url = val.toString();
-    m_account->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + REDIRECT_URI, val);
+    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + REDIRECT_URI, val);
     QString redirect_uri = val.toString();
-    m_account->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + RESPONSE_TYPE, val);
+    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + RESPONSE_TYPE, val);
     QString response_type = val.toString();
 
-    QVariant val1 = QVariant::StringList;
-    m_account->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + SCOPE, val1);
-    QStringList scope = val1.toStringList();
+    QStringList scope;
+    if (mScope.isEmpty()) {
+        QVariant val1 = QVariant::StringList;
+        mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + SCOPE, val1);
+        scope.append(val1.toStringList());
+    } else {
+        scope.append(mScope);
+    }
 
     OAuth2PluginNS::OAuth2PluginData data;
     data.setClientId(CLIENT_ID);
@@ -163,13 +162,13 @@ void GAuth::authenticate()
     data.setResponseType(QStringList() << response_type);
     data.setScope(scope);
 
-    m_session->process(data, mechanism);
+    mSession->process(data, mechanism);
 }
 
 void GAuth::credentialsStored(const quint32 id) {
-    m_account->setCredentialsId(id);
-    m_account->sync();
-    qDebug() << "Credentials Stored.........." + id;
+    mAccount->setCredentialsId(id);
+    mAccount->sync();
+    //LOG_DEBUG("Credentials Stored.........." + id);
 }
 
 void GAuth::error(const SignOn::Error & error) {
