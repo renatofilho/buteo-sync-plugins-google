@@ -14,7 +14,7 @@ TEMPLATE = lib
 #$$PKG_CONFIG_PATH = $$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/
 
 CONFIG += link_pkgconfig plugin mobility debug console
-PKGCONFIG += buteosyncfw signon-plugins libsignon-qt accounts-qt
+PKGCONFIG += buteosyncfw5 signon-plugins libsignon-qt5 accounts-qt5
 
 MOBILITY += contacts
 
@@ -54,7 +54,7 @@ HEADERS += GContactClient.h\
     GWriteStream.h \
     GConfig.h
 
-target.path = /usr/lib/buteo-plugins
+target.path = /usr/lib/buteo-plugins-qt5
 
 sync.path = /etc/buteo/profiles/sync
 sync.files = xmls/sync/*

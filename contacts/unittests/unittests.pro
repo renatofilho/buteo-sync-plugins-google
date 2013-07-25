@@ -4,7 +4,7 @@ QT += network
 CONFIG += qtestlib mobility debug link_pkgconfig console
 MOBILITY += contacts
 
-PKGCONFIG += buteosyncfw
+PKGCONFIG += buteosyncfw5
 
 INCLUDEPATH += ../src
 

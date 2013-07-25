@@ -8,30 +8,27 @@ License: LGPLv2.1
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: pkgconfig(glib-2.0)
-BuildRequires: buteo-syncfw-devel
-BuildRequires: pkgconfig(QtCore)
-BuildRequires: pkgconfig(QJson)
-BuildRequires: pkgconfig(QtContacts)
-BuildRequires: qtcontacts-sqlite
+BuildRequires: pkgconfig(Qt5Core)
+BuildRequires: pkgconfig(Qt5Contacts)
+BuildRequires: pkgconfig(Qt5Network)
+BuildRequires: pkgconfig(signon-oauth2plugin)
+BuildRequires: pkgconfig(buteosyncfw5)
+# Change to below pkgconfig dependencies when we don't have broken packages
+# from mer anymore
+BuildRequires: signon-qt5-devel
+#BuildRequires: pkgconfig(signon-plugins)
+#BuildRequires: pkgconfig(libsignon-qt5)
+BuildRequires: pkgconfig(accounts-qt5)
+BuildRequires: qtcontacts-sqlite-qt5
 
 %description
 %{summary}.
 
 %files
 %defattr(-,root,root,-)
-%config %{_sysconfdir}/sync
-%{_libdir}/sync/*.so
-
-%package doc
-Summary: Documentation for %{name}
-Group: Documentation
-
-%description doc
-%{summary}.
-
-%files doc
-%defattr(-,root,root,-)
-%{_docdir}/sync-app-doc
+%config %{_sysconfdir}/buteo/profiles/client/googlecontacts.xml
+%config %{_sysconfdir}/buteo/profiles/sync/googlecontacts.xml
+%{_libdir}/buteo-plugins-qt5/*.so
 
 
 %package tests
@@ -44,9 +41,9 @@ Requires: %{name} = %{version}-%{release}
 
 %files tests
 %defattr(-,root,root,-)
-%{_bindir}/*-tests
-%{_datadir}/sync-app-tests
-%{_datadir}/%{name}-tests
+#%{_bindir}/*-tests
+#%{_datadir}/sync-app-tests
+#%{_datadir}/%{name}-tests
 
 
 %prep
@@ -54,8 +51,9 @@ Requires: %{name} = %{version}-%{release}
 
 
 %build
-%qmake
-make %{?_smp_mflags}
+%qmake5 -recursive
+#make %{?_smp_mflags}
+make
 
 
 %install
