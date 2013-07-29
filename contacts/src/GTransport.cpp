@@ -4,6 +4,7 @@
  * Copyright (C) 2013 Jolla Ltd. and/or its subsidiary(-ies).
  *
  * Contributors: Sateesh Kavuri <sateesh.kavuri@gmail.com>
+ *               Mani Chandrasekar <maninc@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -27,6 +28,8 @@
 #include <QDebug>
 #include <QNetworkProxy>
 #include <QDateTime>
+#include <QUrlQuery>
+
 #include <LogMacros.h>
 
 const int MAX_RESULTS = 10;
@@ -140,8 +143,8 @@ GTransport::setAuthToken (const QString token)
 
     mAuthToken = token;
 
-    QByteArray header1 = QString(G_AUTH_HEADER).toAscii ();
-    addHeader (header1, ("Bearer " + token).toAscii ());
+    QByteArray header1 = QString(G_AUTH_HEADER).toUtf8();
+    addHeader (header1, ("Bearer " + token).toUtf8());
 }
 
 void
@@ -172,16 +175,18 @@ GTransport::construct (const QUrl& url)
                      this, SLOT(finishedSlot(QNetworkReply*)));
 
     iUrl = url;
+    QUrlQuery urlQuery(iUrl);
 
-    QList<QPair<QString, QString> > queryList = iUrl.queryItems();
+    QList<QPair<QString, QString> > queryList = urlQuery.queryItems();
     for (int i=0; i < queryList.size(); i++)
     {
         QPair<QString, QString> pair = queryList.at(i);
         QByteArray leftEncode = QUrl::toPercentEncoding(pair.first);
         QByteArray rightEncode = QUrl::toPercentEncoding(pair.second);
-        iUrl.removeQueryItem(pair.first);
-        iUrl.addEncodedQueryItem(leftEncode, rightEncode);
+        urlQuery.removeQueryItem(pair.first);
+        urlQuery.addQueryItem(leftEncode, rightEncode);
     }
+    iUrl.setQuery(urlQuery);
 }
 
 void
@@ -311,10 +316,13 @@ GTransport::setUpdatedMin (const QDateTime datetime)
     FUNCTION_CALL_TRACE;
 
     mUpdatedMin = datetime;
+    QUrlQuery urlQuery(iUrl);
 
-    if (!iUrl.hasQueryItem (UPDATED_MIN_TAG))
-        iUrl.addQueryItem (UPDATED_MIN_TAG,
+    if (!urlQuery.hasQueryItem (UPDATED_MIN_TAG)) {
+        urlQuery.addQueryItem (UPDATED_MIN_TAG,
                            mUpdatedMin.toString (Qt::ISODate));
+        iUrl.setQuery(urlQuery);
+    }
 }
 
 void
@@ -322,8 +330,11 @@ GTransport::setMaxResults (unsigned int limit)
 {
     FUNCTION_CALL_TRACE;
 
-    if (!iUrl.hasQueryItem (MAX_RESULTS_TAG))
-        iUrl.addQueryItem (MAX_RESULTS_TAG, QString::number (limit));
+    QUrlQuery urlQuery(iUrl);
+    if (!urlQuery.hasQueryItem (MAX_RESULTS_TAG)) {
+        urlQuery.addQueryItem (MAX_RESULTS_TAG, QString::number (limit));
+        iUrl.setQuery(urlQuery);
+    }
 }
 
 void
@@ -331,8 +342,11 @@ GTransport::setShowDeleted ()
 {
     FUNCTION_CALL_TRACE;
 
-    if (!iUrl.hasQueryItem (SHOW_DELETED_TAG))
-        iUrl.addQueryItem (SHOW_DELETED_TAG, "true");
+    QUrlQuery urlQuery(iUrl);
+    if (!urlQuery.hasQueryItem (SHOW_DELETED_TAG)) {
+        urlQuery.addQueryItem (SHOW_DELETED_TAG, "true");
+        iUrl.setQuery(urlQuery);
+    }
 }
 
 void
@@ -340,10 +354,12 @@ GTransport::setStartIndex (const int index)
 {
     FUNCTION_CALL_TRACE;
 
-    if (iUrl.hasQueryItem ("start-index"))
-        iUrl.removeQueryItem ("start-index");
+    QUrlQuery urlQuery(iUrl);
+    if (urlQuery.hasQueryItem ("start-index"))
+        urlQuery.removeQueryItem ("start-index");
 
-    iUrl.addQueryItem ("start-index", QString::number (index));
+    urlQuery.addQueryItem ("start-index", QString::number (index));
+    iUrl.setQuery(urlQuery);
 }
 
 GTransport::HTTP_REQUEST_TYPE

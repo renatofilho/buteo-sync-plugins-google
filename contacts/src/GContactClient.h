@@ -38,7 +38,7 @@
 #include "GConfig.h"
 #include "GTransport.h"
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 
 class GContactEntry;
 class GTransport;
@@ -174,7 +174,7 @@ private:
 
     void updateIdsToLocal (const QList<GContactEntry*> responseEntries);
 
-    void postAvatar (const QContactLocalId avatarUrl);
+    void postAvatar (const QContactId avatarUrl);
 
     GAuth*                      mGoogleAuth;
 
@@ -196,11 +196,11 @@ private:
 
     QMap<QString, Buteo::DatabaseResults> mItemResults;
 
-    QList<QContactLocalId>          mAllLocalContactIds;
+    QList<QContactId>          mAllLocalContactIds;
 
-    QHash<QString, QContactLocalId> mAddedContactIds;
-    QHash<QString, QContactLocalId> mModifiedContactIds;
-    QHash<QString, QContactLocalId> mDeletedContactIds;
+    QHash<QString, QContactId> mAddedContactIds;
+    QHash<QString, QContactId> mModifiedContactIds;
+    QHash<QString, QContactId> mDeletedContactIds;
 
     int mStartIndex;
 
@@ -208,7 +208,7 @@ private:
 
     Sync::SyncStatus mSyncStatus;
 
-    QList<QContactLocalId> mContactsWithAvatars;
+    QList<QContactId> mContactsWithAvatars;
 
     bool mHasPhotosToStore;
 

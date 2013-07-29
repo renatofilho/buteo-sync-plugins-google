@@ -4,6 +4,7 @@
  * Copyright (C) 2013 Jolla Ltd. and/or its subsidiary(-ies).
  *
  * Contributors: Sateesh Kavuri <sateesh.kavuri@gmail.com>
+ *               Mani Chandrasekar <maninc@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -598,7 +599,7 @@ GContactClient::fetchRemoteContacts (const int startIndex)
     }
     mTransport->setGDataVersionHeader ();
     mTransport->addHeader (QByteArray ("Authorization"),
-                           QByteArray (QString ("Bearer " + token).toAscii ()));
+                           QString ("Bearer " + token).toUtf8());
 
     mTransport->request (GTransport::GET);
 }
@@ -822,11 +823,11 @@ GContactClient::filterRemoteAddedModifiedDeletedContacts (const QList<GContactEn
 
     foreach (GContactEntry* entry, remoteContacts)
     {
-        QContactLocalId localId = mContactBackend->entryExists (entry->guid ());
-        if (localId != 0)
-            entry->setLocalId (QString::number (localId));
+        QContactId localId = mContactBackend->entryExists(entry->guid ());
+        if (!localId.isNull())
+            entry->setLocalId (localId.toString());
 
-        if (localId != 0)
+        if (!localId.isNull())
         {
             if (entry->deleted () == true)
                 remoteDeletedContacts.append (entry);
@@ -870,7 +871,7 @@ GContactClient::storeToRemote ()
 
     } else
     {
-        QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> allChangedContactIds;
+        QHash<QContactId, GConfig::TRANSACTION_TYPE> allChangedContactIds;
 
         /*
          * Create a new list of contact ids that are added/modified/deleted
@@ -879,7 +880,7 @@ GContactClient::storeToRemote ()
          * the next time, this method is invoked
          */
         int totalCount = 0;
-        QHash<QString, QContactLocalId>::iterator iter = mAddedContactIds.begin ();
+        QHash<QString, QContactId>::iterator iter = mAddedContactIds.begin ();
 
         while (iter != mAddedContactIds.end ())
         {
@@ -1014,7 +1015,7 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
 
             QStringList modifiedIdsList;
             for (int i=0; i<modifiedContacts.size (); i++)
-                modifiedIdsList << QString (modifiedContacts.at (i).localId ());
+                modifiedIdsList << modifiedContacts.at(i).id().toString();
 
             QMap<int, GContactsStatus> modifiedStatusMap =
             mContactBackend->modifyContacts (modifiedContacts, modifiedIdsList);
@@ -1147,7 +1148,7 @@ GContactClient::updateIdsToLocal (const QList<GContactEntry*> responseEntries)
   * to generate the PUT url
   */
 void
-GContactClient::postAvatar (const QContactLocalId contactId)
+GContactClient::postAvatar (const QContactId contactId)
 {
     FUNCTION_CALL_TRACE;
 

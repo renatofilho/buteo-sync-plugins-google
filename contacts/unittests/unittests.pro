@@ -1,18 +1,16 @@
 TEMPLATE = app
 
-QT += network
-CONFIG += qtestlib mobility debug link_pkgconfig console
-MOBILITY += contacts
+QT       += contacts network
+CONFIG += qtestlib debug link_pkgconfig console
 
-PKGCONFIG += buteosyncfw
+PKGCONFIG += buteosyncfw5
 
 INCLUDEPATH += ../src
 
 LIBS += -L../src \
         -lgooglecontacts-client
 
-SOURCES +=  \
-    main.cpp \
+SOURCES +=  main.cpp \
     GAtomTest.cpp \
     GParseStreamTest.cpp \
     GTransportTest.cpp \
@@ -20,8 +18,7 @@ SOURCES +=  \
     GContactsBackendTest.cpp \
     GWriteStreamTest.cpp
 
-HEADERS += \
-    GAtomTest.h \
+HEADERS += GAtomTest.h \
     GParseStreamTest.h \
     GTransportTest.h \
     GContactClientTest.h \

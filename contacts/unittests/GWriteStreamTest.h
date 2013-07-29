@@ -4,7 +4,7 @@
 #include <QContactManager>
 #include <QContact>
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 
 class GWriteStreamTest : public QObject
 {

@@ -4,6 +4,7 @@
  * Copyright (C) 2013 Jolla Ltd. and/or its subsidiary(-ies).
  *
  * Contributors: Sateesh Kavuri <sateesh.kavuri@gmail.com>
+ *               Mani Chandrasekar <maninc@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -80,7 +81,7 @@ GContactEntry::setLocalId (const QString localId)
 {
     mLocalId = localId;
     QContactId id;
-    id.setLocalId (localId.toLong ());
+    id.fromString(mLocalId);
     mQContact.setId (id);
 }
 
@@ -231,7 +232,13 @@ void
 GContactEntry::setGender (const QString gender)
 {
     QContactGender contactGender;
-    contactGender.setGender (gender);
+    if (gender.compare("male", Qt::CaseInsensitive)) {
+        contactGender.setGender (QContactGender::GenderMale);
+    } else if (gender.compare("female", Qt::CaseInsensitive)) {
+        contactGender.setGender (QContactGender::GenderMale);
+    } else {
+        contactGender.setGender (QContactGender::GenderUnspecified);
+    }
     mQContact.saveDetail (&contactGender);
 }
 
@@ -459,8 +466,8 @@ GContactEntry::setIm (const QString address, const QString rel,
 {
     QContactOnlineAccount imAccount;
     imAccount.setAccountUri (address);
-    imAccount.setProtocol (protocol);
-    imAccount.setServiceProvider (protocol);  // FIXME: How is protocol different from service provider?
+    //imAccount.setProtocol (protocol);
+    //imAccount.setServiceProvider (protocol);  // FIXME: How is protocol different from service provider?
 
     mQContact.saveDetail (&imAccount);
 }
@@ -533,7 +540,7 @@ GContactEntry::setPhoneNumber (const QString phoneNumber, const QString rel,
 {
     QContactPhoneNumber number;
     number.setNumber (phoneNumber);
-    number.setSubTypes (rel);
+    //number.setSubTypes (rel);
 
     //TODO: Handle primary and uri fields
     mQContact.saveDetail (&number);

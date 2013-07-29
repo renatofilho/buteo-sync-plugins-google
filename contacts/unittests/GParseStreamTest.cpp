@@ -38,7 +38,7 @@
 #include "GAtom.h"
 #include "GContactEntry.h"
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 GParseStreamTest::GParseStreamTest(QObject *parent) :
     QObject(parent)
 {
@@ -50,7 +50,7 @@ GParseStreamTest::initTestCase()
     QFile file("./contact_v3.xml");
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     QTextStream in (&file);
-    QByteArray ba = in.readAll ().toAscii ();
+    QByteArray ba = in.readAll().toUtf8();
     mPs = new GParseStream (false);
     mAtom = mPs->parse (ba);
     file.close ();

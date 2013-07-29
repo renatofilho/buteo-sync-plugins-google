@@ -18,9 +18,9 @@ GWriteStreamTest::testEncodeContact ()
     GWriteStream ws;
 
     QContactManager mgr;
-    QList<QContactLocalId> contactList = mgr.contactIds ();
+    QList<QContactId> contactList = mgr.contactIds ();
 
-    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> contactMap;
+    QHash<QContactId, GConfig::TRANSACTION_TYPE> contactMap;
     contactMap.insert (contactList.at (1), GConfig::ADD);
 
     //qDebug() << ws.encodeContact (contactMap);
@@ -34,9 +34,9 @@ GWriteStreamTest::testEncodeMultipleContacts ()
     GWriteStream ws;
 
     QContactManager mgr;
-    QList<QContactLocalId> contactList = mgr.contactIds ();
+    QList<QContactId> contactList = mgr.contactIds ();
 
-    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> contactMap;
+    QHash<QContactId, GConfig::TRANSACTION_TYPE> contactMap;
     contactMap.insert (contactList.at (1), GConfig::ADD);
     contactMap.insert (contactList.at (2), GConfig::DELETE);
     contactMap.insert (contactList.at (3), GConfig::UPDATE);
@@ -52,7 +52,7 @@ GWriteStreamTest::testEncodeContacts ()
     GWriteStream ws;
 
     QContactManager mgr;
-    QList<QContactLocalId> contactList = mgr.contactIds ();
+    QList<QContactId> contactList = mgr.contactIds ();
 
     ws.encodeContacts (contactList, GConfig::UPDATE);
     //std::cout << ws.encodedStream ().constData () << "\n";
