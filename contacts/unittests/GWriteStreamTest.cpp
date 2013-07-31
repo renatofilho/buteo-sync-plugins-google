@@ -17,15 +17,17 @@ GWriteStreamTest::testEncodeContact ()
 {
     GWriteStream ws;
 
-    QContactManager mgr;
-    QList<QContactId> contactList = mgr.contactIds ();
+    QContactManager *mgr = new QContactManager ("org.nemomobile.contacts.sqlite");
+    QList<QContactId> contactList = mgr->contactIds ();
+    std::cout << " Total Contacts with manager = " << contactList.count() << "\n";
 
-    QHash<QContactId, GConfig::TRANSACTION_TYPE> contactMap;
-    contactMap.insert (contactList.at (1), GConfig::ADD);
-
-    //qDebug() << ws.encodeContact (contactMap);
-    //LOG_DEBUG (ws.encodeContact (contactMap));
-    //std::cout << ws.encodeContact (contactMap).constData () << "\n";
+    if (contactList.count() > 0) {
+        QHash<QContactId, GConfig::TRANSACTION_TYPE> contactMap;
+        contactMap.insert (contactList.at(0), GConfig::ADD);
+        qDebug() << ws.encodeContact (contactMap);
+        LOG_DEBUG (ws.encodeContact (contactMap));
+        std::cout << ws.encodeContact (contactMap).constData () << "\n";
+    }
 }
 
 void
@@ -37,13 +39,15 @@ GWriteStreamTest::testEncodeMultipleContacts ()
     QList<QContactId> contactList = mgr.contactIds ();
 
     QHash<QContactId, GConfig::TRANSACTION_TYPE> contactMap;
-    contactMap.insert (contactList.at (1), GConfig::ADD);
-    contactMap.insert (contactList.at (2), GConfig::DELETE);
-    contactMap.insert (contactList.at (3), GConfig::UPDATE);
+    if (contactList.count() > 3) {
+        contactMap.insert (contactList.at (1), GConfig::ADD);
+        contactMap.insert (contactList.at (2), GConfig::DELETE);
+        contactMap.insert (contactList.at (3), GConfig::UPDATE);
 
-    //qDebug() << ws.encodeContact (contactMap);
-    //LOG_DEBUG (ws.encodeContact (contactMap));
-    std::cout << ws.encodeContact (contactMap).constData () << "\n";
+        qDebug() << ws.encodeContact (contactMap);
+        LOG_DEBUG (ws.encodeContact (contactMap));
+        std::cout << ws.encodeContact (contactMap).constData () << "\n";
+    }
 }
 
 void
@@ -55,8 +59,8 @@ GWriteStreamTest::testEncodeContacts ()
     QList<QContactId> contactList = mgr.contactIds ();
 
     ws.encodeContacts (contactList, GConfig::UPDATE);
-    //std::cout << ws.encodedStream ().constData () << "\n";
-    //qDebug() << ws.encodedStream ();
+    std::cout << ws.encodedStream ().constData () << "\n";
+    qDebug() << ws.encodedStream ();
 }
 
 void
@@ -65,5 +69,5 @@ GWriteStreamTest::testEncodeAllContacts ()
     GWriteStream ws;
     ws.encodeAllContacts ();
 
-    //std::cout << ws.encodedStream ().constData () << "\n";
+    std::cout << ws.encodedStream ().constData () << "\n";
 }

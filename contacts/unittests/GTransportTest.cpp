@@ -43,8 +43,9 @@ GTransportTest::testGET()
 {
     QByteArray data = "client_id=340286938476.apps.googleusercontent.com&scope=https://www.google.com/m8/feeds/ https://www.googleapis.com/auth/userinfo.profile";
     QString url = "https://accounts.google.com/o/oauth2/device/code";
+    QList<QPair<QByteArray, QByteArray> > headers;
 
-    //mTransport = new GTransport (url, data, NULL);
+    mTransport = new GTransport (QUrl(url), headers, data);
 
     connect(mTransport, SIGNAL(finishedRequest()),
             this,  SLOT(processResponse()));
@@ -56,8 +57,10 @@ GTransportTest::testGetToken()
 {
     QByteArray data = "client_id=340286938476.apps.googleusercontent.com&client_secret=cE6huV6DyPQCKXo5AOg5Balm&grant_type=http://oauth.net/grant_type/device/1.0&code=4/uEQy2Ew1ar8x0v3w_EYdMF8_JKlB";
     QString url = "https://accounts.google.com/o/oauth2/token";
+    QList<QPair<QByteArray, QByteArray> > headers;
 
-//    mTransport = new GTransport (url, data, NULL);
+    mTransport = new GTransport (QUrl(url), headers);
+    mTransport->setData(data);
 
     connect(mTransport, SIGNAL(finishedRequest()),
             this,  SLOT(processResponse()));
@@ -76,7 +79,7 @@ GTransportTest::testGetContacts ()
     headers.append (qMakePair(authFirst, authSecond));
     QString url = "https://www.google.com/m8/feeds/contacts/default/full";
 
-    //mTransport = new GTransport (url, &headers);
+    mTransport = new GTransport (QUrl(url), headers);
     connect(mTransport, SIGNAL(finishedRequest()),
             this,  SLOT(processResponse()));
     mTransport->request (GTransport::GET);
@@ -87,16 +90,21 @@ GTransportTest::processResponse ()
 {
     if (mTransport)
     {
-        const QNetworkReply* reply = mTransport->reply ();
-        if (reply)
-        {
-            const QList<QByteArray> headerList = reply->rawHeaderList ();
-            for (int i=0; i<headerList.size (); i++)
-            {
-                qDebug() << headerList[i] << ":" << reply->rawHeader (headerList[i]);
-            }
-            qDebug() << mTransport->replyBody ();
-        }
+//        const QNetworkReply* reply = mTransport->reply ();
+
+//        if (reply) {
+//            if (reply->error() != QNetworkReply::NoError) {
+//                qDebug() << reply->errorString();
+//                return;
+//            }
+
+//            const QList<QByteArray> headerList = reply->rawHeaderList ();
+//            for (int i=0; i<headerList.size (); i++)
+//            {
+//                qDebug() << headerList[i] << ":" << reply->rawHeader (headerList[i]);
+//            }
+//            qDebug() << mTransport->replyBody ();
+//        }
     }
 }
 

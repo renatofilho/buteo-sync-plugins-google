@@ -156,15 +156,13 @@ GContactsBackend::addContacts( QList<QContact>& aContactList,
         QContactId contactId = aContactList.at(i).id();
         if (!errorMap.contains(i))
         {
-//            status.id = (int)contactId;
             status.errorCode = QContactManager::NoError;
             aStatusMap.insert(i, status);
         }
         else
         {
-            LOG_WARNING("Contact with id " << contactId << " and index " << i <<" is in error");
+            qDebug() << "Contact with id " << contactId << " and index " << i <<" is in error";
             QContactManager::Error errorCode = errorMap.value(i);
-//            status.id = (int)contactId;
             status.errorCode = errorCode;
             aStatusMap.insert(i, status);
         }
@@ -236,7 +234,6 @@ GContactsBackend::modifyContacts( QList<QContact> &aContactList,
         if( !errors.contains(i) )
         {
             LOG_DEBUG("No error for contact with id " << contactId << " and index " << i);
-//            status.id = (int)contactId;
             status.errorCode = QContactManager::NoError;
             statusMap.insert(i, status);
         }
@@ -244,7 +241,6 @@ GContactsBackend::modifyContacts( QList<QContact> &aContactList,
         {
             LOG_DEBUG("contact with id " << contactId << " and index " << i <<" is in error");
             QContactManager::Error errorCode = errors.value(i);
-//            status.id = (int)contactId;
             status.errorCode = errorCode;
             statusMap.insert(i, status);
         }
@@ -284,7 +280,6 @@ GContactsBackend::deleteContacts(const QStringList &aContactIDList)
         if( !errors.contains(i) )
         {
             LOG_DEBUG("No error for contact with id " << contactId << " and index " << i);
-//            status.id = (int)contactId;
             status.errorCode = QContactManager::NoError;
             statusMap.insert(i, status);
         }
@@ -292,7 +287,6 @@ GContactsBackend::deleteContacts(const QStringList &aContactIDList)
         {
             LOG_DEBUG("contact with id " << contactId << " and index " << i <<" is in error");
             QContactManager::Error errorCode = errors.value(i);
-//            status.id = (int)contactId;
             status.errorCode = errorCode;
             statusMap.insert(i, status);
         }
@@ -438,8 +432,6 @@ GContactsBackend::getCreationTimes( const QList<QContactId>& aContactIds )
     QContactIdFilter contactFilter;
     contactFilter.setIds(aContactIds);
 
-//    QContactTimestamp contactTimestampDef;
-
     /* Set up fetch hints so that not all details of QContacts be fetched:
      * 1) Fetch only QContactTimestamp details
      * 2) Do not try to resolve contact relationships (siblings etc)
@@ -502,7 +494,7 @@ GContactsBackend::getSyncTargetFilter() const
     QContactDetailFilter detailFilterDefaultSyncTarget;
     detailFilterDefaultSyncTarget.setDetailType(QContactSyncTarget::Type,
                                                 QContactSyncTarget::FieldSyncTarget);
-    detailFilterDefaultSyncTarget.setValue(QLatin1String("buteo-google-contacts"));
+    detailFilterDefaultSyncTarget.setValue(QLatin1String("buteo"));
 
     // return the union
     return detailFilterDefaultSyncTarget;
@@ -511,11 +503,6 @@ GContactsBackend::getSyncTargetFilter() const
 QContactId
 GContactsBackend::entryExists (const QString entryGuid)
 {
-//    QContactFetchHint hint;
-//    QList<QContactDetail::DetailType> detailTypes;
-//    detailTypes << QContactGuid::Type;
-//    hint.setDetailTypesHint(detailTypes);
-
     QContactDetailFilter guidFilter;
     guidFilter.setDetailType(QContactGuid::Type);
     guidFilter.setValue (entryGuid);

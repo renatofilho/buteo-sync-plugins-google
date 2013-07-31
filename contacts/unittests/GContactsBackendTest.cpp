@@ -35,8 +35,9 @@ void
 GContactsBackendTest::testAllLocalContactIds ()
 {
     GContactsBackend* contactsBackend = new GContactsBackend ();
+    contactsBackend->init();
     QList<QContactId> localIds = contactsBackend->getAllContactIds ();
-    std::cout << "What is this" << localIds.size ();
+    std::cout << "What is this" << localIds.size () << std::endl;
     for (int i=0; i<localIds.size (); i++)
         std::cout << localIds.at(i).toString().toStdString() << "\n";
 }

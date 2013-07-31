@@ -86,7 +86,7 @@ GTransport::~GTransport()
 
     if (iNetworkReply != NULL)
     {
-        iNetworkReply->deleteLater();
+//        iNetworkReply->deleteLater();
         iNetworkReply = NULL;
     }
 }

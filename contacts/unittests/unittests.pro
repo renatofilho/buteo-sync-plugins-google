@@ -1,7 +1,7 @@
 TEMPLATE = app
 
-QT       += contacts network
-CONFIG += qtestlib debug link_pkgconfig console
+QT       += contacts network testlib
+CONFIG += debug link_pkgconfig console
 
 PKGCONFIG += buteosyncfw5
 

@@ -32,8 +32,8 @@
 #include <QList>
 #include <QPair>
 
-#include <buteosyncfw/SyncResults.h>
-#include <buteosyncfw/SyncCommonDefs.h>
+#include <SyncResults.h>
+#include <SyncCommonDefs.h>
 
 #include "GConfig.h"
 #include "GTransport.h"

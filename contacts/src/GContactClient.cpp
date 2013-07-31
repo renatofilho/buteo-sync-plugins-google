@@ -38,11 +38,10 @@
 #include <QContactDetailFilter>
 #include <QContactAvatar>
 
-#include <buteosyncfw/SyncCommonDefs.h>
-#include <buteosyncfw/PluginCbInterface.h>
-#include <buteosyncfw/LogMacros.h>
-#include <buteosyncfw/ProfileEngineDefs.h>
-#include <buteosyncfw/ProfileManager.h>
+#include <PluginCbInterface.h>
+#include <LogMacros.h>
+#include <ProfileEngineDefs.h>
+#include <ProfileManager.h>
 
 extern "C" GContactClient* createPlugin(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,

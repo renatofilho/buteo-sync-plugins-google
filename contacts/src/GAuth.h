@@ -27,7 +27,6 @@
 #include <QObject>
 #include "GTransport.h"
 
-#include <buteosyncfw/SyncCommonDefs.h>
 #include <SyncCommonDefs.h>
 #include <SyncProfile.h>
 #include <SignOn/AuthService>
