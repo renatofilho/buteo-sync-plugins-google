@@ -7,7 +7,7 @@
 #include "GContactsBackend.h"
 #include "GConfig.h"
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 
 class GWriteStream
 {
@@ -19,13 +19,13 @@ public:
 
     void encodeAllContacts ();
 
-    void encodeContacts (const QList<QContactLocalId> idList, GConfig::TRANSACTION_TYPE type);
+    void encodeContacts (const QList<QContactId> idList, GConfig::TRANSACTION_TYPE type);
 
-    QByteArray encodeContact (QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap);
+    QByteArray encodeContact (QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap);
 
     QByteArray encodedStream ();
 
-    QList<QContactLocalId>& contactsWithAvatars ();
+    QList<QContactId>& contactsWithAvatars ();
 
 private:
 
@@ -66,7 +66,7 @@ private:
 
     GContactsBackend mContactsBackend;
 
-    QList<QContactLocalId>   mContactsWithAvatars;
+    QList<QContactId>   mContactsWithAvatars;
 };
 
 #endif // GWRITESTREAM_H

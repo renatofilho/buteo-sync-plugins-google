@@ -26,34 +26,36 @@
 
 #include <QContactDetail>
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 
 class GContactCustomDetail : public QContactDetail
 {
 public:
 
-    Q_DECLARE_CUSTOM_CONTACT_DETAIL(GContactCustomDetail, "GoogleContact")
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactETag, "GContactETag");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactBillingInformation, "GContactBillingInformation");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactCalendarLink, "GContactCalendarLink");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactDirectoryServer, "GContactDirectoryServer");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactEvent, "GContactEvent");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactExternalId, "GContactExternalId");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactGroupMembershipInfo, "GContactGroupMembershipInfo");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactInitials, "GContactInitials");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactJot, "GContactJot");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactLanguage, "GContactLanguate");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactMileage, "GContactMileage");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactOccupation, "GContactOccupation");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactPriority, "GContactPriority");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactRelation, "GContactRelation");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactSensitivity, "GContactSensitivity");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactSubject, "GContactSubject");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactSystemGroup, "GContactSystemGroup");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactCountry, "GContactCountry");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactFeedLink, "GContactFeedLink");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactMoney, "GContactMoney");
-    Q_DECLARE_LATIN1_CONSTANT(FieldGContactRating, "GContactRating");
+    Q_DECLARE_CUSTOM_CONTACT_DETAIL(GContactCustomDetail);
+    enum {
+        FieldGContactETag = 1000,
+        FieldGContactBillingInformation,
+        FieldGContactCalendarLink,
+        FieldGContactDirectoryServer,
+        FieldGContactEvent,
+        FieldGContactExternalId,
+        FieldGContactGroupMembershipInfo,
+        FieldGContactInitials,
+        FieldGContactJot,
+        FieldGContactLanguage,
+        FieldGContactMileage,
+        FieldGContactOccupation,
+        FieldGContactPriority,
+        FieldGContactRelation,
+        FieldGContactSensitivity,
+        FieldGContactSubject,
+        FieldGContactSystemGroup,
+        FieldGContactCountry,
+        FieldGContactFeedLink,
+        FieldGContactMoney,
+        FieldGContactRating
+    };
 
     void setETag (const QString& etag) { setValue(FieldGContactETag, etag); }
     QString etag () const { return value<QString>(FieldGContactETag); }

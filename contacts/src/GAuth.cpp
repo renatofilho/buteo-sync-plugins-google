@@ -4,6 +4,7 @@
  * Copyright (C) 2013 Jolla Ltd. and/or its subsidiary(-ies).
  *
  * Contributors: Sateesh Kavuri <sateesh.kavuri@gmail.com>
+ *               Mani Chandrasekar <maninc@gmail.com>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -35,7 +36,7 @@
 
 #include <oauth2data.h>
 
-#include <buteosyncfw/ProfileEngineDefs.h>
+#include <ProfileEngineDefs.h>
 
 using namespace Accounts;
 using namespace SignOn;
@@ -76,12 +77,13 @@ bool GAuth::init() {
     QString mechanism = val.toString();
 
     qint32 cId = mAccount->credentialsId();
-    //LOG_DEBUG("Got Credentials ID = " + cId);
+    LOG_DEBUG("Got Credentials ID ");
+    LOG_DEBUG(QString::number(cId));
     if (cId == 0) {
         QMap<MethodName,MechanismsList> methods;
         methods.insert(method, QStringList()  << mechanism);
         IdentityInfo *info = new IdentityInfo(mAccount->displayName(), "", methods);
-        info->setRealms(QStringList() << HOST);
+        info->setRealms(QStringList() << QString::fromLatin1("google.com"));
         info->setType(IdentityInfo::Application);
 
         mIdentity = Identity::newIdentity(*info);
@@ -116,7 +118,6 @@ void GAuth::sessionResponse(const SessionData &sessionData) {
 
 const QString GAuth::token()
 {
-    //LOG_DEBUG("Returning token.........." + mToken);
     if (mToken.isEmpty()) {
         authenticate();
     }
@@ -168,7 +169,6 @@ void GAuth::authenticate()
 void GAuth::credentialsStored(const quint32 id) {
     mAccount->setCredentialsId(id);
     mAccount->sync();
-    //LOG_DEBUG("Credentials Stored.........." + id);
 }
 
 void GAuth::error(const SignOn::Error & error) {

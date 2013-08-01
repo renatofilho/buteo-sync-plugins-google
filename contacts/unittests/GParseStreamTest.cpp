@@ -24,7 +24,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QtTest/QtTest>
-#include "iostream"
+#include <iostream>
 
 #include <QContactName>
 #include <QContactNote>
@@ -37,8 +37,9 @@
 #include "GParseStream.h"
 #include "GAtom.h"
 #include "GContactEntry.h"
+#include "GContactsBackend.h"
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 GParseStreamTest::GParseStreamTest(QObject *parent) :
     QObject(parent)
 {
@@ -50,7 +51,7 @@ GParseStreamTest::initTestCase()
     QFile file("./contact_v3.xml");
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     QTextStream in (&file);
-    QByteArray ba = in.readAll ().toAscii ();
+    QByteArray ba = in.readAll().toUtf8();
     mPs = new GParseStream (false);
     mAtom = mPs->parse (ba);
     file.close ();
@@ -66,7 +67,9 @@ void
 GParseStreamTest::testAtom ()
 {
     QVERIFY (mAtom != NULL);
+    std::cout << mAtom->authorName().toStdString();
     QVERIFY (mAtom->authorName () == "nemo sailfish");
+    qDebug() << mAtom->authorEmail();
     QVERIFY (mAtom->authorEmail () == "nemosailfish@gmail.com");
     QVERIFY (mAtom->itemsPerPage () == 25);
     QVERIFY (mAtom->startIndex () == 1);
@@ -77,6 +80,8 @@ GParseStreamTest::testAtom ()
 void
 GParseStreamTest::testContactEntry ()
 {
+    GContactsBackend *backend = new GContactsBackend();
+    QList<QContact> remoteQContacts;
     QList<GContactEntry*> gContacts = mAtom->entries ();
     QVERIFY (gContacts.size () == 2);
 
@@ -95,6 +100,10 @@ GParseStreamTest::testContactEntry ()
     std::cout << qContact.detail<QContactNote> ().note ().toStdString () << "\n";
     std::cout << qContact.detail<QContactBirthday> ().date ().toString ("yyyy-MM-dd").toStdString () << "\n";
 
+
+    remoteQContacts.append(qContact);
+
+
     QVERIFY (qContact.detail<QContactName> ().firstName () == "Tarzan");
     QVERIFY (qContact.detail<QContactName> ().lastName () == "Hello");
     QVERIFY (qContact.detail<QContactNickname> ().nickname () == "Taru");
@@ -104,17 +113,24 @@ GParseStreamTest::testContactEntry ()
 
     std::cout << "---------" << "\n";
     qContact = gContacts.at (1)->qContact ();
-    /*
+
     qDebug () << qContact.detail<QContactName> ().firstName ();
     qDebug () << qContact.detail<QContactName> ().lastName ();
     qDebug () << qContact.detail<QContactNickname> ().nickname ();
     qDebug () << qContact.detail<QContactEmailAddress> ().emailAddress ();
     qDebug () << qContact.detail<QContactNote> ().note ();
     qDebug () << qContact.detail<QContactBirthday> ().date ().toString ();
-    */
+
     std::cout << qContact.detail<QContactName> ().firstName ().toStdString () << "\n";
     std::cout << qContact.detail<QContactName> ().lastName ().toStdString () << "\n";
     std::cout << qContact.detail<QContactNickname> ().nickname ().toStdString () << "\n";
     std::cout << qContact.detail<QContactEmailAddress> ().emailAddress ().toStdString () << "\n";
     std::cout << qContact.detail<QContactNote> ().note ().toStdString () << "\n";
+
+    remoteQContacts.append(qContact);
+    QMap<int, GContactsStatus> statusMap;
+    backend->addContacts (remoteQContacts, statusMap);
+//    QVERIFY(backend->addContacts (remoteQContacts, statusMap));
+
+    std::cout << "Status Map count is : " << statusMap.count() << "\n";
 }

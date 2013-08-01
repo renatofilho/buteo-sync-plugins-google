@@ -30,7 +30,7 @@
 #include <qcontactid.h>
 #include <QStringList>
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 
 struct GContactsStatus
 {
@@ -70,21 +70,21 @@ public:
      * \brief Return ids of all contacts retrieved from the backend
      * @return List of contact IDs
      */
-    QList<QContactLocalId> getAllContactIds();
+    QList<QContactId> getAllContactIds();
 
     /*!
      * \brief Return all new contacts ids in a QList of QStrings
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QHash<QString, QContactLocalId> getAllNewContactIds(const QDateTime& aTimeStamp);
+    QHash<QString, QContactId> getAllNewContactIds(const QDateTime& aTimeStamp);
 
     /*!
      * \brief Return all modified contact ids in a QList of QStrings
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QHash<QString, QContactLocalId> getAllModifiedContactIds(const QDateTime& aTimeStamp);
+    QHash<QString, QContactId> getAllModifiedContactIds(const QDateTime& aTimeStamp);
 
 
     /*!
@@ -92,14 +92,14 @@ public:
      * @param aTimeStamp Timestamp of the oldest contact ID to be returned
      * @return List of contact IDs
      */
-    QHash<QString, QContactLocalId> getAllDeletedContactIds(const QDateTime& aTimeStamp);
+    QHash<QString, QContactId> getAllDeletedContactIds(const QDateTime& aTimeStamp);
 
     /*!
      * \brief Get contact data for a given gontact ID as a QContact object
      * @param aContactId The ID of the contact
      * @param aContact The returned data of the contact
      */
-    void getContact(const QContactLocalId& aContactId,
+    void getContact(const QContactId& aContactId,
                     QContact& aContact);
 
 
@@ -108,8 +108,8 @@ public:
      * @param aContactIDs List of contact IDs to be returned
      * @param aContactData Returned contact data
      */
-    void getContacts(const QList<QContactLocalId> &aContactIDs,
-                     QMap<QContactLocalId,QString>& aContactData );
+    void getContacts(const QList<QContactId> &aContactIDs,
+                     QMap<QContactId,QString>& aContactData );
 
 
     /*!
@@ -117,7 +117,7 @@ public:
      * @param aContactIds List of contact IDs
      * @param aContacts List of returned contact data
      */
-    void getContacts(const QList<QContactLocalId>& aContactIds,
+    void getContacts(const QList<QContactId>& aContactIds,
                      QList<QContact>& aContacts);
 
     /*!
@@ -167,7 +167,7 @@ public:
      * @param  aContactId Id of the contact
      * @return Timestamp of contact's last modification time
      */
-    QDateTime lastModificationTime(const QContactLocalId &aContactId);
+    QDateTime lastModificationTime(const QContactId &aContactId);
 
     /*! \brief Return creation time of single contact
      *
@@ -181,13 +181,13 @@ public:
      * @param aContactIds Ids of the contacts
      * @return Creation times
      */
-    QList<QDateTime> getCreationTimes( const QList<QContactLocalId>& aContactIds );
+    QList<QDateTime> getCreationTimes( const QList<QContactId>& aContactIds );
 
-    QContactLocalId entryExists(const QString guid);
+    QContactId entryExists(const QString guid);
 
     const QStringList localIds (const QStringList guid);
 
-    const QList<QPair<QContactLocalId, QString> > guids (const QList<QContactLocalId> localIdList);
+    const QList<QPair<QContactId, QString> > guids (const QList<QContactId> localIdList);
 
 private: // functions
 
@@ -199,7 +199,7 @@ private: // functions
      */
     void getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
                                 const QDateTime &aTimeStamp,
-                                QHash<QString, QContactLocalId> &aIdList);
+                                QHash<QString, QContactId> &aIdList);
 
     /*!
      * \brief Constructs and returns the filter for accessing only contacts allowed to be synchronized

@@ -1,3 +1,27 @@
+/*
+ * This file is part of buteo-gcontact-plugin package
+ *
+ * Copyright (C) 2013 Jolla Ltd. and/or its subsidiary(-ies).
+ *
+ * Contributors: Sateesh Kavuri <sateesh.kavuri@gmail.com>
+ *               Mani Chandrasekar <maninc@gmail.com>
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA
+ *
+ */
+
 #include "GWriteStream.h"
 #include "GContactCustomDetail.h"
 
@@ -37,7 +61,7 @@ void
 GWriteStream::encodeAllContacts ()
 {
     QList<QContact> allContacts;
-    QList<QContactLocalId> allContactIds = mContactsBackend.getAllContactIds ();
+    QList<QContactId> allContactIds = mContactsBackend.getAllContactIds ();
 
     if (allContactIds.size () <= 1)
         return;
@@ -46,8 +70,8 @@ GWriteStream::encodeAllContacts ()
     // in it. Removing this unwanted element
     allContactIds.removeFirst ();
 
-    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap;
-    foreach (QContactLocalId localId, allContactIds)
+    QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap;
+    foreach (QContactId localId, allContactIds)
     {
         qContactMap.insert (localId, GConfig::ADD);
     }
@@ -56,10 +80,10 @@ GWriteStream::encodeAllContacts ()
 }
 
 void
-GWriteStream::encodeContacts (const QList<QContactLocalId> idList, GConfig::TRANSACTION_TYPE type)
+GWriteStream::encodeContacts (const QList<QContactId> idList, GConfig::TRANSACTION_TYPE type)
 {
-    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap;
-    foreach (QContactLocalId localId, idList)
+    QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap;
+    foreach (QContactId localId, idList)
     {
         qContactMap.insert (localId, type);
     }
@@ -68,7 +92,7 @@ GWriteStream::encodeContacts (const QList<QContactLocalId> idList, GConfig::TRAN
 }
 
 QByteArray
-GWriteStream::encodeContact (QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> qContactMap)
+GWriteStream::encodeContact (QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap)
 {
     if (qContactMap.size () <= 0)
         return mXmlBuffer;
@@ -78,7 +102,7 @@ GWriteStream::encodeContact (QHash<QContactLocalId, GConfig::TRANSACTION_TYPE> q
     bool batch = true;
     startBatchFeed ();
 
-    QHash<QContactLocalId, GConfig::TRANSACTION_TYPE>::iterator contactPair;
+    QHash<QContactId, GConfig::TRANSACTION_TYPE>::iterator contactPair;
     for (contactPair = qContactMap.begin (); contactPair != qContactMap.end (); ++contactPair)
     {
         QContact contact;
@@ -144,35 +168,35 @@ GWriteStream::encodeContact(const QContact qContact,
 
     foreach (const QContactDetail& detail, allDetails)
     {
-        if (detail.definitionName () == QContactName::DefinitionName)
+        if (detail.type() == QContactName::Type)
             encodeName (detail);
-        else if (detail.definitionName () == QContactPhoneNumber::DefinitionName)
+        else if (detail.type() == QContactPhoneNumber::Type)
             encodePhoneNumber (detail);
-        else if (detail.definitionName () == QContactEmailAddress::DefinitionName)
+        else if (detail.type() == QContactEmailAddress::Type)
             encodeEmail (detail);
-        else if (detail.definitionName () == QContactAddress::DefinitionName)
+        else if (detail.type() == QContactAddress::Type)
             encodeAddress (detail);
-        else if (detail.definitionName () == QContactUrl::DefinitionName)
+        else if (detail.type() == QContactUrl::Type)
             encodeUrl (detail);
-        else if (detail.definitionName () == QContactBirthday::DefinitionName)
+        else if (detail.type () == QContactBirthday::Type)
             encodeBirthDay (detail);
-        else if (detail.definitionName () == QContactNote::DefinitionName)
+        else if (detail.type () == QContactNote::Type)
             encodeNote (detail);
-        else if (detail.definitionName () == QContactHobby::DefinitionName)
+        else if (detail.type () == QContactHobby::Type)
             encodeHobby (detail);
-        else if (detail.definitionName () == QContactOrganization::DefinitionName)
+        else if (detail.type () == QContactOrganization::Type)
             encodeOrganization (detail);
-        else if (detail.definitionName () == QContactAvatar::DefinitionName)
+        else if (detail.type () == QContactAvatar::Type)
             encodeAvatar (detail, qContact);
-        else if (detail.definitionName () == QContactAnniversary::DefinitionName)
+        else if (detail.type () == QContactAnniversary::Type)
             encodeAnniversary (detail);
-        else if (detail.definitionName () == QContactNickname::DefinitionName)
+        else if (detail.type () == QContactNickname::Type)
             encodeNickname (detail);
-        else if (detail.definitionName () == QContactGender::DefinitionName)
+        else if (detail.type () == QContactGender::Type)
             encodeGender (detail);
-        else if (detail.definitionName () == QContactOnlineAccount::DefinitionName)
+        else if (detail.type () == QContactOnlineAccount::Type)
             encodeOnlineAccount(detail);
-        else if (detail.definitionName () == QContactFamily::DefinitionName)
+        else if (detail.type () == QContactFamily::Type)
             encodeFamily (detail);
         // TODO: handle the custom detail fields. If sailfish UI
         // does not handle these contact details, then they
@@ -224,7 +248,7 @@ void
 GWriteStream::encodeId (const QContact qContact)
 {
     QString guid = qContact.detail (
-        QContactGuid::DefinitionName).value (QContactGuid::FieldGuid);
+                QContactGuid::Type).value (QContactGuid::FieldGuid).toString();
 
     if (!guid.isNull ())
         mXmlWriter.writeTextElement ("id", "http://www.google.com/m8/feeds/contacts/default/base/" + guid);
@@ -233,7 +257,7 @@ GWriteStream::encodeId (const QContact qContact)
 void
 GWriteStream::encodeLocalId (const QContact qContact)
 {
-    QString localId = QString::number (qContact.localId ());
+    QString localId = qContact.id().toString();
 
     if (!localId.isNull ())
     {
@@ -247,7 +271,7 @@ void
 GWriteStream::encodeUpdated (const QContact qContact)
 {
     QString updated = qContact.detail (
-        QContactTimestamp::DefinitionName).value (QContactTimestamp::FieldModificationTimestamp);
+                QContactTimestamp::Type).value (QContactTimestamp::FieldModificationTimestamp).toString();
 
     if (!updated.isNull ())
         mXmlWriter.writeTextElement ("updated", updated);
@@ -305,19 +329,43 @@ void
 GWriteStream::encodePhoneNumber (const QContactDetail& detail)
 {
     QContactPhoneNumber phoneNumber = static_cast<QContactPhoneNumber>(detail);
-    QStringList subTypes = phoneNumber.subTypes();
-    if (phoneNumber.number ().isEmpty ())
+    QList<int> subTypes = phoneNumber.subTypes();
+    if (phoneNumber.number().isEmpty ())
         return;
 
     mXmlWriter.writeStartElement ("gd:phoneNumber");
 
     QString rel = "http://schemas.google.com/g/2005#";
-    // TODO: Handle subtype encoding properly
-    if (subTypes.contains(QContactPhoneNumber::SubTypeAssistant))
-        mXmlWriter.writeAttribute ("rel", rel + "assistant");
-    else
-        mXmlWriter.writeAttribute ("rel", rel + "mobile");
 
+    QString type;
+    switch(subTypes.first()) {
+        case QContactPhoneNumber::SubTypeLandline:
+        type = "landline";
+        break;
+        case QContactPhoneNumber::SubTypeMobile:
+        type = "mobile";
+        break;
+        case QContactPhoneNumber::SubTypeFax:
+        type = "fax";
+        break;
+        case QContactPhoneNumber::SubTypePager:
+        type = "pager";
+        break;
+        case QContactPhoneNumber::SubTypeModem:
+        type = "tty_tdd";
+        break;
+        case QContactPhoneNumber::SubTypeCar:
+        type = "car";
+        break;
+        case QContactPhoneNumber::SubTypeBulletinBoardSystem:
+        type = "telex";
+        break;
+        case QContactPhoneNumber::SubTypeAssistant:
+        type = "assistant";
+        break;
+    }
+
+    mXmlWriter.writeAttribute ("rel", rel + type);
     mXmlWriter.writeCharacters (phoneNumber.number());
     mXmlWriter.writeEndElement ();
 }
@@ -389,8 +437,7 @@ GWriteStream::encodeBirthDay (const QContactDetail& detail)
     if (bday.date ().isNull ())
         return;
 
-    QVariant variant = bday.variantValue(QContactBirthday::FieldBirthday);
-    QString value = variant.toDate().toString(Qt::ISODate);
+    QString value = bday.date().toString(Qt::ISODate);
 
     mXmlWriter.writeEmptyElement ("gContact:birthday");
     mXmlWriter.writeAttribute ("when", value);
@@ -469,8 +516,8 @@ GWriteStream::encodeOrganization (const QContactDetail& detail)
 void
 GWriteStream::encodeAvatar (const QContactDetail &detail, const QContact qContact)
 {
-    mContactsWithAvatars << qContact.id ().localId ();
-    /*
+    mContactsWithAvatars << qContact.id ();
+
     QContactAvatar contactAvatar = static_cast<QContactAvatar>(detail);
     QUrl imageUrl(contactAvatar.imageUrl());
 
@@ -482,11 +529,9 @@ GWriteStream::encodeAvatar (const QContactDetail &detail, const QContact qContac
          imageUrl.isValid () &&
          !imageUrl.isEmpty ())
     {
-        QContactGuid guid = qContact.detail<QContactGuid> ();
-        imageUrl.setFragment (guid.guid ());
-        mAvatarUrls.append (imageUrl);
+        QContactGuid guid = qContact.detail<QContactGuid>();
+        imageUrl.setFragment(guid.guid ());
     }
-    */
 }
 
 /*!
@@ -496,10 +541,21 @@ void
 GWriteStream::encodeGender (const QContactDetail &detail)
 {
     QContactGender gender = static_cast<QContactGender>(detail);
-    if (gender.gender ().isEmpty ())
+    if (gender.gender() <= 0)
         return;
     mXmlWriter.writeEmptyElement ("gContact:gender");
-    mXmlWriter.writeAttribute ("value", gender.gender ().toLower ());
+    switch(gender.gender()) {
+        case QContactGender::GenderMale:
+        mXmlWriter.writeAttribute ("value", "male");
+        break;
+        case QContactGender::GenderFemale:
+        mXmlWriter.writeAttribute ("value", "female");
+        break;
+        case QContactGender::GenderUnspecified:
+        mXmlWriter.writeAttribute ("value", "unspecified");
+        break;
+    }
+
 }
 
 /*!
@@ -542,8 +598,8 @@ GWriteStream::encodeOnlineAccount (const QContactDetail &detail)
     if (onlineAccount.accountUri ().isEmpty ())
         return;
 
-    QStringList subTypes = onlineAccount.subTypes();
-    QString protocol = onlineAccount.protocol();
+    QList<int> subTypes = onlineAccount.subTypes();
+    QContactOnlineAccount::Protocol protocol = onlineAccount.protocol();
 
     QString propertyName;
 
@@ -593,7 +649,7 @@ GWriteStream::encodeFamily (const QContactDetail &detail)
     }
 }
 
-QList<QContactLocalId>&
+QList<QContactId>&
 GWriteStream::contactsWithAvatars ()
 {
     return mContactsWithAvatars;

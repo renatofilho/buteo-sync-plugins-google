@@ -29,7 +29,7 @@
 
 #include "GAtom.h"
 
-QTM_USE_NAMESPACE
+QTCONTACTS_USE_NAMESPACE
 
 class GContactEntry
 {
