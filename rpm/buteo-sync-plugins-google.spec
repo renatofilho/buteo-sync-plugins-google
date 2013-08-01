@@ -11,6 +11,7 @@ BuildRequires: pkgconfig(glib-2.0)
 BuildRequires: pkgconfig(Qt5Core)
 BuildRequires: pkgconfig(Qt5Contacts)
 BuildRequires: pkgconfig(Qt5Network)
+BuildRequires: pkgconfig(Qt5Test)
 BuildRequires: pkgconfig(signon-oauth2plugin)
 BuildRequires: pkgconfig(buteosyncfw5)
 # Change to below pkgconfig dependencies when we don't have broken packages
