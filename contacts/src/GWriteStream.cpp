@@ -338,31 +338,35 @@ GWriteStream::encodePhoneNumber (const QContactDetail& detail)
     QString rel = "http://schemas.google.com/g/2005#";
 
     QString type;
-    switch(subTypes.first()) {
-        case QContactPhoneNumber::SubTypeLandline:
-        type = "landline";
-        break;
-        case QContactPhoneNumber::SubTypeMobile:
+    if (subTypes.isEmpty()) {
         type = "mobile";
-        break;
-        case QContactPhoneNumber::SubTypeFax:
-        type = "fax";
-        break;
-        case QContactPhoneNumber::SubTypePager:
-        type = "pager";
-        break;
-        case QContactPhoneNumber::SubTypeModem:
-        type = "tty_tdd";
-        break;
-        case QContactPhoneNumber::SubTypeCar:
-        type = "car";
-        break;
-        case QContactPhoneNumber::SubTypeBulletinBoardSystem:
-        type = "telex";
-        break;
-        case QContactPhoneNumber::SubTypeAssistant:
-        type = "assistant";
-        break;
+    } else {
+        switch(subTypes.first()) {
+            case QContactPhoneNumber::SubTypeLandline:
+            type = "landline";
+            break;
+            case QContactPhoneNumber::SubTypeMobile:
+            type = "mobile";
+            break;
+            case QContactPhoneNumber::SubTypeFax:
+            type = "fax";
+            break;
+            case QContactPhoneNumber::SubTypePager:
+            type = "pager";
+            break;
+            case QContactPhoneNumber::SubTypeModem:
+            type = "tty_tdd";
+            break;
+            case QContactPhoneNumber::SubTypeCar:
+            type = "car";
+            break;
+            case QContactPhoneNumber::SubTypeBulletinBoardSystem:
+            type = "telex";
+            break;
+            case QContactPhoneNumber::SubTypeAssistant:
+            type = "assistant";
+            break;
+        }
     }
 
     mXmlWriter.writeAttribute ("rel", rel + type);

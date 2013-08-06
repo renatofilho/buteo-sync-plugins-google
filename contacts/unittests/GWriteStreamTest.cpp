@@ -35,18 +35,17 @@ GWriteStreamTest::testEncodeMultipleContacts ()
 {
     GWriteStream ws;
 
-    QContactManager mgr;
-    QList<QContactId> contactList = mgr.contactIds ();
+    QContactManager *mgr = new QContactManager ("org.nemomobile.contacts.sqlite");
+    QList<QContactId> contactList = mgr->contactIds ();
 
     QHash<QContactId, GConfig::TRANSACTION_TYPE> contactMap;
-    if (contactList.count() > 3) {
-        contactMap.insert (contactList.at (1), GConfig::ADD);
-        contactMap.insert (contactList.at (2), GConfig::DELETE);
-        contactMap.insert (contactList.at (3), GConfig::UPDATE);
+    if (contactList.count() > 2) {
+        contactMap.insert (contactList.at (0), GConfig::ADD);
+        contactMap.insert (contactList.at (1), GConfig::DELETE);
+        contactMap.insert (contactList.at (2), GConfig::UPDATE);
 
-        qDebug() << ws.encodeContact (contactMap);
-        LOG_DEBUG (ws.encodeContact (contactMap));
-        std::cout << ws.encodeContact (contactMap).constData () << "\n";
+        std::cout << "encoding multiple contacts";
+        std::cout << ws.encodeContact (contactMap).constData() << "\n";
     }
 }
 
@@ -55,8 +54,8 @@ GWriteStreamTest::testEncodeContacts ()
 {
     GWriteStream ws;
 
-    QContactManager mgr;
-    QList<QContactId> contactList = mgr.contactIds ();
+    QContactManager *mgr = new QContactManager ("org.nemomobile.contacts.sqlite");
+    QList<QContactId> contactList = mgr->contactIds ();
 
     ws.encodeContacts (contactList, GConfig::UPDATE);
     std::cout << ws.encodedStream ().constData () << "\n";

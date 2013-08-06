@@ -40,7 +40,7 @@ int main(int argc, char** argv)
     QTest::qExec (&parseStreamTest, argc, argv);
     QTest::qExec (&transportTest, argc, argv);
     QTest::qExec (&contactsBackendTest, argc, argv);
-//    QTest::qExec (&writer, argc, argv);
+    QTest::qExec (&writer, argc, argv);
 
     return 0;
 }
