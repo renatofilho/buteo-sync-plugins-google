@@ -42,9 +42,7 @@ Requires: %{name} = %{version}-%{release}
 
 %files tests
 %defattr(-,root,root,-)
-#%{_bindir}/*-tests
-#%{_datadir}/sync-app-tests
-#%{_datadir}/%{name}-tests
+/opt/tests/%{name}
 
 
 %prep
@@ -53,8 +51,7 @@ Requires: %{name} = %{version}-%{release}
 
 %build
 %qmake5 -recursive
-#make %{?_smp_mflags}
-make
+make %{?_smp_mflags}
 
 
 %install
