@@ -38,12 +38,10 @@
 
 #include <ProfileEngineDefs.h>
 
+#include <sailfishkeyprovider.h>
+
 using namespace Accounts;
 using namespace SignOn;
-
-/* Values obtained after registering with Google */
-const QString CLIENT_ID	            ("340286938476.apps.googleusercontent.com");
-const QString CLIENT_SECRET			("cE6huV6DyPQCKXo5AOg5Balm");
 
 const QString RESPONSE_TYPE         ("ResponseType");
 const QString SCOPE             	("Scope");
@@ -153,9 +151,11 @@ void GAuth::authenticate()
         scope.append(mScope);
     }
 
+    QString clientId = storedKeyValue("google", "google-sync", "client-id");
+    QString clientSecret = storedKeyValue("google", "google-sync", "client-secret");
     OAuth2PluginNS::OAuth2PluginData data;
-    data.setClientId(CLIENT_ID);
-    data.setClientSecret(CLIENT_SECRET);
+    data.setClientId(clientId);
+    data.setClientSecret(clientSecret);
     data.setHost(host);
     data.setAuthPath(auth_url);
     data.setTokenPath(token_url);
@@ -176,4 +176,17 @@ void GAuth::error(const SignOn::Error & error) {
     qDebug() << error.message();
 
     emit failed();
+}
+
+QString GAuth::storedKeyValue(const char *provider, const char *service, const char *keyName) {
+    char *storedKey = NULL;
+    QString retn;
+
+    int success = SailfishKeyProvider_storedKey(provider, service, keyName, &storedKey);
+    if (success == 0 && storedKey != NULL && strlen(storedKey) != 0) {
+        retn = QLatin1String(storedKey);
+        free(storedKey);
+    }
+
+    return retn;
 }
