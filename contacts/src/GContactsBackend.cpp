@@ -379,6 +379,7 @@ GContactsBackend::getContact(const QContactId& aContactId,
 
     QList<QContactId> contactId;
     contactId.append(aContactId);
+    LOG_DEBUG("Contact ID to be retreived = " << aContactId.toString());
     QList<QContact>        returnedContacts;
 
     getContacts(contactId, returnedContacts);
@@ -400,9 +401,34 @@ GContactsBackend::getContacts(const QList<QContactId>& aContactIds,
     Q_ASSERT (iMgr);
 
     QContactIdFilter contactFilter;
-    contactFilter.setIds(aContactIds);
+    contactFilter.setIds(aContactIds);    
+    aContacts = iMgr->contacts(contactFilter & getSyncTargetFilter());
 
-    aContacts = iMgr->contacts(contactFilter);
+    LOG_DEBUG("Contacts retreived from Contact manager  = " << aContacts.count());
+}
+
+QContact GContactsBackend::getContact(const QString& aGuid) {
+    FUNCTION_CALL_TRACE;
+    Q_ASSERT (iMgr);
+    LOG_DEBUG("GUID to be searched for = " << aGuid);
+
+    QContact retContact;
+    QtContacts::QContactDetailFilter guidFilter;
+    guidFilter.setDetailType (QtContacts::QContactDetail::TypeGuid);
+    guidFilter.setValue (aGuid);
+    guidFilter.setMatchFlags (QtContacts::QContactFilter::MatchExactly);
+
+    QList<QContact> contactList = iMgr->contacts(guidFilter & getSyncTargetFilter());
+
+    foreach(QContact contact , contactList) {
+        QString guid = contact.detail<QtContacts::QContactGuid>().guid();
+        if (guid.compare(aGuid) == 0) {
+            retContact = contact;
+            break;
+        }
+    }
+
+    return retContact;
 }
 
 QDateTime
@@ -527,15 +553,15 @@ QStringList GContactsBackend::localIds(const QStringList guidList)
     QContactDetailFilter guidFilter;
     guidFilter.setDetailType(QContactGuid::Type);
     guidFilter.setMatchFlags (QContactFilter::MatchExactly);
+    QList<QContact> tempContacts =
+            iMgr->contacts (guidFilter & getSyncTargetFilter());
 
     QStringList localIdList;
-    for (int i=0; i<guidList.size (); i++)
-    {
-        guidFilter.setValue (guidList.at (i));
-        QList<QContact> tempContacts =
-                iMgr->contacts (guidFilter & getSyncTargetFilter (), QList<QContactSortOrder>(), hint);
-        if (tempContacts.size () > 0)
-            localIdList.append(tempContacts.at(0).id().toString());
+    foreach (QContact contact , tempContacts) {
+        QString guid = contact.detail<QtContacts::QContactGuid>().guid();
+        if (guidList.contains(guid)) {
+            localIdList << contact.id().toString();
+        }
     }
 
     return localIdList;

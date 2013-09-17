@@ -45,6 +45,7 @@
 #include <QContactFamily>
 #include <QContactTimestamp>
 #include <QContactManager>
+#include <QContactOriginMetadata>
 
 #include <QHash>
 
@@ -138,11 +139,11 @@ GWriteStream::encodeContact(const QContact qContact,
         mXmlWriter.writeStartElement ("atom:entry");
         mXmlWriter.writeAttribute ("xmlns:atom", "http://www.w3.org/2005/Atom");
         mXmlWriter.writeAttribute ("xmlns:gd", "http://schemas.google.com/g/2005");
-        mXmlWriter.writeAttribute (" bexmlns:gContact", "http://schemas.google.com/contact/2008");
+        mXmlWriter.writeAttribute (" xmlns:gContact", "http://schemas.google.com/contact/2008");
     }
 
     // Set the local id as "gContact:userDefinedField"
-    encodeLocalId (qContact);
+//    encodeLocalId (qContact);
 
     // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
     // since etag is an attribute of this element
@@ -259,7 +260,7 @@ GWriteStream::encodeLocalId (const QContact qContact)
 {
     QString localId = qContact.id().toString();
 
-    if (!localId.isNull ())
+    if (!localId.isNull())
     {
         mXmlWriter.writeEmptyElement ("gContact:userDefinedField");
         mXmlWriter.writeAttribute ("key", "ButeoLocalId");
@@ -280,13 +281,11 @@ GWriteStream::encodeUpdated (const QContact qContact)
 void
 GWriteStream::encodeEtag (const QContact qContact)
 {
-#ifdef CUSTOM_DETAIL_IS_SUPPORTED
-    QString etag = qContact.detail (
-        GContactCustomDetail::DefinitionName).value (GContactCustomDetail::FieldGContactETag);
+    QtContacts::QContactOriginMetadata etagDetail = qContact.detail<QtContacts::QContactOriginMetadata>();
+    QString etag = etagDetail.id();
 
     if (!etag.isNull ())
         mXmlWriter.writeAttribute ("gd:etag", etag);
-#endif
 }
 
 void
@@ -556,7 +555,6 @@ GWriteStream::encodeGender (const QContactDetail &detail)
         mXmlWriter.writeAttribute ("value", "female");
         break;
         case QContactGender::GenderUnspecified:
-        mXmlWriter.writeAttribute ("value", "unspecified");
         break;
     }
 

@@ -46,6 +46,9 @@
 #include <QContactSyncTarget>
 #include <QContactTimestamp>
 #include <QContactAvatar>
+#include <QContactOriginMetadata>
+#include <qcontactoriginmetadata_impl.h>
+
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
@@ -66,7 +69,6 @@ GContactEntry::setGuid (const QString id)
     QContactGuid contactGuid = mQContact.detail<QContactGuid> ();
     contactGuid.setGuid (id);
     mQContact.saveDetail (&contactGuid);
-
     mId = id;
 }
 
@@ -94,12 +96,9 @@ GContactEntry::localId ()
 void
 GContactEntry::setEtag (const QString etag)
 {
-#ifdef CUSTOM_DETAIL_IS_SUPPORTED
-    GContactCustomDetail etagDetail = mQContact.detail <GContactCustomDetail>();
-    etagDetail.setETag (etag);
-
+    QtContacts::QContactOriginMetadata etagDetail;
+    etagDetail.setId(etag);
     mQContact.saveDetail (&etagDetail);
-#endif
 }
 
 void
@@ -648,7 +647,7 @@ void
 GContactEntry::setSyncTarget ()
 {
     QContactSyncTarget target;
-    target.setSyncTarget ("buteo-google-contacts");
+    target.setSyncTarget ("buteo");
 
     mQContact.saveDetail (&target);
 }

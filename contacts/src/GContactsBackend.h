@@ -111,6 +111,12 @@ public:
     void getContacts(const QList<QContactId> &aContactIDs,
                      QMap<QContactId,QString>& aContactData );
 
+    /*!
+     * \brief Returns a contact matching filter criteria
+     * @param aGuid Guid of the contact to be returned
+     */
+    QContact getContact(const QString& aGuid);
+
 
     /*!
      * \brief Get multiple contacts at once as QContact objects

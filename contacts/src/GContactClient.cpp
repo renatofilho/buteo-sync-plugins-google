@@ -880,7 +880,7 @@ GContactClient::storeToRemote ()
          */
         int totalCount = 0;
         QHash<QString, QContactId>::iterator iter = mAddedContactIds.begin ();
-
+        LOG_DEBUG("Total number of Contacts ADDED : " << mAddedContactIds.count());
         while (iter != mAddedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::ADD);
@@ -893,6 +893,7 @@ GContactClient::storeToRemote ()
         }
 
         iter = mModifiedContactIds.begin ();
+        LOG_DEBUG("Total number of Contacts MODIFIED : " << mModifiedContactIds.count());
         while (iter != mModifiedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::UPDATE);
@@ -905,6 +906,7 @@ GContactClient::storeToRemote ()
         }
 
         iter = mDeletedContactIds.begin ();
+        LOG_DEBUG("Total number of Contacts DELETED : " << mDeletedContactIds.count());
         while (iter != mDeletedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::DELETE);
@@ -916,6 +918,7 @@ GContactClient::storeToRemote ()
             ++iter;
         }
 
+        LOG_DEBUG("Contacts to be syncs : " << allChangedContactIds.count());
         if (allChangedContactIds.size () > 0)
         {
             GWriteStream ws;
@@ -1013,8 +1016,11 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
             QList<QContact> modifiedContacts = toQContacts (remoteModifiedContacts);
 
             QStringList modifiedIdsList;
-            for (int i=0; i<modifiedContacts.size (); i++)
-                modifiedIdsList << modifiedContacts.at(i).id().toString();
+            for (int i=0; i<modifiedContacts.size (); i++) {
+                QContact contact = mContactBackend->getContact(remoteModifiedContacts.at(i)->guid());
+                LOG_DEBUG("Original contact - " << contact.id().toString());
+                modifiedIdsList << contact.id().toString();
+            }
 
             QMap<int, GContactsStatus> modifiedStatusMap =
             mContactBackend->modifyContacts (modifiedContacts, modifiedIdsList);
@@ -1030,7 +1036,7 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
 
         if (remoteDeletedContacts.size () > 0)
         {
-            LOG_DEBUG ("***Deleting " << remoteModifiedContacts.size () << " contacts");
+            LOG_DEBUG ("***Deleting " << remoteDeletedContacts.size () << " contacts");
             QStringList guidList;
             for (int i=0; i<remoteDeletedContacts.size (); i++)
                 guidList << remoteDeletedContacts.at (i)->guid ();

@@ -23,6 +23,8 @@
 
 #include "GContactsBackendTest.h"
 #include "GContactsBackend.h"
+#include <QDateTime>
+#include <QHash>
 #include <QDebug>
 #include <iostream>
 
@@ -51,5 +53,35 @@ GContactsBackendTest::testLocalIdsGivenGuids ()
     QStringList localIds = cb.localIds (guids);
     foreach (QString localId, localIds) {
         std::cout << localId.toStdString() << "\n";
+    }
+}
+
+void GContactsBackendTest::testgetAllNewContactIds() {
+    GContactsBackend cb;
+    QDateTime datetime = QDateTime::fromString("2013-09-16T10:00:19", Qt::ISODate);
+    QHash<QString, QContactId> newContactHash = cb.getAllNewContactIds(datetime);
+    std::cout << "Total Contacts added newly = " << newContactHash.count() << "   Search Time : " << datetime.toString(Qt::ISODate).toStdString() << "\n";
+    foreach (QContactId id , newContactHash.values()) {
+        std::cout << id.toString().toStdString() << "\n";
+    }
+}
+
+void GContactsBackendTest::testgetAllDeletedContactIds() {
+    GContactsBackend cb;
+    QDateTime datetime = QDateTime::fromString("2013-09-16T10:00:19", Qt::ISODate);
+    QHash<QString, QContactId> newContactHash = cb.getAllDeletedContactIds(datetime);
+    std::cout << "Total Contacts Deleted = " << newContactHash.count() << "   Search Time : " << datetime.toString(Qt::ISODate).toStdString() << "\n";
+    foreach (QContactId id , newContactHash.values()) {
+        std::cout << id.toString().toStdString() << "\n";
+    }
+}
+
+void GContactsBackendTest::testgetAllModifiedContactIds() {
+    GContactsBackend cb;
+    QDateTime datetime = QDateTime::fromString("2013-09-16T10:00:19", Qt::ISODate);
+    QHash<QString, QContactId> newContactHash = cb.getAllModifiedContactIds(datetime);
+    std::cout << "Total Contacts Modified = " << newContactHash.count() << "   Search Time : " << datetime.toString(Qt::ISODate).toStdString() << "\n";
+    foreach (QContactId id , newContactHash.values()) {
+        std::cout << id.toString().toStdString() << "\n";
     }
 }
