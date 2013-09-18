@@ -194,6 +194,8 @@ private:
 
     quint32                     mCommittedItems;
 
+    quint32                     mAccountId;
+
     QMap<QString, Buteo::DatabaseResults> mItemResults;
 
     QList<QContactId>          mAllLocalContactIds;

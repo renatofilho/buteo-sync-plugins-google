@@ -70,6 +70,7 @@ private:
     // incase of failures
     void handleEntryBatchStatus ();
     void handleEntryBatchOperation ();
+    void handleEntryBatchId();
 
     // gContact:xxx schema handler methods
     void handleEntryContent();

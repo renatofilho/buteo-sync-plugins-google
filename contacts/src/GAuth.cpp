@@ -151,8 +151,8 @@ void GAuth::authenticate()
         scope.append(mScope);
     }
 
-    QString clientId = storedKeyValue("google", "google-sync", "client-id");
-    QString clientSecret = storedKeyValue("google", "google-sync", "client-secret");
+    QString clientId = storedKeyValue("google", "google", "client-id");
+    QString clientSecret = storedKeyValue("google", "google", "client-secret");
     OAuth2PluginNS::OAuth2PluginData data;
     data.setClientId(clientId);
     data.setClientSecret(clientSecret);

@@ -13,7 +13,7 @@ class GWriteStream
 {
 public:
 
-    GWriteStream ();
+    GWriteStream (quint32 accountId);
 
     ~GWriteStream ();
 
@@ -35,9 +35,8 @@ private:
 
     void startBatchFeed ();
     void endBatchFeed ();
-    void encodeBatchTag (const GConfig::TRANSACTION_TYPE type);
+    void encodeBatchTag (const GConfig::TRANSACTION_TYPE type, const QString batchId);
     void encodeId (const QContact qContact);
-    void encodeLocalId (const QContact qContact);
     void encodeUpdated (const QContact qContact);
     void encodeEtag (const QContact qContact);
     void encodeCategory ();
@@ -59,6 +58,8 @@ private:
     void encodeOnlineAccount (const QContactDetail &detail);
     void encodeFamily (const QContactDetail &detail);
     void encodeDisplayLabel (const QContactDetail &detail);
+
+    quint32          mAccountId;
 
     QByteArray       mXmlBuffer;
 

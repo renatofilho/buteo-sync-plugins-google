@@ -78,18 +78,14 @@ GContactEntry::guid ()
     return mId;
 }
 
-void
-GContactEntry::setLocalId (const QString localId)
-{
+void GContactEntry::setLocalId(const QString localId) {
     mLocalId = localId;
     QContactId id;
     id.fromString(mLocalId);
     mQContact.setId (id);
 }
 
-QString
-GContactEntry::localId ()
-{
+QString GContactEntry::localId() {
     return mLocalId;
 }
 

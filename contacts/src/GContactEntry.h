@@ -43,9 +43,9 @@ public:
 
     QString guid ();
 
-    void setLocalId (const QString localId);
+    void setLocalId(const QString localId);
 
-    QString localId ();
+    QString localId();
 
     void setEtag (const QString etag);
 

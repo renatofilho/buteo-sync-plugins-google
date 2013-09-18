@@ -213,10 +213,9 @@ GContactsBackend::modifyContacts( QList<QContact> &aContactList,
     QMap<int,GContactsStatus> statusMap;
 
     for (int i = 0; i < aContactList.size(); i++) {
+        LOG_DEBUG("Replacing item's ID " << aContactList.at(i));
         LOG_DEBUG("Id of the contact to be replaced" << aContactIdList.at(i));
         aContactList[i].setId(QContactId::fromString(aContactIdList.at(i)));
-
-        LOG_DEBUG("Replacing item's ID " << aContactList.at(i));
     }
 
     if(iMgr->saveContacts(&aContactList , &errors)) {
@@ -313,7 +312,6 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
     if (aEventType != QContactChangeLogFilter::EventAdded)
     {
         filter.setEventType(QContactChangeLogFilter::EventAdded);
-        //QList<QContactId> addedList = iMgr->contactIds (filter);
         QList<QContactId> addedList = iMgr->contactIds(filter & getSyncTargetFilter());
         foreach (const QContactId &id, addedList)
         {
@@ -531,8 +529,8 @@ GContactsBackend::entryExists (const QString entryGuid)
 {
     QContactDetailFilter guidFilter;
     guidFilter.setDetailType(QContactGuid::Type);
-    guidFilter.setValue (entryGuid);
     guidFilter.setMatchFlags (QContactFilter::MatchExactly);
+    guidFilter.setValue (entryGuid);
 
     QList<QContactId> idList = iMgr->contactIds (guidFilter & getSyncTargetFilter ());
 
@@ -545,25 +543,11 @@ GContactsBackend::entryExists (const QString entryGuid)
 const
 QStringList GContactsBackend::localIds(const QStringList guidList)
 {
-    QContactFetchHint hint;
-    QList<QContactDetail::DetailType> detailTypes;
-    detailTypes << QContactGuid::Type;
-    hint.setDetailTypesHint(detailTypes);
-
-    QContactDetailFilter guidFilter;
-    guidFilter.setDetailType(QContactGuid::Type);
-    guidFilter.setMatchFlags (QContactFilter::MatchExactly);
-    QList<QContact> tempContacts =
-            iMgr->contacts (guidFilter & getSyncTargetFilter());
-
     QStringList localIdList;
-    foreach (QContact contact , tempContacts) {
-        QString guid = contact.detail<QtContacts::QContactGuid>().guid();
-        if (guidList.contains(guid)) {
-            localIdList << contact.id().toString();
-        }
+    foreach (QString guid , guidList) {
+        localIdList << entryExists(guid).toString();
     }
-
+    Q_ASSERT(localIdList.count() == guidList.count());
     return localIdList;
 }
 
