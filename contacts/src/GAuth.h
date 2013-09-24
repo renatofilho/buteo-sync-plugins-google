@@ -69,6 +69,8 @@ private:
 
     QString iToken;
 
+    QString storedKeyValue(const char *provider, const char *service, const char *keyName);
+
 public slots:
 
     void credentialsStored(const quint32);

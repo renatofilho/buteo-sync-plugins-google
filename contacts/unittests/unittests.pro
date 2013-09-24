@@ -5,7 +5,7 @@ QT       += contacts network testlib
 CONFIG += debug link_pkgconfig console
 QT -= gui
 
-PKGCONFIG += buteosyncfw5
+PKGCONFIG += buteosyncfw5 qtcontacts-sqlite-qt5-extensions
 
 INCLUDEPATH += ../src
 

@@ -15,7 +15,7 @@ GWriteStreamTest::GWriteStreamTest(QObject* parent) :
 void
 GWriteStreamTest::testEncodeContact ()
 {
-    GWriteStream ws;
+    GWriteStream ws(1);
 
     QContactManager *mgr = new QContactManager ("org.nemomobile.contacts.sqlite");
     QList<QContactId> contactList = mgr->contactIds ();
@@ -33,7 +33,7 @@ GWriteStreamTest::testEncodeContact ()
 void
 GWriteStreamTest::testEncodeMultipleContacts ()
 {
-    GWriteStream ws;
+    GWriteStream ws(1);
 
     QContactManager *mgr = new QContactManager ("org.nemomobile.contacts.sqlite");
     QList<QContactId> contactList = mgr->contactIds ();
@@ -52,7 +52,7 @@ GWriteStreamTest::testEncodeMultipleContacts ()
 void
 GWriteStreamTest::testEncodeContacts ()
 {
-    GWriteStream ws;
+    GWriteStream ws(1);
 
     QContactManager *mgr = new QContactManager ("org.nemomobile.contacts.sqlite");
     QList<QContactId> contactList = mgr->contactIds ();
@@ -65,7 +65,7 @@ GWriteStreamTest::testEncodeContacts ()
 void
 GWriteStreamTest::testEncodeAllContacts ()
 {
-    GWriteStream ws;
+    GWriteStream ws(1);
     ws.encodeAllContacts ();
 
     std::cout << ws.encodedStream ().constData () << "\n";

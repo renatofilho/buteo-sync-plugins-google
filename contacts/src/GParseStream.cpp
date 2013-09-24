@@ -80,6 +80,7 @@ GParseStream::initResponseFunctionMap ()
 
     mContactFunctionMap.insert ("batch:status", &GParseStream::handleEntryBatchStatus);
     mContactFunctionMap.insert ("batch:operation", &GParseStream::handleEntryBatchOperation);
+    mContactFunctionMap.insert ("batch:id", &GParseStream::handleEntryBatchId);
 }
 
 void
@@ -136,6 +137,7 @@ GParseStream::initFunctionMap ()
 
     mContactFunctionMap.insert ("batch:status", &GParseStream::handleEntryBatchStatus);
     mContactFunctionMap.insert ("batch:operation", &GParseStream::handleEntryBatchOperation);
+    mContactFunctionMap.insert ("batch:id", &GParseStream::handleEntryBatchId);
 }
 
 GAtom*
@@ -251,6 +253,14 @@ GParseStream::handleEntryBatchOperation ()
     Q_ASSERT(mXml->isStartElement () && (mXml->name () == "operation"));
 
     mContactEntry->setBatchResponseOpsType (mXml->readElementText ());
+}
+
+void GParseStream::handleEntryBatchId() {
+    FUNCTION_CALL_TRACE;
+
+    Q_ASSERT(mXml->isStartElement () && (mXml->name () == "id"));
+
+    mContactEntry->setLocalId(mXml->readElementText());
 }
 
 void
@@ -551,13 +561,6 @@ void
 GParseStream::handleEntryUserDefinedField ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gContact:userDefinedField");
-
-    QString key = mXml->attributes ().value ("key").toString ();
-    QString value = mXml->attributes ().value ("value").toString ();
-    if (key == "ButeoLocalId")
-    {
-        mContactEntry->setLocalId (value);
-    }
 }
 
 void

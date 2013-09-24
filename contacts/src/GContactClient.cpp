@@ -442,14 +442,14 @@ GContactClient::initConfig ()
 
     LOG_DEBUG("Initiating config...");
 
-    quint32 accountId = 0;
+    mAccountId = 0;
     QString scope = "";
     QStringList accountList = iProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
     QStringList scopeList   = iProfile.keyValues(Buteo::KEY_REMOTE_DATABASE);
     if (!accountList.isEmpty()) {
         QString aId = accountList.first();
         if (aId != NULL) {
-            accountId = aId.toInt();
+            mAccountId = aId.toInt();
         }
     } else {
         return false;
@@ -458,7 +458,7 @@ GContactClient::initConfig ()
     if (!scopeList.isEmpty()) {
         scope = scopeList.first();
     }
-    mGoogleAuth = new GAuth (accountId, scope);
+    mGoogleAuth = new GAuth (mAccountId, scope);
     if (!mGoogleAuth->init()) {
         return false;
     }
@@ -678,9 +678,10 @@ GContactClient::networkRequestFinished ()
     {
         QByteArray data = mTransport->replyBody ();
         LOG_DEBUG (data);
-        if (data.isNull ())
+        if (data.isNull () || data.isEmpty())
         {
             LOG_DEBUG ("Nothing returned from server");
+            emit syncFinished(Sync::SYNC_CONNECTION_ERROR);
             return;
         }
 
@@ -788,8 +789,7 @@ GContactClient::networkError (int errorCode)
     case 400:
         // Bad request. Better to bail out, since it could be a problem with the
         // data format of the request/response
-//        mSyncStatus = Sync::SYNC_BAD_REQUEST;
-        mSyncStatus = Sync::SYNC_ERROR;
+        mSyncStatus = Sync::SYNC_BAD_REQUEST;
         break;
     case 401:
         mSyncStatus = Sync::SYNC_AUTHENTICATION_FAILURE;
@@ -802,8 +802,7 @@ GContactClient::networkError (int errorCode)
     case 503:
     case 504:
         // Server failures
-//        mSyncStatus = Sync::SYNC_SERVER_FAILURE;
-        mSyncStatus = Sync::SYNC_ERROR;
+        mSyncStatus = Sync::SYNC_SERVER_FAILURE;
         break;
     default:
         break;
@@ -823,8 +822,6 @@ GContactClient::filterRemoteAddedModifiedDeletedContacts (const QList<GContactEn
     foreach (GContactEntry* entry, remoteContacts)
     {
         QContactId localId = mContactBackend->entryExists(entry->guid ());
-        if (!localId.isNull())
-            entry->setLocalId (localId.toString());
 
         if (!localId.isNull())
         {
@@ -843,12 +840,13 @@ GContactClient::storeToRemote ()
     FUNCTION_CALL_TRACE;
 
     QByteArray encodedContacts;
+
     if (mSlowSync == true)
     {
         LOG_DEBUG ("TOTAL LOCAL CONTACTS FOR REMOTE STORAGE:" << mAllLocalContactIds.size ());
         if (!mAllLocalContactIds.isEmpty ())
         {
-            GWriteStream ws;
+            GWriteStream ws(mAccountId);
             ws.encodeContacts (mAllLocalContactIds.mid (0, GConfig::MAX_RESULTS),
                            GConfig::ADD);
             encodedContacts = ws.encodedStream ();
@@ -880,7 +878,7 @@ GContactClient::storeToRemote ()
          */
         int totalCount = 0;
         QHash<QString, QContactId>::iterator iter = mAddedContactIds.begin ();
-
+        LOG_DEBUG("Total number of Contacts ADDED : " << mAddedContactIds.count());
         while (iter != mAddedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::ADD);
@@ -893,6 +891,7 @@ GContactClient::storeToRemote ()
         }
 
         iter = mModifiedContactIds.begin ();
+        LOG_DEBUG("Total number of Contacts MODIFIED : " << mModifiedContactIds.count());
         while (iter != mModifiedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::UPDATE);
@@ -905,6 +904,7 @@ GContactClient::storeToRemote ()
         }
 
         iter = mDeletedContactIds.begin ();
+        LOG_DEBUG("Total number of Contacts DELETED : " << mDeletedContactIds.count());
         while (iter != mDeletedContactIds.end ())
         {
             allChangedContactIds.insert (iter.value (), GConfig::DELETE);
@@ -916,9 +916,10 @@ GContactClient::storeToRemote ()
             ++iter;
         }
 
+        LOG_DEBUG("Contacts to be syncs : " << allChangedContactIds.count());
         if (allChangedContactIds.size () > 0)
         {
-            GWriteStream ws;
+            GWriteStream ws(mAccountId);
 
             encodedContacts = ws.encodeContact (allChangedContactIds);
             mContactsWithAvatars.append (ws.contactsWithAvatars ());
@@ -950,7 +951,7 @@ GContactClient::storeToRemote ()
 
     mTransport->request (GTransport::POST);
 
-    return mHasMoreContactsToStore;
+    return true;
 }
 
 bool
@@ -1013,8 +1014,11 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
             QList<QContact> modifiedContacts = toQContacts (remoteModifiedContacts);
 
             QStringList modifiedIdsList;
-            for (int i=0; i<modifiedContacts.size (); i++)
-                modifiedIdsList << modifiedContacts.at(i).id().toString();
+            for (int i=0; i<modifiedContacts.size (); i++) {
+                QContact contact = mContactBackend->getContact(remoteModifiedContacts.at(i)->guid());
+                LOG_DEBUG("Original contact - " << contact.id().toString());
+                modifiedIdsList << contact.id().toString();
+            }
 
             QMap<int, GContactsStatus> modifiedStatusMap =
             mContactBackend->modifyContacts (modifiedContacts, modifiedIdsList);
@@ -1030,7 +1034,7 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
 
         if (remoteDeletedContacts.size () > 0)
         {
-            LOG_DEBUG ("***Deleting " << remoteModifiedContacts.size () << " contacts");
+            LOG_DEBUG ("***Deleting " << remoteDeletedContacts.size () << " contacts");
             QStringList guidList;
             for (int i=0; i<remoteDeletedContacts.size (); i++)
                 guidList << remoteDeletedContacts.at (i)->guid ();
@@ -1127,17 +1131,12 @@ GContactClient::updateIdsToLocal (const QList<GContactEntry*> responseEntries)
 {
     FUNCTION_CALL_TRACE;
 
-    // Fetch only the ids from the contact entry list
-    QStringList contactIdList;
-    foreach (GContactEntry* entry, responseEntries)
-    {
-        // We will have to store the local id also to the server,
-        // so that a mapping can be done while storing the remote id to
-        // local
-        contactIdList << entry->localId ();
+    QStringList localIdList;
+    foreach (GContactEntry* entry, responseEntries) {
+        localIdList << entry->localId();
     }
-    QList<QContact> qContacts = toQContacts (responseEntries);
-    mContactBackend->modifyContacts (qContacts, contactIdList);
+    QList<QContact> contactsList = toQContacts (responseEntries);
+    mContactBackend->modifyContacts (contactsList, localIdList);
 }
 
 /**

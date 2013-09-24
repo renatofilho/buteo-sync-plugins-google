@@ -39,6 +39,12 @@ private slots:
     void testAllLocalContactIds ();
 
     void testLocalIdsGivenGuids ();
+
+    void testgetAllNewContactIds();
+
+    void testgetAllDeletedContactIds();
+
+    void testgetAllModifiedContactIds();
 };
 
 #endif // GCONTACTSBACKENDTEST_H

@@ -14,7 +14,7 @@ TEMPLATE = lib
 #$$PKG_CONFIG_PATH = $$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig/
 
 CONFIG += link_pkgconfig plugin debug console
-PKGCONFIG += buteosyncfw5 libsignon-qt5 accounts-qt5 signon-oauth2plugin
+PKGCONFIG += buteosyncfw5 libsignon-qt5 accounts-qt5 signon-oauth2plugin libsailfishkeyprovider qtcontacts-sqlite-qt5-extensions
 
 VER_MAJ = 1
 VER_MIN = 0

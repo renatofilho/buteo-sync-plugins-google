@@ -24,3 +24,26 @@
 
 #include "GContactCustomDetail.h"
 
+const QString GContactCustomDetail::FieldGContactETag = "GContactETag";
+const QString GContactCustomDetail::FieldGContactBillingInformation = "GContactBillingInformation";
+const QString GContactCustomDetail::FieldGContactCalendarLink = "GContactCalendarLink";
+const QString GContactCustomDetail::FieldGContactDirectoryServer = "GContactDirectoryServer";
+const QString GContactCustomDetail::FieldGContactEvent = "GContactEvent";
+const QString GContactCustomDetail::FieldGContactExternalId = "GContactExternalId";
+const QString GContactCustomDetail::FieldGContactGroupMembershipInfo = "GContactGroupMembershipInfo";
+const QString GContactCustomDetail::FieldGContactInitials = "GContactInitials";
+const QString GContactCustomDetail::FieldGContactJot = "GContactJot";
+const QString GContactCustomDetail::FieldGContactLanguage = "GContactLanguate";
+const QString GContactCustomDetail::FieldGContactMileage = "GContactMileage";
+const QString GContactCustomDetail::FieldGContactOccupation = "GContactOccupation";
+const QString GContactCustomDetail::FieldGContactPriority = "GContactPriority";
+const QString GContactCustomDetail::FieldGContactRelation = "GContactRelation";
+const QString GContactCustomDetail::FieldGContactSensitivity = "GContactSensitivity";
+const QString GContactCustomDetail::FieldGContactSubject = "GContactSubject";
+const QString GContactCustomDetail::FieldGContactSystemGroup = "GContactSystemGroup";
+const QString GContactCustomDetail::FieldGContactCountry = "GContactCountry";
+const QString GContactCustomDetail::FieldGContactFeedLink = "GContactFeedLink";
+const QString GContactCustomDetail::FieldGContactMoney = "GContactMoney";
+const QString GContactCustomDetail::FieldGContactRating = "GContactRating";
+
+

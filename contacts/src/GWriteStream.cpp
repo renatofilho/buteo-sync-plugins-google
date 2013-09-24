@@ -26,6 +26,12 @@
 #include "GContactCustomDetail.h"
 
 #include <QXmlStreamWriter>
+
+#include <QVariant>
+#include <QHash>
+
+#include <LogMacros.h>
+
 #include <QContactUrl>
 #include <QContactAnniversary>
 #include <QContact>
@@ -45,11 +51,13 @@
 #include <QContactFamily>
 #include <QContactTimestamp>
 #include <QContactManager>
+#include <QContactOriginMetadata>
 
-#include <QHash>
+#include <Accounts/Manager>
+#include <Accounts/Account>
 
-GWriteStream::GWriteStream () :
-    mXmlWriter (&mXmlBuffer)
+GWriteStream::GWriteStream(quint32 accountId)
+                : mXmlWriter (&mXmlBuffer), mAccountId(accountId)
 {
 }
 
@@ -132,31 +140,25 @@ GWriteStream::encodeContact(const QContact qContact,
 {
     QList<QContactDetail> allDetails = qContact.details ();
 
-    if (batch == true)
+    // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
+    // since etag is an attribute of this element
+    if (batch == true) {
         mXmlWriter.writeStartElement ("atom:entry");
-    else {
+        encodeEtag (qContact);
+        encodeBatchTag (updateType, qContact.id().toString());
+    } else {
         mXmlWriter.writeStartElement ("atom:entry");
         mXmlWriter.writeAttribute ("xmlns:atom", "http://www.w3.org/2005/Atom");
         mXmlWriter.writeAttribute ("xmlns:gd", "http://schemas.google.com/g/2005");
-        mXmlWriter.writeAttribute (" bexmlns:gContact", "http://schemas.google.com/contact/2008");
+        mXmlWriter.writeAttribute (" xmlns:gContact", "http://schemas.google.com/contact/2008");
     }
 
-    // Set the local id as "gContact:userDefinedField"
-    encodeLocalId (qContact);
-
-    // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
-    // since etag is an attribute of this element
-    if (batch == true) encodeBatchTag (updateType);
-    if (updateType == GConfig::UPDATE)
-    {
-        encodeEtag (qContact);
+    if (updateType == GConfig::UPDATE) {
         encodeId (qContact);
         encodeUpdated (qContact);
     }
 
-    if (updateType == GConfig::DELETE)
-    {
-        encodeEtag (qContact);
+    if (updateType == GConfig::DELETE) {
         encodeId (qContact);
         mXmlWriter.writeEndElement ();
         return mXmlBuffer;
@@ -224,21 +226,19 @@ GWriteStream::endBatchFeed ()
 }
 
 void
-GWriteStream::encodeBatchTag (const GConfig::TRANSACTION_TYPE type)
+GWriteStream::encodeBatchTag (const GConfig::TRANSACTION_TYPE type, const QString batchId)
 {
+    mXmlWriter.writeTextElement ("batch:id", batchId);
     if (type == GConfig::ADD)
     {
-        mXmlWriter.writeTextElement ("batch:id", "create");
         mXmlWriter.writeEmptyElement ("batch:operation");
         mXmlWriter.writeAttribute ("type", "insert");
     } else if (type == GConfig::UPDATE)
     {
-        mXmlWriter.writeTextElement ("batch:id", "update");
         mXmlWriter.writeEmptyElement ("batch:operation");
         mXmlWriter.writeAttribute ("type", "update");
     } else if (type == GConfig::DELETE)
     {
-        mXmlWriter.writeTextElement ("batch:id", "delete");
         mXmlWriter.writeEmptyElement ("batch:operation");
         mXmlWriter.writeAttribute ("type", "delete");
     }
@@ -250,20 +250,19 @@ GWriteStream::encodeId (const QContact qContact)
     QString guid = qContact.detail (
                 QContactGuid::Type).value (QContactGuid::FieldGuid).toString();
 
-    if (!guid.isNull ())
-        mXmlWriter.writeTextElement ("id", "http://www.google.com/m8/feeds/contacts/default/base/" + guid);
-}
+    if (!guid.isNull ()) {
+        QString uname = "default";
+        Accounts::Manager mgr;
+        Accounts::Account *account = mgr.account(mAccountId);
+        if (account != NULL) {
+            QVariant val = QVariant::String;
+            account->value("name", val);
+            uname = val.toString();
+        } else {
+            LOG_DEBUG(mgr.lastError().message());
+        }
 
-void
-GWriteStream::encodeLocalId (const QContact qContact)
-{
-    QString localId = qContact.id().toString();
-
-    if (!localId.isNull ())
-    {
-        mXmlWriter.writeEmptyElement ("gContact:userDefinedField");
-        mXmlWriter.writeAttribute ("key", "ButeoLocalId");
-        mXmlWriter.writeAttribute ("value", localId);
+        mXmlWriter.writeTextElement ("atom:id", "http://www.google.com/m8/feeds/contacts/" + uname + "/full/" + guid);
     }
 }
 
@@ -280,13 +279,11 @@ GWriteStream::encodeUpdated (const QContact qContact)
 void
 GWriteStream::encodeEtag (const QContact qContact)
 {
-#ifdef CUSTOM_DETAIL_IS_SUPPORTED
-    QString etag = qContact.detail (
-        GContactCustomDetail::DefinitionName).value (GContactCustomDetail::FieldGContactETag);
+    QtContacts::QContactOriginMetadata etagDetail = qContact.detail<QtContacts::QContactOriginMetadata>();
+    QString etag = etagDetail.id();
 
     if (!etag.isNull ())
         mXmlWriter.writeAttribute ("gd:etag", etag);
-#endif
 }
 
 void
@@ -545,8 +542,9 @@ void
 GWriteStream::encodeGender (const QContactDetail &detail)
 {
     QContactGender gender = static_cast<QContactGender>(detail);
-    if (gender.gender() <= 0)
+    if (gender.gender() == QContactGender::GenderUnspecified)
         return;
+
     mXmlWriter.writeEmptyElement ("gContact:gender");
     switch(gender.gender()) {
         case QContactGender::GenderMale:
@@ -554,9 +552,6 @@ GWriteStream::encodeGender (const QContactDetail &detail)
         break;
         case QContactGender::GenderFemale:
         mXmlWriter.writeAttribute ("value", "female");
-        break;
-        case QContactGender::GenderUnspecified:
-        mXmlWriter.writeAttribute ("value", "unspecified");
         break;
     }
 
