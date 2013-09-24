@@ -4,16 +4,9 @@
   <suite name="google-contacts-sync" domain="googlecontacts">
     <!-- At least one set per suite, name and description mandatory -->
     <set name="buteo-google-sync-plugin " description="Buteo sync plugin for google contacts" feature="Google contact sync">
-      <!-- Possibly some pre-steps to execute before running the test cases -->
-      <pre_steps>
-        <step>export LD_LIBRARY_PATH=/usr/lib/buteo-plugins-qt5:$LD_LIBRARY_PATH</step>
-        <step>timed -d</step>
-      </pre_steps>
-
-      <case name="sync-google-contacts" type="Functional" description="Running Tests for Google Contact sync" timeout="1000" subfeature="">
-        <step expected_result="0"> /opt/tests/buteo-sync-plugins-google/./runstarget.sh   /opt/tests/buteo-sync-plugins-google/sync-google-contacts-tests </step>
+      <case name="sync-google-contacts" type="Functional" description="Running Tests for Google Contact sync" subfeature="">
+        <step expected_result="0">/opt/tests/buteo-sync-plugins-google/runstarget.sh sync-google-contacts-tests</step>
       </case>
-
     </set>
   </suite>
 </testdefinition>
