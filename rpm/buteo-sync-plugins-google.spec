@@ -21,6 +21,8 @@ BuildRequires: signon-qt5-devel
 #BuildRequires: pkgconfig(libsignon-qt5)
 BuildRequires: pkgconfig(accounts-qt5)
 BuildRequires: qtcontacts-sqlite-qt5
+BuildRequires: pkgconfig(libsailfishkeyprovider)
+BuildRequires: pkgconfig(qtcontacts-sqlite-qt5-extensions)
 
 %description
 %{summary}.
@@ -28,7 +30,7 @@ BuildRequires: qtcontacts-sqlite-qt5
 %files
 %defattr(-,root,root,-)
 %config %{_sysconfdir}/buteo/profiles/client/googlecontacts.xml
-%config %{_sysconfdir}/buteo/profiles/sync/googlecontacts.xml
+%config %{_sysconfdir}/buteo/profiles/sync/google-sync.xml
 %{_libdir}/buteo-plugins-qt5/*.so
 
 
