@@ -75,8 +75,6 @@ bool GAuth::init() {
     QString mechanism = val.toString();
 
     qint32 cId = mAccount->credentialsId();
-    LOG_DEBUG("Got Credentials ID ");
-    LOG_DEBUG(QString::number(cId));
     if (cId == 0) {
         QMap<MethodName,MechanismsList> methods;
         methods.insert(method, QStringList()  << mechanism);
@@ -151,8 +149,8 @@ void GAuth::authenticate()
         scope.append(mScope);
     }
 
-    QString clientId = storedKeyValue("google", "google", "client-id");
-    QString clientSecret = storedKeyValue("google", "google", "client-secret");
+    QString clientId = storedKeyValue("google", "google", "client_id");
+    QString clientSecret = storedKeyValue("google", "google", "client_secret");
     OAuth2PluginNS::OAuth2PluginData data;
     data.setClientId(clientId);
     data.setClientSecret(clientSecret);
