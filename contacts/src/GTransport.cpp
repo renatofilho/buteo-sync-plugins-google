@@ -172,7 +172,7 @@ GTransport::construct (const QUrl& url)
     FUNCTION_CALL_TRACE;
 
     QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
-                     this, SLOT(finishedSlot(QNetworkReply*)));
+                     this, SLOT(finishedSlot(QNetworkReply*)), Qt::QueuedConnection);
 
     iUrl = url;
     QUrlQuery urlQuery(iUrl);
@@ -374,4 +374,5 @@ GTransport::reset ()
     iUrl.clear ();
     iHeaders.clear ();
     iPostData.clear ();
+    iNetworkReplyBody.clear();
 }

@@ -25,7 +25,6 @@
 #define GAUTH_H
 
 #include <QObject>
-#include "GTransport.h"
 
 #include <SyncCommonDefs.h>
 #include <SyncProfile.h>
@@ -58,8 +57,6 @@ private:
     void deviceAuth();
 
     void processDeviceCode(const QByteArray deviceCodeJSON);
-
-    GTransport* iTransport;
 
     QString	iDeviceCode;
 

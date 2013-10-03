@@ -619,6 +619,8 @@ GWriteStream::encodeOnlineAccount (const QContactDetail &detail)
     } else
         propertyName = protocol;
 
+    if (propertyName.isNull() || propertyName.isEmpty()) return;
+
     mXmlWriter.writeEmptyElement ("gd:im");
     mXmlWriter.writeAttribute ("protocol", "http://schemas.google.com/g/2005#" + propertyName);
     // FIXME: The 'rel' value should be properly stored and retrieved

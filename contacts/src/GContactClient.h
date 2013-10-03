@@ -34,6 +34,7 @@
 
 #include <SyncResults.h>
 #include <SyncCommonDefs.h>
+#include <LogMacros.h>
 
 #include "GConfig.h"
 #include "GTransport.h"
@@ -86,6 +87,14 @@ public:
 
     //! @see SyncPluginBase::cleanUp
     virtual bool cleanUp();
+
+    static QString syncTarget() {
+        Q_ASSERT(!mSyncTarget.isEmpty());
+
+        LOG_DEBUG("SyncTarget = " << mSyncTarget);
+
+        return mSyncTarget;
+    }
 
 public slots:
 
@@ -182,10 +191,6 @@ private:
 
     bool                        mHasMoreContactsToStore;
 
-    Buteo::SyncProfile::SyncDirection mSyncDirection;
-
-    Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;
-
     GContactsBackend*           mContactBackend;
 
     GTransport*                 mTransport;
@@ -196,13 +201,13 @@ private:
 
     quint32                     mAccountId;
 
-    QMap<QString, Buteo::DatabaseResults> mItemResults;
-
     QList<QContactId>          mAllLocalContactIds;
 
     QHash<QString, QContactId> mAddedContactIds;
     QHash<QString, QContactId> mModifiedContactIds;
     QHash<QString, QContactId> mDeletedContactIds;
+
+    static QString             mSyncTarget;
 
     int mStartIndex;
 
@@ -214,13 +219,19 @@ private:
 
     bool mHasPhotosToStore;
 
+    QMap<QString, Buteo::DatabaseResults> mItemResults;
+
+    Buteo::SyncProfile::SyncDirection mSyncDirection;
+
+    Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;
+
 #ifndef QT_NO_DEBUG
     friend class GContactClientTest;
 #endif
 
 };
 
-/*! \brief Creates SyncML client plugin
+/*! \brief Creates Google client plugin
  *
  * @param aPluginName Name of this client plugin
  * @param aProfile Profile to use
@@ -231,9 +242,9 @@ extern "C" GContactClient* createPlugin( const QString& aPluginName,
                                        const Buteo::SyncProfile& aProfile,
                                        Buteo::PluginCbInterface *aCbInterface );
 
-/*! \brief Destroys SyncML client plugin
+/*! \brief Destroys Google client plugin
  *
- * @param aServer SyncML client plugin instance to destroy
+ * @param aServer Google client plugin instance to destroy
  */
 extern "C" void destroyPlugin( GContactClient *aClient );
 

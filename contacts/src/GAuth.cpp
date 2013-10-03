@@ -23,10 +23,8 @@
  */
 
 #include "GAuth.h"
-#include "GTransport.h"
-#include <QVariantMap>
-#include <LogMacros.h>
 
+#include <QVariantMap>
 #include <QTextStream>
 #include <QFile>
 #include <QStringList>
@@ -37,6 +35,7 @@
 #include <oauth2data.h>
 
 #include <ProfileEngineDefs.h>
+#include <LogMacros.h>
 
 #include <sailfishkeyprovider.h>
 
