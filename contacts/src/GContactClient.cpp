@@ -660,8 +660,8 @@ GContactClient::lastSyncTime ()
     // time is greater than the sync finish time
     // Because of this, the already added contacts are being sync'd again
     // for consecutive sync's
-    if (!sp->lastSuccessfulSyncTime ().isNull ())
-        return sp->lastSuccessfulSyncTime ().addSecs (5);
+    if (!sp->lastSuccessfulSyncTime().isNull ())
+        return sp->lastSuccessfulSyncTime ().addSecs (30);
     else
         return sp->lastSuccessfulSyncTime ();
 }
