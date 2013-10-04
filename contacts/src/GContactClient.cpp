@@ -203,6 +203,16 @@ bool
 GContactClient::cleanUp() {
     FUNCTION_CALL_TRACE;
 
+    mAccountId = 0;
+    QStringList accountList = iProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
+    if (!accountList.isEmpty()) {
+        QString aId = accountList.first();
+        if (aId != NULL) {
+            mAccountId = aId.toInt();
+        }
+    }
+    mSyncTarget = QString("buteo-") + QString::number(mAccountId);
+
     if (mContactBackend == NULL) {
         mContactBackend = new GContactsBackend();
     }
