@@ -57,7 +57,7 @@ QString GContactClient::mSyncTarget = "";
 GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
-    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true),
+    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true), mContactBackend(0),
     mTransport(0), mCommittedItems(0), mStartIndex (1), mHasMoreContactsToStore (false), mHasPhotosToStore (false)
 {
     FUNCTION_CALL_TRACE;

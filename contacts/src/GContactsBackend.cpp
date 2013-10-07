@@ -275,6 +275,8 @@ GContactsBackend::deleteContacts(const QStringList &aContactIDList)
 
 QMap<int, GContactsStatus>
 GContactsBackend::deleteContacts(const QList<QContactId> &aContactIDList) {
+    FUNCTION_CALL_TRACE;
+
     Q_ASSERT (iMgr);
     GContactsStatus status;
     QMap<int, QContactManager::Error> errors;

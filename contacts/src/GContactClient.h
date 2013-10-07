@@ -89,9 +89,8 @@ public:
     virtual bool cleanUp();
 
     static QString syncTarget() {
-        Q_ASSERT(!mSyncTarget.isEmpty());
-
         LOG_DEBUG("SyncTarget = " << mSyncTarget);
+        Q_ASSERT(!mSyncTarget.isEmpty());
 
         return mSyncTarget;
     }
