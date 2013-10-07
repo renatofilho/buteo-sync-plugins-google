@@ -766,7 +766,7 @@ GContactClient::networkRequestFinished ()
                 // called again and again until there are no more
                 // entries left to be fetched from the server
                 mStartIndex += GConfig::MAX_RESULTS;
-                //mTransport->setUrl (atom->nextEntriesUrl ());
+                mTransport->setUrl (atom->nextEntriesUrl ());
                 fetchRemoteContacts (mStartIndex);
                 mSyncStatus = Sync::SYNC_PROGRESS;
             } else
