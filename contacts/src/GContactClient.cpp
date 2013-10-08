@@ -704,7 +704,6 @@ GContactClient::networkRequestFinished ()
             emit syncFinished(Sync::SYNC_CONNECTION_ERROR);
             return;
         }
-        mTransport->reset();
         GParseStream parser (false);
         GAtom* atom = parser.parse (data);
 

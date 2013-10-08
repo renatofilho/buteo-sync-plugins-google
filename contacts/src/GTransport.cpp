@@ -61,6 +61,9 @@ GTransport::GTransport(QObject *parent) :
     QObject(parent), iNetworkMgr (this), iNetworkRequest (NULL)
 {
     FUNCTION_CALL_TRACE;
+
+    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
+                     this, SLOT(finishedSlot(QNetworkReply*)), Qt::QueuedConnection);
 }
 
 GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers) :
@@ -68,6 +71,9 @@ GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers)
     iNetworkRequest (NULL), iNetworkReply (NULL)
 {
     construct (url);
+    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
+                     this, SLOT(finishedSlot(QNetworkReply*)), Qt::QueuedConnection);
+
 }
 
 GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers, QByteArray data) :
@@ -75,6 +81,8 @@ GTransport::GTransport (QUrl url, QList<QPair<QByteArray, QByteArray> > headers,
     iNetworkRequest (NULL), iNetworkReply (NULL)
 {
     construct (url);
+    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
+                     this, SLOT(finishedSlot(QNetworkReply*)), Qt::QueuedConnection);
 }
 
 GTransport::~GTransport()
@@ -170,9 +178,6 @@ void
 GTransport::construct (const QUrl& url)
 {
     FUNCTION_CALL_TRACE;
-
-    QObject::connect(&iNetworkMgr, SIGNAL(finished(QNetworkReply*)),
-                     this, SLOT(finishedSlot(QNetworkReply*)), Qt::QueuedConnection);
 
     iUrl = url;
     QUrlQuery urlQuery(iUrl);
