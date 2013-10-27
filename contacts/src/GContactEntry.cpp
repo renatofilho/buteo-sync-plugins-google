@@ -24,6 +24,8 @@
 
 #include "GContactEntry.h"
 #include "GContactCustomDetail.h"
+#include "GContactClient.h"
+
 #include <QDateTime>
 #include <QDebug>
 #include <LogMacros.h>
@@ -427,6 +429,7 @@ GContactEntry::setCountry (const QString country)
 void
 GContactEntry::setDeleted (const bool deleted)
 {
+    Q_UNUSED(deleted);
     mDeleted = true;
 }
 
@@ -643,7 +646,7 @@ void
 GContactEntry::setSyncTarget ()
 {
     QContactSyncTarget target;
-    target.setSyncTarget ("buteo");
+    target.setSyncTarget (GContactClient::syncTarget());
 
     mQContact.saveDetail (&target);
 }

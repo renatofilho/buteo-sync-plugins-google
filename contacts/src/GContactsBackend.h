@@ -67,10 +67,17 @@ public:
     bool uninit();
 
     /*!
-     * \brief Return ids of all contacts retrieved from the backend
+     * \brief Return ids of all "aggregate" contacts retrieved from the backend
      * @return List of contact IDs
      */
     QList<QContactId> getAllContactIds();
+
+    /*!
+     * \brief Return ids of all "buteo" synctarget contacts retrieved from the backend
+     * @return List of contact IDs
+     */
+    QList<QContactId> getAllButeoContactIds();
+
 
     /*!
      * \brief Return all new contacts ids in a QList of QStrings
@@ -102,6 +109,13 @@ public:
     void getContact(const QContactId& aContactId,
                     QContact& aContact);
 
+    /*!
+     * \brief Get contact data for a given gontact ID as a QContact object
+     * @param aContactId The ID of the contact
+     * @param aContact The returned data of the contact
+     */
+    void getButeoContact(const QContactId& aContactId,
+                               QContact& aContact);
 
     /*!
      * \brief Get multiple contacts at once as vcards
@@ -161,6 +175,12 @@ public:
      */
     QMap<int, GContactsStatus> deleteContacts(const QStringList &aContactIDList);
 
+    /*!
+     * \brief Batch deletion of contacts
+     * @param aContactIDList Contact IDs
+     * @return Errors
+     */
+    QMap<int, GContactsStatus> deleteContacts(const QList<QContactId> &aContactIDList);
 
     /*!
      * \brief Tells if batch updates are enabled
@@ -219,7 +239,7 @@ private: // functions
 private: // data
 
     // if there is more than one Manager we need to have a list of Managers
-    QContactManager                *iMgr;      ///< A pointer to contact manager
+    QContactManager     *iMgr;      ///< A pointer to contact manager
 };
 
 #endif /* CONTACTSBACKEND_H_ */

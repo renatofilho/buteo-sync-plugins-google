@@ -595,7 +595,7 @@ void
 GParseStream::handleEntryDeleted ()
 {
     Q_ASSERT(mXml->isStartElement () && mXml->qualifiedName () == "gd:deleted");
-
+    LOG_DEBUG(">>>>>>>>>>>>>>>>>>>>> Contact Entry is DELETED");
     mContactEntry->setDeleted (true);
 }
 

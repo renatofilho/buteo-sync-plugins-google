@@ -39,7 +39,6 @@
 #include <QContactAvatar>
 
 #include <PluginCbInterface.h>
-#include <LogMacros.h>
 #include <ProfileEngineDefs.h>
 #include <ProfileManager.h>
 
@@ -53,10 +52,12 @@ extern "C" void destroyPlugin(GContactClient *aClient) {
     delete aClient;
 }
 
+QString GContactClient::mSyncTarget = "";
+
 GContactClient::GContactClient(const QString& aPluginName,
         const Buteo::SyncProfile& aProfile,
         Buteo::PluginCbInterface *aCbInterface) :
-    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true),
+    ClientPlugin(aPluginName, aProfile, aCbInterface), mSlowSync (true), mContactBackend(0),
     mTransport(0), mCommittedItems(0), mStartIndex (1), mHasMoreContactsToStore (false), mHasPhotosToStore (false)
 {
     FUNCTION_CALL_TRACE;
@@ -202,7 +203,24 @@ bool
 GContactClient::cleanUp() {
     FUNCTION_CALL_TRACE;
 
-    // TODO: Implement
+    mAccountId = 0;
+    QStringList accountList = iProfile.keyValues(Buteo::KEY_ACCOUNT_ID);
+    if (!accountList.isEmpty()) {
+        QString aId = accountList.first();
+        if (aId != NULL) {
+            mAccountId = aId.toInt();
+        }
+    }
+    mSyncTarget = QString("buteo-") + QString::number(mAccountId);
+
+    if (mContactBackend == NULL) {
+        mContactBackend = new GContactsBackend();
+    }
+
+    QList<QContactId> contactIdList = mContactBackend->getAllButeoContactIds();
+
+    mContactBackend->deleteContacts(contactIdList);
+
     return true;
 }
 
@@ -463,6 +481,8 @@ GContactClient::initConfig ()
         return false;
     }
 
+    mSyncTarget = QString("buteo-") + QString::number(mAccountId);
+
     connect(mGoogleAuth, SIGNAL(success()), this, SLOT(start()));
     connect(mGoogleAuth, SIGNAL(failed()), this, SLOT(authenticationError()));
 
@@ -650,8 +670,8 @@ GContactClient::lastSyncTime ()
     // time is greater than the sync finish time
     // Because of this, the already added contacts are being sync'd again
     // for consecutive sync's
-    if (!sp->lastSuccessfulSyncTime ().isNull ())
-        return sp->lastSuccessfulSyncTime ().addSecs (5);
+    if (!sp->lastSuccessfulSyncTime().isNull ())
+        return sp->lastSuccessfulSyncTime ().addSecs (30);
     else
         return sp->lastSuccessfulSyncTime ();
 }
@@ -684,7 +704,6 @@ GContactClient::networkRequestFinished ()
             emit syncFinished(Sync::SYNC_CONNECTION_ERROR);
             return;
         }
-
         GParseStream parser (false);
         GAtom* atom = parser.parse (data);
 
@@ -746,7 +765,7 @@ GContactClient::networkRequestFinished ()
                 // called again and again until there are no more
                 // entries left to be fetched from the server
                 mStartIndex += GConfig::MAX_RESULTS;
-                //mTransport->setUrl (atom->nextEntriesUrl ());
+                mTransport->setUrl (atom->nextEntriesUrl ());
                 fetchRemoteContacts (mStartIndex);
                 mSyncStatus = Sync::SYNC_PROGRESS;
             } else
@@ -821,16 +840,17 @@ GContactClient::filterRemoteAddedModifiedDeletedContacts (const QList<GContactEn
 
     foreach (GContactEntry* entry, remoteContacts)
     {
-        QContactId localId = mContactBackend->entryExists(entry->guid ());
+        if (entry->deleted () == true) {
+            remoteDeletedContacts.append (entry);
+            continue;
+        }
 
-        if (!localId.isNull())
-        {
-            if (entry->deleted () == true)
-                remoteDeletedContacts.append (entry);
-            else
-                remoteModifiedContacts.append (entry);
-        } else
+        QContactId localId = mContactBackend->entryExists(entry->guid());
+        if (!localId.isNull()) {
+            remoteModifiedContacts.append (entry);
+        } else {
             remoteAddedContacts.append (entry);
+        }
     }
 }
 
@@ -881,13 +901,13 @@ GContactClient::storeToRemote ()
         LOG_DEBUG("Total number of Contacts ADDED : " << mAddedContactIds.count());
         while (iter != mAddedContactIds.end ())
         {
+            LOG_DEBUG("Contact ID to be Added :   " << iter.value().toString());
             allChangedContactIds.insert (iter.value (), GConfig::ADD);
             iter = mAddedContactIds.erase (iter);
             totalCount++;
             if ((iter == mAddedContactIds.end ()) ||
                 (totalCount > GConfig::MAX_RESULTS))
                 break;
-            ++iter;
         }
 
         iter = mModifiedContactIds.begin ();
@@ -900,7 +920,6 @@ GContactClient::storeToRemote ()
             if ((iter == mModifiedContactIds.end ()) ||
                 (totalCount > GConfig::MAX_RESULTS))
                 break;
-            ++iter;
         }
 
         iter = mDeletedContactIds.begin ();
@@ -913,7 +932,6 @@ GContactClient::storeToRemote ()
             if ((iter == mDeletedContactIds.end ()) ||
                 (totalCount > GConfig::MAX_RESULTS))
                 break;
-            ++iter;
         }
 
         LOG_DEBUG("Contacts to be syncs : " << allChangedContactIds.count());
@@ -992,7 +1010,7 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
                                                   remoteModifiedContacts,
                                                   remoteDeletedContacts);
 
-        resolveConflicts (remoteModifiedContacts, remoteDeletedContacts);
+        resolveConflicts(remoteModifiedContacts, remoteDeletedContacts);
 
         LOG_DEBUG ("###REMOTED ADDED=" << remoteAddedContacts.size ());
         LOG_DEBUG ("###REMOTED MODIFIED=" << remoteModifiedContacts.size ());
@@ -1036,18 +1054,15 @@ GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
         {
             LOG_DEBUG ("***Deleting " << remoteDeletedContacts.size () << " contacts");
             QStringList guidList;
-            for (int i=0; i<remoteDeletedContacts.size (); i++)
-                guidList << remoteDeletedContacts.at (i)->guid ();
+            for (int i=0; i<remoteDeletedContacts.size(); i++)
+                guidList << remoteDeletedContacts.at(i)->guid();
 
-            QStringList localIdList = mContactBackend->localIds (guidList);
-
+            QStringList localIdList = mContactBackend->localIds(guidList);
             QMap<int, GContactsStatus> deletedStatusMap =
                     mContactBackend->deleteContacts (localIdList);
-            if (deletedStatusMap.size () > 0)
-            {
+            if (deletedStatusMap.size () > 0) {
                 syncSuccess = true;
-            } else
-            {
+            } else {
                 syncSuccess = false;
             }
         }
