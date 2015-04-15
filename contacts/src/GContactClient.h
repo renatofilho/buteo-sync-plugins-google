@@ -24,17 +24,13 @@
 #ifndef GCONTACTCLIENT_H
 #define GCONTACTCLIENT_H
 
+#include "buteosyncfw_p.h"
 #include "buteo-gcontact-plugin_global.h"
-#include <ClientPlugin.h>
 
 #include <QNetworkReply>
 #include <QContact>
 #include <QList>
 #include <QPair>
-
-#include <SyncResults.h>
-#include <SyncCommonDefs.h>
-#include <LogMacros.h>
 
 #include "GConfig.h"
 #include "GTransport.h"
@@ -48,7 +44,7 @@ class GParseStream;
 class GAuth;
 class GWriteStream;
 
-class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : Buteo::ClientPlugin
+class BUTEOGCONTACTPLUGINSHARED_EXPORT GContactClient : public Buteo::ClientPlugin
 {
 public:
     Q_OBJECT
@@ -60,9 +56,9 @@ public:
      * @param aProfile Sync profile
      * @param aCbInterface Pointer to the callback interface
      */
-    GContactClient( const QString& aPluginName,
-                  const Buteo::SyncProfile& aProfile,
-                  Buteo::PluginCbInterface *aCbInterface );
+    GContactClient(const QString& aPluginName,
+                   const Buteo::SyncProfile &aProfile,
+                   Buteo::PluginCbInterface *aCbInterface);
 
     /*! \brief Destructor
      *
@@ -87,13 +83,6 @@ public:
 
     //! @see SyncPluginBase::cleanUp
     virtual bool cleanUp();
-
-    static QString syncTarget() {
-        LOG_DEBUG("SyncTarget = " << mSyncTarget);
-        Q_ASSERT(!mSyncTarget.isEmpty());
-
-        return mSyncTarget;
-    }
 
 public slots:
 
@@ -206,7 +195,7 @@ private:
     QHash<QString, QContactId> mModifiedContactIds;
     QHash<QString, QContactId> mDeletedContactIds;
 
-    static QString             mSyncTarget;
+    QString             mSyncTarget;
 
     int mStartIndex;
 

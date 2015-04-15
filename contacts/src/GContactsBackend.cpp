@@ -21,6 +21,7 @@
  * 02110-1301 USA
  *
  */
+#include "config.h"
 #include "GContactsBackend.h"
 #include "GContactClient.h"
 
@@ -30,13 +31,16 @@
 #include <QContactSyncTarget>
 #include <QContactDetailFilter>
 #include <QContactGuid>
+#include <QContactDisplayLabel>
+#include <QContactExtendedDetail>
 
 #include <QBuffer>
 #include <QSet>
 #include <QHash>
 
-GContactsBackend::GContactsBackend(QObject* parent) :
-                    QObject (parent), iMgr(new QContactManager ("org.nemomobile.contacts.sqlite"))
+GContactsBackend::GContactsBackend(QObject* parent)
+    : QObject (parent),
+      iMgr(new QContactManager (QCONTACTS_BACKEND_NAME))
 {
     FUNCTION_CALL_TRACE;
 }
@@ -50,9 +54,47 @@ GContactsBackend::~GContactsBackend()
 }
 
 bool
-GContactsBackend::init()
+GContactsBackend::init(const QString &syncTarget)
 {
     FUNCTION_CALL_TRACE;
+    // create address book it it does not exists
+    qDebug() << "CHECK FOR SYNC TARGET" << syncTarget;
+
+    // check if the source already exists
+    QContactDetailFilter filter;
+    filter.setDetailType(QContactDetail::TypeType, QContactType::FieldType);
+    filter.setValue(QContactType::TypeGroup);
+
+    QList<QContact> sources = iMgr->contacts(filter);
+    Q_FOREACH(const QContact &contact, sources) {
+        if (contact.detail<QContactDisplayLabel>().label() == syncTarget) {
+            mSyncTargetId = contact.detail<QContactGuid>().guid();
+            return true;
+        }
+    }
+
+    // create a new source if necessary
+    QContact contact;
+    contact.setType(QContactType::TypeGroup);
+
+    QContactDisplayLabel label;
+    label.setLabel(syncTarget);
+    contact.saveDetail(&label);
+
+    // set the new source as default if there is only the local source
+    if (sources.size() == 1) {
+        QContactExtendedDetail isDefault;
+        isDefault.setName("IS-PRIMARY");
+        isDefault.setData(true);
+        contact.saveDetail(&isDefault);
+    }
+
+    if (!iMgr->saveContact(&contact)) {
+        qWarning() << "Fail to create contact source:" << syncTarget;
+        return false;
+    }
+
+    mSyncTargetId = contact.detail<QContactGuid>().guid();
 
     return true;
 }
@@ -71,18 +113,7 @@ GContactsBackend::getAllContactIds()
     FUNCTION_CALL_TRACE;
     Q_ASSERT (iMgr);
 
-    QList<QContactId> idList = iMgr->contactIds ();
-    return idList;
-}
-
-QList<QContactId>
-GContactsBackend::getAllButeoContactIds()
-{
-    FUNCTION_CALL_TRACE;
-    Q_ASSERT (iMgr);
-
-    QList<QContactId> idList = iMgr->contactIds(getSyncTargetFilter());
-    return idList;
+    return iMgr->contactIds(getSyncTargetFilter());
 }
 
 QHash<QString, QContactId>
@@ -146,18 +177,18 @@ GContactsBackend::addContacts( QList<QContact>& aContactList,
                                QMap<int, GContactsStatus>& aStatusMap )
 {
     FUNCTION_CALL_TRACE;
-
     Q_ASSERT( iMgr );
 
     GContactsStatus status;
     QMap<int, QContactManager::Error> errorMap;
 
+//    foreach (const QContact &c, aContactList) {
+//        qDebug() << "SYNC TARGETTTTTT" << c.detail(QContactDetail::TypeSyncTarget).value(QContactSyncTarget::FieldSyncTarget);
+//    }
     // TODO: Should a check be made for existing contacts based
     // on guid and filter them out?
-    bool retVal = iMgr->saveContacts (&aContactList, &errorMap);
-
-    if (!retVal)
-    {
+    bool retVal = iMgr->saveContacts(&aContactList, &errorMap);
+    if (!retVal) {
         LOG_WARNING( "Errors reported while saving contacts:" << iMgr->error() );
     }
 
@@ -229,7 +260,7 @@ GContactsBackend::modifyContacts( QList<QContact> &aContactList,
         LOG_DEBUG("Replacing item's ID " << aContactList.at(i));
         LOG_DEBUG("Id of the contact to be replaced" << aContactIdList.at(i));
         QContact contact;
-        getButeoContact(QContactId::fromString(aContactIdList.at(i)), contact);
+        getContact(QContactId::fromString(aContactIdList.at(i)), contact);
         if (!contact.isEmpty()) {
             aContactList[i].setId(QContactId::fromString(aContactIdList.at(i)));
         }
@@ -282,7 +313,8 @@ GContactsBackend::deleteContacts(const QList<QContactId> &aContactIDList) {
     QMap<int, QContactManager::Error> errors;
     QMap<int, GContactsStatus> statusMap;
 
-    if(iMgr->removeContacts(aContactIDList , &errors)) {
+    qDebug() << "WILL REMOVE CONTACTS:" << aContactIDList;
+    if(true) { //iMgr->removeContacts(aContactIDList , &errors)) {
         LOG_DEBUG("Successfully Removed all contacts ");
     }
     else {
@@ -315,23 +347,21 @@ GContactsBackend::deleteContacts(const QList<QContactId> &aContactIDList) {
 
 void
 GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
-        const QDateTime& aTimeStamp,
-        QHash<QString, QContactId>& aIdList)
+                                         const QDateTime& aTimeStamp,
+                                         QHash<QString, QContactId>& aIdList)
 {
     FUNCTION_CALL_TRACE;
-
     QList<QContactId> localIdList;
-
     QContactChangeLogFilter filter(aEventType);
     filter.setSince(aTimeStamp);
 
-    localIdList = iMgr->contactIds(filter);
+    localIdList = iMgr->contactIds(filter  & getSyncTargetFilter());
     LOG_DEBUG("Local ID added =  " << localIdList.size() << "    Datetime from when this " << aTimeStamp.toString());
     // Filter out ids for items that were added after the specified time.
     if (aEventType != QContactChangeLogFilter::EventAdded)
     {
         filter.setEventType(QContactChangeLogFilter::EventAdded);
-        QList<QContactId> addedList = iMgr->contactIds(filter);
+        QList<QContactId> addedList = iMgr->contactIds(filter  & getSyncTargetFilter());
         foreach (const QContactId &id, addedList)
         {
             localIdList.removeAll(id);
@@ -360,7 +390,6 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
     guidHint.setDetailTypesHint(detailTypes);
 
     QList<QContact> contacts = iMgr->contacts(localIdList, guidHint);
-
     foreach (QContact contact, contacts)
     {
         aIdList.insertMulti(contact.detail<QContactGuid>().value(QContactGuid::Type).toString(),
@@ -394,21 +423,6 @@ GContactsBackend::getContact(const QContactId& aContactId,
 {
     FUNCTION_CALL_TRACE;
 
-    QList<QContactId> contactId;
-    contactId.append(aContactId);
-    LOG_DEBUG("Contact ID to be retreived = " << aContactId.toString());
-    QList<QContact>        returnedContacts;
-
-    getContacts(contactId, returnedContacts);
-
-    if (!returnedContacts.isEmpty()) {
-        aContact = returnedContacts.first();
-    }
-}
-
-void GContactsBackend::getButeoContact(const QContactId &aContactId, QContact &aContact) {
-    FUNCTION_CALL_TRACE;
-
     Q_ASSERT (iMgr);
 
     QList<QContactId> aContactIds;
@@ -439,8 +453,8 @@ GContactsBackend::getContacts(const QList<QContactId>& aContactIds,
     Q_ASSERT (iMgr);
 
     QContactIdFilter contactFilter;
-    contactFilter.setIds(aContactIds);    
-    aContacts = iMgr->contacts(contactFilter);
+    contactFilter.setIds(aContactIds);
+    aContacts = iMgr->contacts(contactFilter & getSyncTargetFilter());
 
     LOG_DEBUG("Contacts retreived from Contact manager  = " << aContacts.count());
 }
@@ -556,10 +570,13 @@ GContactsBackend::getSyncTargetFilter() const
 {
     // user enterred contacts, i.e. all other contacts that are not sourcing
     // from restricted backends or instant messaging service
-    QContactDetailFilter detailFilterDefaultSyncTarget;
-    detailFilterDefaultSyncTarget.setDetailType(QContactSyncTarget::Type,
-                                                QContactSyncTarget::FieldSyncTarget);
-    detailFilterDefaultSyncTarget.setValue(QLatin1String(GContactClient::syncTarget().toLatin1()));
+    static QContactDetailFilter detailFilterDefaultSyncTarget;
+
+    if (detailFilterDefaultSyncTarget.value().isNull()) {
+        detailFilterDefaultSyncTarget.setDetailType(QContactSyncTarget::Type,
+                                                    QContactSyncTarget::FieldSyncTarget);
+        detailFilterDefaultSyncTarget.setValue(mSyncTargetId);
+    }
 
     // return the union
     return detailFilterDefaultSyncTarget;
@@ -581,6 +598,11 @@ GContactsBackend::entryExists (const QString entryGuid)
         return QContactId();
 }
 
+QString GContactsBackend::syncTargetId() const
+{
+    return mSyncTargetId;
+}
+
 const
 QStringList GContactsBackend::localIds(const QStringList guidList)
 {
@@ -594,7 +616,7 @@ QStringList GContactsBackend::localIds(const QStringList guidList)
 }
 
 const QList<QPair<QContactId, QString> >
-GContactsBackend::guids (const QList<QContactId> localIdList)
+GContactsBackend::guids(const QList<QContactId> localIdList)
 {
     QContactFetchHint hint;
     QList<QContactDetail::DetailType> detailTypes;

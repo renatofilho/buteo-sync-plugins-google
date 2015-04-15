@@ -35,7 +35,7 @@ class GContactEntry
 {
 public:
 
-    explicit GContactEntry ();
+    explicit GContactEntry (const QString &syncTargetId);
 
     void setUpdated (QDateTime updated);
 
@@ -140,7 +140,7 @@ public:
 
     void setOriginalEvent (const QString origEvent);
 
-    void setPhoneNumber (const QString phoneNumber, const QString rel, const QString uri, const QString primary);
+    void setPhoneNumber (const QString phoneNumber, const QString rel, const QString uri, const bool primary);
 
     void setRating (const QString max, const QString min, const QString average,
                     const QString numRaters, const QString rel, const QString value);
@@ -194,6 +194,7 @@ public:
     QString photoUrl ();
 
 private:
+    GContactEntry();
 
     QString mId;
 
@@ -216,6 +217,8 @@ private:
     bool mHasPhoto;
 
     QString mPhotoUrl;
+
+    QString mSyncTargetId;
 };
 
 #endif // GCONTACT_H

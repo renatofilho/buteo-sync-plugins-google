@@ -26,62 +26,49 @@
 
 #include <QObject>
 
-#include <SyncCommonDefs.h>
-#include <SyncProfile.h>
 #include <SignOn/AuthService>
 #include <SignOn/Identity>
 
 #include <Accounts/Account>
+#include <Accounts/Manager>
+
+#include "buteosyncfw_p.h"
 
 class GAuth : public QObject
 {
     Q_OBJECT
 public:
     explicit GAuth(const quint32 accountId, const QString scope, QObject *parent = 0);
-
     void authenticate();
-
     const QString token();
-
     bool init();
 
 signals:
     void success();
     void failed();
 
-private:
-    void getToken();
-
-    void processTokenResponse(const QByteArray tokenJSON);
-
-    void deviceAuth();
-
-    void processDeviceCode(const QByteArray deviceCodeJSON);
-
-    QString	iDeviceCode;
-
-    QString iUserCode;
-
-    QString iVerificationURL;
-
-    QString iToken;
-
-    QString storedKeyValue(const char *provider, const char *service, const char *keyName);
-
 public slots:
-
     void credentialsStored(const quint32);
-
     void error(const SignOn::Error &);
-
     void sessionResponse(const SignOn::SessionData &);
 
 private:
-    SignOn::Identity    *mIdentity;
-    SignOn::AuthSession *mSession;
-    Accounts::Account   *mAccount;
+    quint32 mAccountId;
+    QPointer<Accounts::Manager> mAccountManager;
+    QPointer<SignOn::Identity> mIdentity;
+    QPointer<SignOn::AuthSession> mSession;
+    QPointer<Accounts::Account> mAccount;
     QString mToken;
     QString mScope;
+    QString iDeviceCode;
+    QString iUserCode;
+    QString iVerificationURL;
+    QString iToken;
+
+    void getToken();
+    void processTokenResponse(const QByteArray tokenJSON);
+    void deviceAuth();
+    void processDeviceCode(const QByteArray deviceCodeJSON);
 };
 
 #endif // GAUTH_H

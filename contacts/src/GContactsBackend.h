@@ -47,7 +47,7 @@ class GContactsBackend : public QObject
 
 public:
 
-    explicit GContactsBackend (QObject* parent = 0);
+    explicit GContactsBackend(QObject* parent = 0);
 
     /*!
      * \brief Destructor
@@ -58,7 +58,7 @@ public:
      * \brief Searches for available storage plugins and sets the manager to that plugin
      * @return
      */
-    bool init();
+    bool init(const QString &syncTarget);
 
     /*!
      * \brief releases the resources held.
@@ -71,12 +71,6 @@ public:
      * @return List of contact IDs
      */
     QList<QContactId> getAllContactIds();
-
-    /*!
-     * \brief Return ids of all "buteo" synctarget contacts retrieved from the backend
-     * @return List of contact IDs
-     */
-    QList<QContactId> getAllButeoContactIds();
 
 
     /*!
@@ -108,14 +102,6 @@ public:
      */
     void getContact(const QContactId& aContactId,
                     QContact& aContact);
-
-    /*!
-     * \brief Get contact data for a given gontact ID as a QContact object
-     * @param aContactId The ID of the contact
-     * @param aContact The returned data of the contact
-     */
-    void getButeoContact(const QContactId& aContactId,
-                               QContact& aContact);
 
     /*!
      * \brief Get multiple contacts at once as vcards
@@ -211,6 +197,8 @@ public:
 
     QContactId entryExists(const QString guid);
 
+    QString syncTargetId() const;
+
     const QStringList localIds (const QStringList guid);
 
     const QList<QPair<QContactId, QString> > guids (const QList<QContactId> localIdList);
@@ -240,6 +228,7 @@ private: // data
 
     // if there is more than one Manager we need to have a list of Managers
     QContactManager     *iMgr;      ///< A pointer to contact manager
+    QString             mSyncTargetId;
 };
 
 #endif /* CONTACTSBACKEND_H_ */

@@ -36,9 +36,9 @@ class GParseStream : public QObject
 {
     Q_OBJECT
 public:
-    explicit GParseStream (bool response, QObject* parent = 0);
+    explicit GParseStream (bool response, const QString &mSyncTargetId, QObject* parent = 0);
 
-    explicit GParseStream (QByteArray xmlStream, QObject *parent = 0);
+    explicit GParseStream (QByteArray xmlStream, const QString &mSyncTargetId, QObject *parent = 0);
 
     ~GParseStream ();
 
@@ -130,6 +130,8 @@ private:
     GAtom* mAtom;
 
     GContactEntry* mContactEntry;
+
+    QString mSyncTargetId;
 };
 
 #endif // PARSESTREAM_H

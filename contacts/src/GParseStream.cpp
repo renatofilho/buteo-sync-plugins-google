@@ -27,8 +27,11 @@
 #include "GAtom.h"
 #include <LogMacros.h>
 
-GParseStream::GParseStream (bool response, QObject* parent) :
-                            QObject (parent), mXml (NULL), mAtom (NULL)
+GParseStream::GParseStream (bool response, const QString &syncTargetId, QObject* parent)
+    : QObject(parent),
+      mXml(NULL),
+      mAtom(NULL),
+      mSyncTargetId(syncTargetId)
 {
     FUNCTION_CALL_TRACE;
 
@@ -38,8 +41,9 @@ GParseStream::GParseStream (bool response, QObject* parent) :
         initFunctionMap ();
 }
 
-GParseStream::GParseStream(QByteArray xmlStream, QObject *parent) :
-    QObject(parent)
+GParseStream::GParseStream(QByteArray xmlStream, const QString &syncTargetId, QObject *parent)
+    : QObject(parent),
+      mSyncTargetId(syncTargetId)
 {
     FUNCTION_CALL_TRACE;
 
@@ -270,7 +274,7 @@ GParseStream::handleAtomEntry ()
 
     Q_ASSERT(mXml->isStartElement () && mXml->name () == "entry");
 
-    mContactEntry = new GContactEntry ();
+    mContactEntry = new GContactEntry (mSyncTargetId);
     Q_CHECK_PTR (mContactEntry);
 
     // TODO: Optimize the parsing of the entries for GET and POST
@@ -291,7 +295,7 @@ GParseStream::handleAtomEntry ()
         }
         mXml->readNextStartElement ();
     }
-    mContactEntry->setSyncTarget ();
+    mContactEntry->setSyncTarget();
     mAtom->addEntry (mContactEntry);
 }
 
@@ -740,7 +744,7 @@ GParseStream::handleEntryPhoneNumber ()
         primary = mXml->attributes ().value ("primary").toString ();
 
     mContactEntry->setPhoneNumber (mXml->readElementText (),
-                                   rel, uri, primary);
+                                   rel, uri, primary.toLower() == "false");
 }
 
 void

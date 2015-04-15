@@ -22,6 +22,7 @@
  *
  */
 
+#include "config.h"
 #include "GWriteStream.h"
 #include "GContactCustomDetail.h"
 
@@ -51,7 +52,7 @@
 #include <QContactFamily>
 #include <QContactTimestamp>
 #include <QContactManager>
-#include <QContactOriginMetadata>
+#include <QContactExtendedDetail>
 
 #include <Accounts/Manager>
 #include <Accounts/Account>
@@ -279,11 +280,16 @@ GWriteStream::encodeUpdated (const QContact qContact)
 void
 GWriteStream::encodeEtag (const QContact qContact)
 {
-    QtContacts::QContactOriginMetadata etagDetail = qContact.detail<QtContacts::QContactOriginMetadata>();
-    QString etag = etagDetail.id();
-
-    if (!etag.isNull ())
-        mXmlWriter.writeAttribute ("gd:etag", etag);
+    QList<QtContacts::QContactExtendedDetail> xDetails = qContact.details<QtContacts::QContactExtendedDetail>();
+    Q_FOREACH(const QtContacts::QContactExtendedDetail &d, xDetails) {
+        if (d.name() == GOOGLE_ETAG_DETAIL) {
+            QString etag = d.data().toString();
+            if (!etag.isEmpty()) {
+                mXmlWriter.writeAttribute ("gd:etag", etag);
+            }
+            break;
+        }
+    }
 }
 
 void

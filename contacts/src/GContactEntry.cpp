@@ -22,6 +22,7 @@
  *
  */
 
+#include "config.h"
 #include "GContactEntry.h"
 #include "GContactCustomDetail.h"
 #include "GContactClient.h"
@@ -48,14 +49,18 @@
 #include <QContactSyncTarget>
 #include <QContactTimestamp>
 #include <QContactAvatar>
-#include <QContactOriginMetadata>
-#include <qcontactoriginmetadata_impl.h>
+#include <QContactExtendedDetail>
+#include <QContactSyncTarget>
+//#include <QContactOriginMetadata>
+//#include <qcontactoriginmetadata_impl.h>
 
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
-GContactEntry::GContactEntry() :
-    mDeleted (false), mHasPhoto (false)
+GContactEntry::GContactEntry(const QString &syncTargetId)
+    : mDeleted (false),
+      mHasPhoto (false),
+      mSyncTargetId(syncTargetId)
 {
     // Set the timestamp explictly, since otherwise, qtcontacts-tracker
     // seems to mess up the created timestamp
@@ -94,8 +99,9 @@ QString GContactEntry::localId() {
 void
 GContactEntry::setEtag (const QString etag)
 {
-    QtContacts::QContactOriginMetadata etagDetail;
-    etagDetail.setId(etag);
+    QtContacts::QContactExtendedDetail etagDetail;
+    etagDetail.setName(GOOGLE_ETAG_DETAIL);
+    etagDetail.setData(etag);
     mQContact.saveDetail (&etagDetail);
 }
 
@@ -534,7 +540,7 @@ GContactEntry::setOriginalEvent (const QString origEvent)
 
 void
 GContactEntry::setPhoneNumber (const QString phoneNumber, const QString rel,
-                               const QString uri, const QString primary=false)
+                               const QString uri, const bool primary=false)
 {
     QContactPhoneNumber number;
     number.setNumber (phoneNumber);
@@ -646,8 +652,7 @@ void
 GContactEntry::setSyncTarget ()
 {
     QContactSyncTarget target;
-    target.setSyncTarget (GContactClient::syncTarget());
-
+    target.setSyncTarget (mSyncTargetId);
     mQContact.saveDetail (&target);
 }
 

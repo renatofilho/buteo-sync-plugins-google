@@ -22,6 +22,7 @@
  *
  */
 
+#include "config.h"
 #include "GAuth.h"
 
 #include <QVariantMap>
@@ -30,82 +31,50 @@
 #include <QStringList>
 #include <QDebug>
 
-#include <Accounts/Manager>
-
-#include <oauth2data.h>
+#include <Accounts/AccountService>
 
 #include <ProfileEngineDefs.h>
 #include <LogMacros.h>
 
-#include <sailfishkeyprovider.h>
-
 using namespace Accounts;
 using namespace SignOn;
 
-const QString RESPONSE_TYPE         ("ResponseType");
-const QString SCOPE             	("Scope");
-const QString AUTH_PATH				("AuthPath");
-const QString TOKEN_PATH			("TokenPath");
-const QString REDIRECT_URI          ("RedirectUri");
-const QString HOST                  ("Host");
-const QString SLASH                 ("/");
-const QString AUTH                  ("auth");
-const QString AUTH_METHOD           ("method");
-const QString MECHANISM             ("mechanism");
+const QString SYNC_SERVICE          ("google-contacts2");
 
 GAuth::GAuth(const quint32 accountId, const QString scope, QObject *parent) :
-    QObject(parent)
+    QObject(parent),
+    mAccountId(accountId),
+    mScope(scope)
 {
-    Manager *manager = new Manager();
-    mAccount = manager->account(accountId);
-    mScope = scope;
 }
 
-bool GAuth::init() {
+bool GAuth::init()
+{
+    if (mAccountManager) {
+        LOG_DEBUG("GAuth already initialized");
+        return false;
+    }
+
+    mAccountManager = new Accounts::Manager();
+    if (mAccountManager == NULL) {
+        LOG_DEBUG("Account manager is not created... Cannot authenticate");
+        return false;
+    }
+
+    mAccount = Accounts::Account::fromId(mAccountManager.data(), mAccountId, this);
     if (mAccount == NULL) {
         LOG_DEBUG("Account is not created... Cannot authenticate");
         return false;
     }
 
-    QVariant val = QVariant::String;
-    mAccount->value(AUTH + SLASH + AUTH_METHOD, val);
-    QString method = val.toString();
-    mAccount->value(AUTH + SLASH + MECHANISM, val);
-    QString mechanism = val.toString();
-
-    qint32 cId = mAccount->credentialsId();
-    if (cId == 0) {
-        QMap<MethodName,MechanismsList> methods;
-        methods.insert(method, QStringList()  << mechanism);
-        IdentityInfo *info = new IdentityInfo(mAccount->displayName(), "", methods);
-        info->setRealms(QStringList() << QString::fromLatin1("google.com"));
-        info->setType(IdentityInfo::Application);
-
-        mIdentity = Identity::newIdentity(*info);
-        connect(mIdentity, SIGNAL(credentialsStored(const quint32)),
-                this, SLOT(credentialsStored(const quint32)));
-        connect(mIdentity, SIGNAL(error(const SignOn::Error &)),
-                this, SLOT(error(const SignOn::Error &)));
-
-        mIdentity->storeCredentials();
-    } else {
-        mIdentity = Identity::existingIdentity(cId);
-    }
-
-    mSession = mIdentity->createSession(QLatin1String("oauth2"));
-
-    connect(mSession, SIGNAL(response(const SignOn::SessionData &)),
-            this, SLOT(sessionResponse(const SignOn::SessionData &)));
-
-    connect(mSession, SIGNAL(error(const SignOn::Error &)),
-            this, SLOT(error(const SignOn::Error &)));
-
     return true;
 }
 
 void GAuth::sessionResponse(const SessionData &sessionData) {
-    OAuth2PluginNS::OAuth2PluginTokenData response = sessionData.data<OAuth2PluginNS::OAuth2PluginTokenData>();
-    mToken = response.AccessToken();
+    SignOn::AuthSession *session = qobject_cast<SignOn::AuthSession*>(sender());
+    session->disconnect(this);
+
+    mToken = sessionData.getProperty(QStringLiteral("AccessToken")).toString();
     LOG_DEBUG("Authenticated !!!");
 
     emit success();
@@ -122,68 +91,64 @@ const QString GAuth::token()
 
 void GAuth::authenticate()
 {
-    QVariant val = QVariant::String;
-    mAccount->value(AUTH + SLASH + AUTH_METHOD, val);
-    QString method = val.toString();
-    mAccount->value(AUTH + SLASH + MECHANISM, val);
-    QString mechanism = val.toString();
-
-    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + HOST, val);
-    QString host = val.toString();
-    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + AUTH_PATH, val);
-    QString auth_url = val.toString();
-    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + TOKEN_PATH, val);
-    QString token_url = val.toString();
-    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + REDIRECT_URI, val);
-    QString redirect_uri = val.toString();
-    mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + RESPONSE_TYPE, val);
-    QString response_type = val.toString();
-
-    QStringList scope;
-    if (mScope.isEmpty()) {
-        QVariant val1 = QVariant::StringList;
-        mAccount->value(AUTH + SLASH + method + SLASH + mechanism + SLASH + SCOPE, val1);
-        scope.append(val1.toStringList());
-    } else {
-        scope.append(mScope);
+    if (mSession) {
+        LOG_WARNING(QString(QLatin1String("error: Google account %1 Authenticate already requested"))
+                .arg(mAccount->displayName()));
+        return;
     }
 
-    QString clientId = storedKeyValue("google", "google", "client_id");
-    QString clientSecret = storedKeyValue("google", "google", "client_secret");
-    OAuth2PluginNS::OAuth2PluginData data;
-    data.setClientId(clientId);
-    data.setClientSecret(clientSecret);
-    data.setHost(host);
-    data.setAuthPath(auth_url);
-    data.setTokenPath(token_url);
-    data.setRedirectUri(redirect_uri);
-    data.setResponseType(QStringList() << response_type);
-    data.setScope(scope);
+    Accounts::Service srv(mAccountManager->service(SYNC_SERVICE));
+    mAccount->selectService(srv);
 
-    mSession->process(data, mechanism);
+    Accounts::AccountService *accSrv = new Accounts::AccountService(mAccount, srv);
+    if (!accSrv) {
+        LOG_WARNING(QString(QLatin1String("error: Google account %1 has no valid account service"))
+                .arg(mAccount->displayName()));
+        return;
+    }
+
+    AuthData authData = accSrv->authData();
+    mIdentity = SignOn::Identity::existingIdentity(authData.credentialsId());
+    if (!mIdentity) {
+        LOG_WARNING(QString(QLatin1String("error: Google account %1 has no valid credentials"))
+                .arg(mAccount->displayName()));
+        return;
+    }
+
+    mSession = mIdentity->createSession(authData.method());
+    if (!mSession) {
+        LOG_WARNING(QString(QLatin1String("error: could not create signon session for Google account %1"))
+                .arg(mAccount->displayName()));
+        accSrv->deleteLater();
+        return;
+    }
+    connect(mSession.data(), SIGNAL(response(SignOn::SessionData)),
+            SLOT(sessionResponse(SignOn::SessionData)), Qt::QueuedConnection);
+    connect(mSession.data(), SIGNAL(error(SignOn::Error)),
+            SLOT(error(SignOn::Error)), Qt::QueuedConnection);
+    accSrv->deleteLater();
+
+    QVariantMap signonSessionData = authData.parameters();
+    signonSessionData.insert("ClientId", GOOGLE_CONTACTS_CLIENT_ID);
+    signonSessionData.insert("ClientSecret", GOOGLE_CONTACTS_CLIENT_SECRET);
+    //signonSessionData.insert("UiPolicy", SignOn::NoUserInteractionPolicy);
+    //mSession->setProperty("accountId", mAccount->id());
+    //mSession->setProperty("mechanism", mechanism);
+    //mSession->setProperty("signonSessionData", signonSessionData);
+
+    mSession->process(signonSessionData, authData.mechanism());
+    qDebug() << "INITIIIIIIIIIIIIIIII+++" << __LINE__;
+
 }
 
-void GAuth::credentialsStored(const quint32 id) {
+void GAuth::credentialsStored(const quint32 id)
+{
     mAccount->setCredentialsId(id);
     mAccount->sync();
 }
 
-void GAuth::error(const SignOn::Error & error) {
-    printf(error.message().toStdString().c_str());
-    qDebug() << error.message();
-
+void GAuth::error(const SignOn::Error & error)
+{
+    qDebug() << "LOGIN ERROR:" << error.message();
     emit failed();
-}
-
-QString GAuth::storedKeyValue(const char *provider, const char *service, const char *keyName) {
-    char *storedKey = NULL;
-    QString retn;
-
-    int success = SailfishKeyProvider_storedKey(provider, service, keyName, &storedKey);
-    if (success == 0 && storedKey != NULL && strlen(storedKey) != 0) {
-        retn = QLatin1String(storedKey);
-        free(storedKey);
-    }
-
-    return retn;
 }
