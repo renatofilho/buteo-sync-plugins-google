@@ -169,7 +169,7 @@ public:
 
     void setPostalAddrAttrs(const QString rel, const QString mailClass, const QString usage, const QString primary);
 
-    void setSyncTarget ();
+    void setSyncTarget();
 
     void setBatchResponseStatusCode (const int code);
 

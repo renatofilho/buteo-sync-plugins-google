@@ -31,8 +31,6 @@ QTCONTACTS_USE_NAMESPACE
 class GContactCustomDetail
 {
 public:
-
-
     static const QString FieldGContactETag;
     static const QString FieldGContactBillingInformation;
     static const QString FieldGContactCalendarLink;
@@ -54,6 +52,7 @@ public:
     static const QString FieldGContactFeedLink;
     static const QString FieldGContactMoney;
     static const QString FieldGContactRating;
+    static const QString FieldGRemoteId;
 };
 
 #endif // GCONTACTCUSTOMDETAIL_H

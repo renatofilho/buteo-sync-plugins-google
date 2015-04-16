@@ -115,7 +115,7 @@ public:
      * \brief Returns a contact matching filter criteria
      * @param aGuid Guid of the contact to be returned
      */
-    QContact getContact(const QString& aGuid);
+    QContact getContact(const QString& remoteId);
 
 
     /*!
@@ -223,6 +223,9 @@ private: // functions
      * - value for QContactSyncTarget::SyncTarget written by this backend is "buteo".
      */
     QContactFilter getSyncTargetFilter() const;
+
+    QContactFilter getRemoteIdFilter(const QString &remoteId) const;
+    QString getRemoteId(const QContact &contact) const;
 
 private: // data
 

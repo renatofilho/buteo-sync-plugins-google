@@ -51,9 +51,6 @@
 #include <QContactAvatar>
 #include <QContactExtendedDetail>
 #include <QContactSyncTarget>
-//#include <QContactOriginMetadata>
-//#include <qcontactoriginmetadata_impl.h>
-
 
 const QString GDATA_SCHEMA ("http://schemas.google.com/g/2005");
 
@@ -73,9 +70,10 @@ void
 GContactEntry::setGuid (const QString id)
 {
     LOG_DEBUG ("### GUID=" << id);
-    QContactGuid contactGuid = mQContact.detail<QContactGuid> ();
-    contactGuid.setGuid (id);
-    mQContact.saveDetail (&contactGuid);
+    QContactExtendedDetail contactRemoteUid;
+    contactRemoteUid.setName(GContactCustomDetail::FieldGRemoteId);
+    contactRemoteUid.setData(id);
+    mQContact.saveDetail(&contactRemoteUid);
     mId = id;
 }
 
@@ -649,7 +647,7 @@ GContactEntry::setPostalAddrAttrs(const QString rel, const QString mailClass,
 }
 
 void
-GContactEntry::setSyncTarget ()
+GContactEntry::setSyncTarget()
 {
     QContactSyncTarget target;
     target.setSyncTarget (mSyncTargetId);

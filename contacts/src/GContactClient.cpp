@@ -765,7 +765,7 @@ GContactClient::networkRequestFinished ()
             QList<GContactEntry*> remoteContacts = atom->entries ();
 
             if (remoteContacts.size () > 0)
-                storeToLocal (remoteContacts);
+                storeToLocal(remoteContacts);
 
             if ((!atom->nextEntriesUrl ().isNull () ||
                 !atom->nextEntriesUrl ().isEmpty ())) {
@@ -866,16 +866,13 @@ GContactClient::storeToRemote ()
 
     QByteArray encodedContacts;
 
-    if (mSlowSync == true)
-    {
+    if (mSlowSync == true) {
         LOG_DEBUG ("TOTAL LOCAL CONTACTS FOR REMOTE STORAGE:" << mAllLocalContactIds.size ());
-        if (!mAllLocalContactIds.isEmpty ())
-        {
+        if (!mAllLocalContactIds.isEmpty()) {
             GWriteStream ws(mAccountId);
-            ws.encodeContacts (mAllLocalContactIds.mid (0, GConfig::MAX_RESULTS),
-                           GConfig::ADD);
+            ws.encodeContacts(mAllLocalContactIds.mid(0, GConfig::MAX_RESULTS), GConfig::ADD);
             encodedContacts = ws.encodedStream ();
-            mContactsWithAvatars.append (ws.contactsWithAvatars ());
+            mContactsWithAvatars.append(ws.contactsWithAvatars());
 
             // Once the contacts have been encoded, remove them
             // from mAllLocalContactIds
@@ -886,13 +883,10 @@ GContactClient::storeToRemote ()
                 mHasMoreContactsToStore = true;
             else
                 mHasMoreContactsToStore = false;
-        } else
-        {
+        } else {
             return false; // Function exit here, if there are no contacts to be sync'd
         }
-
-    } else
-    {
+    } else {
         QHash<QContactId, GConfig::TRANSACTION_TYPE> allChangedContactIds;
 
         /*
@@ -978,36 +972,31 @@ GContactClient::storeToRemote ()
 }
 
 bool
-GContactClient::storeToLocal (const QList<GContactEntry*> remoteContacts)
+GContactClient::storeToLocal(const QList<GContactEntry*> remoteContacts)
 {
     FUNCTION_CALL_TRACE;
 
     bool syncSuccess = false;
-    if (mSlowSync == true)
-    {
+    if (mSlowSync == true) {
         LOG_DEBUG ("@@@storeToLocal#SLOW SYNC");
         // Since we request for all the deleted contacts, if
         // slow sync is performed many times, even deleted contacts
         // will appear in *remoteContacts. Filter them out while
         // saving them to device
         LOG_DEBUG ("TOTAL REMOTE CONTACTS:" << remoteContacts.size ());
-        if (remoteContacts.size () > 0)
-        {
-            QList<QContact> remoteQContacts = toQContacts (remoteContacts);
+        if (remoteContacts.size () > 0) {
+            QList<QContact> remoteQContacts = toQContacts(remoteContacts);
             QMap<int, GContactsStatus> statusMap;
 
-            if (mContactBackend->addContacts (remoteQContacts, statusMap))
-            {
+            if (mContactBackend->addContacts(remoteQContacts, statusMap)) {
                 // TODO: Saving succeeded. Update sync results
                 syncSuccess = true;
-            } else
-            {
+            } else {
                 // TODO: Saving failed. Update sync results and probably stop sync
                 syncSuccess = false;
             }
         }
-    } else if (mSlowSync == false)
-    {
+    } else if (mSlowSync == false) {
         LOG_DEBUG ("@@@storeToLocal#FAST SYNC");
         QList<GContactEntry*> remoteAddedContacts, remoteModifiedContacts, remoteDeletedContacts;
         filterRemoteAddedModifiedDeletedContacts (remoteContacts,

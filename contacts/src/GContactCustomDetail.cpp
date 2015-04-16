@@ -45,5 +45,6 @@ const QString GContactCustomDetail::FieldGContactCountry = "GContactCountry";
 const QString GContactCustomDetail::FieldGContactFeedLink = "GContactFeedLink";
 const QString GContactCustomDetail::FieldGContactMoney = "GContactMoney";
 const QString GContactCustomDetail::FieldGContactRating = "GContactRating";
+const QString GContactCustomDetail::FieldGRemoteId = "X-REMOTE-ID";
 
 
