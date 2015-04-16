@@ -39,9 +39,9 @@ public:
 
     void setUpdated (QDateTime updated);
 
-    void setGuid (const QString id);
+    void setRemoteId (const QString id);
 
-    QString guid ();
+    QString remoteId ();
 
     void setLocalId(const QString localId);
 

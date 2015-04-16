@@ -203,6 +203,8 @@ public:
 
     const QList<QPair<QContactId, QString> > guids (const QList<QContactId> localIdList);
 
+    static QString getRemoteId(const QContact &contact);
+
 private: // functions
 
     /*!
@@ -225,7 +227,6 @@ private: // functions
     QContactFilter getSyncTargetFilter() const;
 
     QContactFilter getRemoteIdFilter(const QString &remoteId) const;
-    QString getRemoteId(const QContact &contact) const;
 
 private: // data
 

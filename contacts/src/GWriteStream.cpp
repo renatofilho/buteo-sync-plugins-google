@@ -36,7 +36,6 @@
 #include <QContactUrl>
 #include <QContactAnniversary>
 #include <QContact>
-#include <QContactGuid>
 #include <QContactName>
 #include <QContactEmailAddress>
 #include <QContactBirthday>
@@ -67,33 +66,10 @@ GWriteStream::~GWriteStream ()
 }
 
 void
-GWriteStream::encodeAllContacts ()
-{
-    QList<QContact> allContacts;
-    QList<QContactId> allContactIds = mContactsBackend.getAllContactIds ();
-
-    if (allContactIds.size () <= 1)
-        return;
-
-    // QtContacts has a fictious first contact that has nothing
-    // in it. Removing this unwanted element
-    allContactIds.removeFirst ();
-
-    QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap;
-    foreach (QContactId localId, allContactIds)
-    {
-        qContactMap.insert (localId, GConfig::ADD);
-    }
-
-    encodeContact (qContactMap);
-}
-
-void
 GWriteStream::encodeContacts (const QList<QContactId> idList, GConfig::TRANSACTION_TYPE type)
 {
     QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap;
-    foreach (QContactId localId, idList)
-    {
+    foreach (QContactId localId, idList) {
         qContactMap.insert (localId, type);
     }
 
@@ -116,8 +92,19 @@ GWriteStream::encodeContact (QHash<QContactId, GConfig::TRANSACTION_TYPE> qConta
     {
         QContact contact;
         mContactsBackend.getContact (contactPair.key (), contact);
-        if (!contact.isEmpty ())
-            encodeContact (contact, contactPair.value (), batch);
+        if (!contact.isEmpty ()) {
+            GConfig::TRANSACTION_TYPE ttype = contactPair.value ();
+            if (ttype == GConfig::ADD_OR_UPDATE) {
+                // If the contactact contains the remote id
+                // it means that the contact exists on remote server
+                if (GContactsBackend::getRemoteId(contact).isEmpty()) {
+                    ttype = GConfig::ADD;
+                } else {
+                    ttype = GConfig::UPDATE;
+                }
+            }
+            encodeContact (contact, ttype, batch);
+        }
     }
 
     if (batch == true)
@@ -248,10 +235,9 @@ GWriteStream::encodeBatchTag (const GConfig::TRANSACTION_TYPE type, const QStrin
 void
 GWriteStream::encodeId (const QContact qContact)
 {
-    QString guid = qContact.detail (
-                QContactGuid::Type).value (QContactGuid::FieldGuid).toString();
+    QString remoteId = GContactsBackend::getRemoteId(qContact);
 
-    if (!guid.isNull ()) {
+    if (!remoteId.isNull ()) {
         QString uname = "default";
         Accounts::Manager mgr;
         Accounts::Account *account = mgr.account(mAccountId);
@@ -263,7 +249,7 @@ GWriteStream::encodeId (const QContact qContact)
             LOG_DEBUG(mgr.lastError().message());
         }
 
-        mXmlWriter.writeTextElement ("atom:id", "http://www.google.com/m8/feeds/contacts/" + uname + "/full/" + guid);
+        mXmlWriter.writeTextElement ("atom:id", "http://www.google.com/m8/feeds/contacts/" + uname + "/full/" + remoteId);
     }
 }
 
@@ -536,8 +522,8 @@ GWriteStream::encodeAvatar (const QContactDetail &detail, const QContact qContac
          imageUrl.isValid () &&
          !imageUrl.isEmpty ())
     {
-        QContactGuid guid = qContact.detail<QContactGuid>();
-        imageUrl.setFragment(guid.guid ());
+        QString remoteId = GContactsBackend::getRemoteId(qContact);
+        imageUrl.setFragment(remoteId);
     }
 }
 

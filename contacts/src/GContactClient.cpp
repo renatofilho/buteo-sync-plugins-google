@@ -721,15 +721,13 @@ GContactClient::networkRequestFinished ()
         GParseStream parser(false, mContactBackend->syncTargetId());
         GAtom* atom = parser.parse(data);
 
-        if (!atom)
-        {
+        if (!atom) {
             LOG_CRITICAL ("NULL atom object. Something wrong with parsing");
             emit syncFinished (Sync::SYNC_ERROR);
         }
 
         if ((requestType == GTransport::POST) ||
-            (requestType == GTransport::PUT))
-        {
+            (requestType == GTransport::PUT)) {
             LOG_DEBUG ("@@@PREVIOUS REQUEST TYPE=POST");
             // Check if there are any errors in the returned XML
             // buffer
@@ -850,7 +848,7 @@ GContactClient::filterRemoteAddedModifiedDeletedContacts (const QList<GContactEn
             continue;
         }
 
-        QContactId localId = mContactBackend->entryExists(entry->guid());
+        QContactId localId = mContactBackend->entryExists(entry->remoteId());
         if (!localId.isNull()) {
             remoteModifiedContacts.append (entry);
         } else {
@@ -870,7 +868,7 @@ GContactClient::storeToRemote ()
         LOG_DEBUG ("TOTAL LOCAL CONTACTS FOR REMOTE STORAGE:" << mAllLocalContactIds.size ());
         if (!mAllLocalContactIds.isEmpty()) {
             GWriteStream ws(mAccountId);
-            ws.encodeContacts(mAllLocalContactIds.mid(0, GConfig::MAX_RESULTS), GConfig::ADD);
+            ws.encodeContacts(mAllLocalContactIds.mid(0, GConfig::MAX_RESULTS), GConfig::ADD_OR_UPDATE);
             encodedContacts = ws.encodedStream ();
             mContactsWithAvatars.append(ws.contactsWithAvatars());
 
@@ -958,7 +956,7 @@ GContactClient::storeToRemote ()
         mHasPhotosToStore = true;
 
     mTransport->reset ();
-    mTransport->setUrl (mRemoteURI + "/batch");
+    mTransport->setUrl (mRemoteURI + "batch");
     mTransport->setGDataVersionHeader ();
     mTransport->setAuthToken (mGoogleAuth->token ());
     mTransport->setData (encodedContacts);
@@ -991,6 +989,12 @@ GContactClient::storeToLocal(const QList<GContactEntry*> remoteContacts)
             if (mContactBackend->addContacts(remoteQContacts, statusMap)) {
                 // TODO: Saving succeeded. Update sync results
                 syncSuccess = true;
+
+                // Remove remote contacts from localContacts to avoid uploade it
+                foreach (const QContact &c, remoteQContacts) {
+                    mAllLocalContactIds.removeOne(c.id());
+                }
+
             } else {
                 // TODO: Saving failed. Update sync results and probably stop sync
                 syncSuccess = false;
@@ -1027,7 +1031,7 @@ GContactClient::storeToLocal(const QList<GContactEntry*> remoteContacts)
 
             QStringList modifiedIdsList;
             for (int i=0; i<modifiedContacts.size (); i++) {
-                QContact contact = mContactBackend->getContact(remoteModifiedContacts.at(i)->guid());
+                QContact contact = mContactBackend->getContact(remoteModifiedContacts.at(i)->remoteId());
                 LOG_DEBUG("Original contact - " << contact.id().toString());
                 modifiedIdsList << contact.id().toString();
             }
@@ -1049,7 +1053,7 @@ GContactClient::storeToLocal(const QList<GContactEntry*> remoteContacts)
             LOG_DEBUG ("***Deleting " << remoteDeletedContacts.size () << " contacts");
             QStringList guidList;
             for (int i=0; i<remoteDeletedContacts.size(); i++)
-                guidList << remoteDeletedContacts.at(i)->guid();
+                guidList << remoteDeletedContacts.at(i)->remoteId();
 
             QStringList localIdList = mContactBackend->localIds(guidList);
             QMap<int, GContactsStatus> deletedStatusMap =
@@ -1096,41 +1100,41 @@ GContactClient::resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
     for (iter = modifiedRemoteContacts.begin (); iter != modifiedRemoteContacts.end (); ++iter)
     {
         GContactEntry* entry = *iter;
-        if (mModifiedContactIds.contains (entry->guid ()))
+        if (mModifiedContactIds.contains (entry->remoteId ()))
         {
             if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
                 modifiedRemoteContacts.erase (iter);
             else
-                mModifiedContactIds.remove (entry->guid ());
+                mModifiedContactIds.remove (entry->remoteId ());
         }
 
-        if (mDeletedContactIds.contains (entry->guid ()))
+        if (mDeletedContactIds.contains (entry->remoteId ()))
         {
             if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
                 modifiedRemoteContacts.erase (iter);
             else
-                mDeletedContactIds.remove (entry->guid ());
+                mDeletedContactIds.remove (entry->remoteId ());
         }
     }
 
     for (iter = deletedRemoteContacts.begin (); iter != deletedRemoteContacts.end (); ++iter)
     {
         GContactEntry* entry = *iter;
-        if (mModifiedContactIds.contains (entry->guid ()))
+        if (mModifiedContactIds.contains (entry->remoteId ()))
         {
             if (mConflictResPolicy == Buteo::SyncProfile::CR_POLICY_PREFER_LOCAL_CHANGES)
                 deletedRemoteContacts.erase (iter);
             else
-                mModifiedContactIds.remove (entry->guid ());
+                mModifiedContactIds.remove (entry->remoteId ());
         }
 
-        if (mDeletedContactIds.contains (entry->guid ()))
+        if (mDeletedContactIds.contains (entry->remoteId ()))
         {
             // If the entry is deleted both at the server and
             // locally, then just remove it from the lists
             // so that no further action need to be taken
             deletedRemoteContacts.erase (iter);
-            mDeletedContactIds.remove (entry->guid ());
+            mDeletedContactIds.remove (entry->remoteId ());
         }
     }
 }

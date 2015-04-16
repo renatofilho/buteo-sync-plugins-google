@@ -112,7 +112,6 @@ GContactsBackend::getAllContactIds()
 {
     FUNCTION_CALL_TRACE;
     Q_ASSERT (iMgr);
-
     return iMgr->contactIds(getSyncTargetFilter());
 }
 
@@ -190,11 +189,6 @@ GContactsBackend::addContacts(QList<QContact>& aContactList,
         QContactId id = entryExists(remoteId);
         if (!id.isNull()) {
             c.setId(id);
-            /*
-            QContactGuid guid;
-            guid.setGuid(id.toString().split("::").last());
-            c.saveDetail(&guid);
-            */
         }
     }
 
@@ -633,7 +627,7 @@ QContactFilter GContactsBackend::getRemoteIdFilter(const QString &remoteId) cons
     return remoteFilter;
 }
 
-QString GContactsBackend::getRemoteId(const QContact &contact) const
+QString GContactsBackend::getRemoteId(const QContact &contact)
 {
     foreach (const QContactExtendedDetail &xDet, contact.details<QContactExtendedDetail>()) {
         if (xDet.name() == GContactCustomDetail::FieldGRemoteId) {

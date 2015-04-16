@@ -37,25 +37,17 @@ class GParseStream : public QObject
     Q_OBJECT
 public:
     explicit GParseStream (bool response, const QString &mSyncTargetId, QObject* parent = 0);
-
     explicit GParseStream (QByteArray xmlStream, const QString &mSyncTargetId, QObject *parent = 0);
 
     ~GParseStream ();
-
     GAtom* parse(const QByteArray xmlBuffer);
 
 signals:
-
     void parseDone (bool);
 
-public slots:
-
 private:
-
     void initAtomFunctionMap ();
-
     void initResponseFunctionMap ();
-
     void initFunctionMap();
 
     // Atom feed elements handler methods
@@ -119,18 +111,13 @@ private:
     void handleEntryRating();
     void handleEntryStructuredPostalAddress();
 
-    QXmlStreamReader* mXml;
-
     typedef void (GParseStream::*Handler)();
 
+    QXmlStreamReader* mXml;
     QMap<QString, GParseStream::Handler> mAtomFunctionMap;
-
     QMap<QString, GParseStream::Handler> mContactFunctionMap;
-
     GAtom* mAtom;
-
     GContactEntry* mContactEntry;
-
     QString mSyncTargetId;
 };
 

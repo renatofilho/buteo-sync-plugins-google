@@ -34,7 +34,6 @@
 #include <QContactUrl>
 #include <QContactAnniversary>
 #include <QContact>
-#include <QContactGuid>
 #include <QContactName>
 #include <QContactEmailAddress>
 #include <QContactBirthday>
@@ -67,9 +66,9 @@ GContactEntry::GContactEntry(const QString &syncTargetId)
 }
 
 void
-GContactEntry::setGuid (const QString id)
+GContactEntry::setRemoteId (const QString id)
 {
-    LOG_DEBUG ("### GUID=" << id);
+    LOG_DEBUG ("### REMOTE-ID=" << id);
     QContactExtendedDetail contactRemoteUid;
     contactRemoteUid.setName(GContactCustomDetail::FieldGRemoteId);
     contactRemoteUid.setData(id);
@@ -78,7 +77,7 @@ GContactEntry::setGuid (const QString id)
 }
 
 QString
-GContactEntry::guid ()
+GContactEntry::remoteId ()
 {
     return mId;
 }

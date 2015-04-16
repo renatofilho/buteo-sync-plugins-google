@@ -13,19 +13,14 @@ class GWriteStream
 {
 public:
 
-    GWriteStream (quint32 accountId);
+    GWriteStream(quint32 accountId);
+    ~GWriteStream();
 
-    ~GWriteStream ();
-
-    void encodeAllContacts ();
-
-    void encodeContacts (const QList<QContactId> idList, GConfig::TRANSACTION_TYPE type);
-
-    QByteArray encodeContact (QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap);
-
-    QByteArray encodedStream ();
-
-    QList<QContactId>& contactsWithAvatars ();
+    void encodeContacts(const QList<QContactId> idList,
+                        GConfig::TRANSACTION_TYPE type);
+    QByteArray encodeContact(QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap);
+    QByteArray encodedStream();
+    QList<QContactId>& contactsWithAvatars();
 
 private:
 

@@ -34,7 +34,8 @@ public:
         NONE = 0,
         ADD,
         UPDATE,
-        DELETE
+        DELETE,
+        ADD_OR_UPDATE
     } TRANSACTION_TYPE;
 };
 

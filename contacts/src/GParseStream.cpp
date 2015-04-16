@@ -303,7 +303,7 @@ void
 GParseStream::handleEntryId ()
 {
     QString idUrl = mXml->readElementText ();
-    mContactEntry->setGuid (idUrl.remove (0, idUrl.lastIndexOf ('/') + 1));
+    mContactEntry->setRemoteId (idUrl.remove (0, idUrl.lastIndexOf ('/') + 1));
 }
 
 void

@@ -120,33 +120,20 @@ protected slots:
     void authenticationError();
 
 private:
-
     bool initConfig ();
-
     void closeConfig ();
-
     bool initTransport();
-
     void closeTransport();
-
     bool abort (Sync::SyncStatus status);
-
     Buteo::SyncProfile::SyncDirection syncDirection();
-
     Buteo::SyncProfile::ConflictResolutionPolicy conflictResolutionPolicy();
-
     void addProcessedItem (Sync::TransferType modificationType,
                            Sync::TransferDatabase database,
                            QString modifiedDatabase);
-
     void generateResults( bool aSuccessful );
-
     void fetchRemoteContacts (const int startIndex);
-
     void changedLocalContactIds ();
-
     void allLocalContactIds ();
-
     const QString authToken ();
 
     /**
@@ -154,63 +141,38 @@ private:
      *        be slow-sync or fast-sync
      */
     const QDateTime lastSyncTime ();
-
     void filterRemoteAddedModifiedDeletedContacts (const QList<GContactEntry*> remoteContacts,
                                              QList<GContactEntry*>& remoteAddedContacts,
                                              QList<GContactEntry*>& remoteModifiedContacts,
                                              QList<GContactEntry*>& remoteDeletedContacts);
-
     bool storeToRemote ();
-
     bool storeToLocal (const QList<GContactEntry*> remoteContacts);
-
     QList<QContact> toQContacts (const QList<GContactEntry*> gContactList);
-
     void resolveConflicts (QList<GContactEntry*>& modifiedRemoteContacts,
                            QList<GContactEntry*>& deletedRemoteContacts);
-
     void updateIdsToLocal (const QList<GContactEntry*> responseEntries);
-
     void postAvatar (const QContactId avatarUrl);
 
     GAuth*                      mGoogleAuth;
-
     bool                        mSlowSync;
-
     bool                        mHasMoreContactsToStore;
-
     GContactsBackend*           mContactBackend;
-
     GTransport*                 mTransport;
-
     Buteo::SyncResults          mResults;
-
     quint32                     mCommittedItems;
-
     quint32                     mAccountId;
-
-    QList<QContactId>          mAllLocalContactIds;
-
-    QHash<QString, QContactId> mAddedContactIds;
-    QHash<QString, QContactId> mModifiedContactIds;
-    QHash<QString, QContactId> mDeletedContactIds;
-
-    QString             mSyncTarget;
-
-    int mStartIndex;
-
-    QString mRemoteURI;
-
-    Sync::SyncStatus mSyncStatus;
-
-    QList<QContactId> mContactsWithAvatars;
-
-    bool mHasPhotosToStore;
-
+    QList<QContactId>           mAllLocalContactIds;
+    QHash<QString, QContactId>  mAddedContactIds;
+    QHash<QString, QContactId>  mModifiedContactIds;
+    QHash<QString, QContactId>  mDeletedContactIds;
+    QString                     mSyncTarget;
+    int                         mStartIndex;
+    QString                     mRemoteURI;
+    Sync::SyncStatus            mSyncStatus;
+    QList<QContactId>           mContactsWithAvatars;
+    bool                        mHasPhotosToStore;
     QMap<QString, Buteo::DatabaseResults> mItemResults;
-
     Buteo::SyncProfile::SyncDirection mSyncDirection;
-
     Buteo::SyncProfile::ConflictResolutionPolicy mConflictResPolicy;
 
 #ifndef QT_NO_DEBUG
