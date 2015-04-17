@@ -24,7 +24,10 @@
 #ifndef GCONTACTCUSTOMDETAIL_H
 #define GCONTACTCUSTOMDETAIL_H
 
-#include <QContactDetail>
+#include <QString>
+
+#include <QContact>
+#include <QContactExtendedDetail>
 
 QTCONTACTS_USE_NAMESPACE
 
@@ -37,7 +40,6 @@ public:
     static const QString FieldGContactDirectoryServer;
     static const QString FieldGContactEvent;
     static const QString FieldGContactExternalId;
-    static const QString FieldGContactGroupMembershipInfo;
     static const QString FieldGContactInitials;
     static const QString FieldGContactJot;
     static const QString FieldGContactLanguage;
@@ -52,7 +54,12 @@ public:
     static const QString FieldGContactFeedLink;
     static const QString FieldGContactMoney;
     static const QString FieldGContactRating;
+
+    // Ubuntu fields
     static const QString FieldGRemoteId;
+    static const QString FieldGGroupMembershipInfo;
+
+    static QContactExtendedDetail getCustomField(const QContact &contact, const QString &name);
 };
 
 #endif // GCONTACTCUSTOMDETAIL_H

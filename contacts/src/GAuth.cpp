@@ -70,6 +70,15 @@ bool GAuth::init()
     return true;
 }
 
+QString GAuth::accountDisplayName() const
+{
+    if (mAccount) {
+        return mAccount->displayName();
+    } else {
+        return QString();
+    }
+}
+
 void GAuth::sessionResponse(const SessionData &sessionData) {
     SignOn::AuthSession *session = qobject_cast<SignOn::AuthSession*>(sender());
     session->disconnect(this);

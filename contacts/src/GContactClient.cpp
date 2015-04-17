@@ -225,11 +225,6 @@ GContactClient::cleanUp() {
         mContactBackend = new GContactsBackend();
     }
 
-    /*
-    QList<QContactId> contactIdList = mContactBackend->getAllButeoContactIds();
-    mContactBackend->deleteContacts(contactIdList);
-    */
-
     return true;
 }
 
@@ -684,10 +679,13 @@ GContactClient::lastSyncTime ()
     // time is greater than the sync finish time
     // Because of this, the already added contacts are being sync'd again
     // for consecutive sync's
-    if (!sp->lastSuccessfulSyncTime().isNull ())
-        return sp->lastSuccessfulSyncTime ().addSecs (30);
-    else
-        return sp->lastSuccessfulSyncTime ();
+    QDateTime lastTime = sp->lastSuccessfulSyncTime();
+    if (!lastTime.isNull()) {
+        // return UTC time used by google
+        return lastTime.addSecs(30).toUTC();
+    } else {
+        return lastTime;
+    }
 }
 
 /**
@@ -867,7 +865,7 @@ GContactClient::storeToRemote ()
     if (mSlowSync == true) {
         LOG_DEBUG ("TOTAL LOCAL CONTACTS FOR REMOTE STORAGE:" << mAllLocalContactIds.size ());
         if (!mAllLocalContactIds.isEmpty()) {
-            GWriteStream ws(mAccountId);
+            GWriteStream ws(mGoogleAuth->accountDisplayName());
             ws.encodeContacts(mAllLocalContactIds.mid(0, GConfig::MAX_RESULTS), GConfig::ADD_OR_UPDATE);
             encodedContacts = ws.encodedStream ();
             mContactsWithAvatars.append(ws.contactsWithAvatars());
@@ -894,6 +892,7 @@ GContactClient::storeToRemote ()
          * the next time, this method is invoked
          */
         int totalCount = 0;
+        LOG_DEBUG("LAST SYNC" << lastSyncTime());
         QHash<QString, QContactId>::iterator iter = mAddedContactIds.begin ();
         LOG_DEBUG("Total number of Contacts ADDED : " << mAddedContactIds.count());
         while (iter != mAddedContactIds.end ())
@@ -932,28 +931,27 @@ GContactClient::storeToRemote ()
         }
 
         LOG_DEBUG("Contacts to be syncs : " << allChangedContactIds.count());
-        if (allChangedContactIds.size () > 0)
-        {
-            GWriteStream ws(mAccountId);
+        if (allChangedContactIds.size () > 0) {
+            GWriteStream ws(mGoogleAuth->accountDisplayName());
 
             encodedContacts = ws.encodeContact (allChangedContactIds);
             mContactsWithAvatars.append (ws.contactsWithAvatars ());
-        } else
-        {
+        } else {
             return false; // Function exit here, if there are no contacts to be sync'd
         }
 
         if ((mAddedContactIds.size () +
              mModifiedContactIds.size () +
-             mDeletedContactIds.size ()) > 0)
+             mDeletedContactIds.size ()) > 0) {
             mHasMoreContactsToStore = true;
-        else
+        } else {
             mHasMoreContactsToStore = false;
-
+        }
     }
 
-    if (mContactsWithAvatars.size () > 0)
+    if (mContactsWithAvatars.size () > 0) {
         mHasPhotosToStore = true;
+    }
 
     mTransport->reset ();
     mTransport->setUrl (mRemoteURI + "batch");
@@ -965,7 +963,6 @@ GContactClient::storeToRemote ()
     LOG_DEBUG ("POST DATA:" << encodedContacts);
 
     mTransport->request (GTransport::POST);
-
     return true;
 }
 

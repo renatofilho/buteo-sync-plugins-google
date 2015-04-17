@@ -23,11 +23,13 @@
 #ifndef CONTACTSBACKEND_H_
 #define CONTACTSBACKEND_H_
 
-#include <QContactManager>
-#include <QContactFetchRequest>
 #include <QContact>
-#include <qcontactchangelogfilter.h>
-#include <qcontactid.h>
+#include <QContactId>
+#include <QContactFetchRequest>
+#include <QContactExtendedDetail>
+#include <QContactChangeLogFilter>
+#include <QContactManager>
+
 #include <QStringList>
 
 QTCONTACTS_USE_NAMESPACE

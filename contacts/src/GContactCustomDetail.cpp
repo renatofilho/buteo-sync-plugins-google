@@ -30,7 +30,6 @@ const QString GContactCustomDetail::FieldGContactCalendarLink = "GContactCalenda
 const QString GContactCustomDetail::FieldGContactDirectoryServer = "GContactDirectoryServer";
 const QString GContactCustomDetail::FieldGContactEvent = "GContactEvent";
 const QString GContactCustomDetail::FieldGContactExternalId = "GContactExternalId";
-const QString GContactCustomDetail::FieldGContactGroupMembershipInfo = "GContactGroupMembershipInfo";
 const QString GContactCustomDetail::FieldGContactInitials = "GContactInitials";
 const QString GContactCustomDetail::FieldGContactJot = "GContactJot";
 const QString GContactCustomDetail::FieldGContactLanguage = "GContactLanguate";
@@ -45,6 +44,21 @@ const QString GContactCustomDetail::FieldGContactCountry = "GContactCountry";
 const QString GContactCustomDetail::FieldGContactFeedLink = "GContactFeedLink";
 const QString GContactCustomDetail::FieldGContactMoney = "GContactMoney";
 const QString GContactCustomDetail::FieldGContactRating = "GContactRating";
+
+// Ubuntu fields
+const QString GContactCustomDetail::FieldGGroupMembershipInfo = "X-GROUP-ID";
 const QString GContactCustomDetail::FieldGRemoteId = "X-REMOTE-ID";
 
 
+QContactExtendedDetail
+GContactCustomDetail::getCustomField(const QContact &contact, const QString &name)
+{
+    foreach (QContactExtendedDetail xd, contact.details<QContactExtendedDetail>()) {
+        if (xd.name() == name) {
+            return xd;
+        }
+    }
+    QContactExtendedDetail xd;
+    xd.setName(name);
+    return xd;
+}

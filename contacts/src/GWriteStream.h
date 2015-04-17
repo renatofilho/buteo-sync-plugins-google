@@ -13,7 +13,7 @@ class GWriteStream
 {
 public:
 
-    GWriteStream(quint32 accountId);
+    GWriteStream(const QString &accountDisplayName);
     ~GWriteStream();
 
     void encodeContacts(const QList<QContactId> idList,
@@ -53,15 +53,13 @@ private:
     void encodeOnlineAccount (const QContactDetail &detail);
     void encodeFamily (const QContactDetail &detail);
     void encodeDisplayLabel (const QContactDetail &detail);
+    void encodeExtendedDetail (const QContactDetail &detail);
+    void encodeGroupMembership (const QString &groupName);
 
-    quint32          mAccountId;
-
+    QString          mAccountDisplayName;
     QByteArray       mXmlBuffer;
-
     QXmlStreamWriter mXmlWriter;
-
     GContactsBackend mContactsBackend;
-
     QList<QContactId>   mContactsWithAvatars;
 };
 

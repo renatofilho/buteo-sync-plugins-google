@@ -56,9 +56,13 @@
 #include <Accounts/Manager>
 #include <Accounts/Account>
 
-GWriteStream::GWriteStream(quint32 accountId)
-                : mXmlWriter (&mXmlBuffer), mAccountId(accountId)
+GWriteStream::GWriteStream(const QString &accountDisplayName)
+    : mXmlWriter(&mXmlBuffer),
+      mAccountDisplayName(accountDisplayName)
 {
+    if (mAccountDisplayName.isEmpty()) {
+        LOG_WARNING("Account display name is empty. Groups will not be saved");
+    }
 }
 
 GWriteStream::~GWriteStream ()
@@ -127,6 +131,12 @@ GWriteStream::encodeContact(const QContact qContact,
                             const bool batch)
 {
     QList<QContactDetail> allDetails = qContact.details ();
+    // check if group exists otherwise add it
+    QContactExtendedDetail group = GContactCustomDetail::getCustomField(qContact, GContactCustomDetail::FieldGGroupMembershipInfo);
+    if (group.data().isNull()) {
+        group.setData("6"); // this is default id for "My Contacts"
+        allDetails << group;
+    }
 
     // Etag encoding has to immediately succeed writeStartElement ("atom:entry"),
     // since etag is an attribute of this element
@@ -188,6 +198,9 @@ GWriteStream::encodeContact(const QContact qContact,
             encodeOnlineAccount(detail);
         else if (detail.type () == QContactFamily::Type)
             encodeFamily (detail);
+        else if (detail.type() == QContactExtendedDetail::Type) {
+            encodeExtendedDetail(detail);
+        }
         // TODO: handle the custom detail fields. If sailfish UI
         // does not handle these contact details, then they
         // need not be pushed to the server
@@ -239,16 +252,9 @@ GWriteStream::encodeId (const QContact qContact)
 
     if (!remoteId.isNull ()) {
         QString uname = "default";
-        Accounts::Manager mgr;
-        Accounts::Account *account = mgr.account(mAccountId);
-        if (account != NULL) {
-            QVariant val = QVariant::String;
-            account->value("name", val);
-            uname = val.toString();
-        } else {
-            LOG_DEBUG(mgr.lastError().message());
+        if (!mAccountDisplayName.isEmpty()) {
+            uname = mAccountDisplayName;
         }
-
         mXmlWriter.writeTextElement ("atom:id", "http://www.google.com/m8/feeds/contacts/" + uname + "/full/" + remoteId);
     }
 }
@@ -639,6 +645,28 @@ GWriteStream::encodeFamily (const QContactDetail &detail)
         mXmlWriter.writeEmptyElement ("gContact:relation");
         mXmlWriter.writeAttribute ("rel", "child");
         mXmlWriter.writeCharacters (member);
+    }
+}
+
+void GWriteStream::encodeExtendedDetail(const QContactDetail &detail)
+{
+    QString fieldName = detail.value(QContactExtendedDetail::FieldName).toString();
+    QString fieldData = detail.value(QContactExtendedDetail::FieldData).toString();
+    if (fieldName == GContactCustomDetail::FieldGGroupMembershipInfo) {
+        encodeGroupMembership(fieldData);
+    } else {
+        LOG_WARNING("extended detail not supported:" << fieldName);
+    }
+}
+
+void GWriteStream::encodeGroupMembership(const QString &groupName)
+{
+    static const QString groupHref = QStringLiteral("http://www.google.com/m8/feeds/groups/%1/base/%2");
+
+    if (!groupName.isEmpty() && !mAccountDisplayName.isEmpty()) {
+         mXmlWriter.writeEmptyElement("gContact:groupMembershipInfo");
+         mXmlWriter.writeAttribute("deleted", "false");
+         mXmlWriter.writeAttribute("href", QString(groupHref).arg(mAccountDisplayName).arg(groupName));
     }
 }
 

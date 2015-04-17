@@ -42,6 +42,7 @@ public:
     void authenticate();
     const QString token();
     bool init();
+    QString accountDisplayName() const;
 
 signals:
     void success();

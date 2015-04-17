@@ -389,17 +389,15 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
 
     localIdList = idSet.toList();
 
-    QContactFetchHint guidHint;
+    QContactFetchHint remoteIdHint;
     QList <QContactDetail::DetailType> detailTypes;
     detailTypes << QContactExtendedDetail::Type;
-    guidHint.setDetailTypesHint(detailTypes);
+    remoteIdHint.setDetailTypesHint(detailTypes);
 
-    QList<QContact> contacts = iMgr->contacts(localIdList, guidHint);
+    QList<QContact> contacts = iMgr->contacts(localIdList, remoteIdHint);
     foreach (const QContact &contact, contacts) {
         QString rid = getRemoteId(contact);
-        if (!rid.isEmpty()) {
-            aIdList.insertMulti(rid, contact.id());
-        }
+        aIdList.insertMulti(rid, contact.id());
     }
 }
 
@@ -629,12 +627,7 @@ QContactFilter GContactsBackend::getRemoteIdFilter(const QString &remoteId) cons
 
 QString GContactsBackend::getRemoteId(const QContact &contact)
 {
-    foreach (const QContactExtendedDetail &xDet, contact.details<QContactExtendedDetail>()) {
-        if (xDet.name() == GContactCustomDetail::FieldGRemoteId) {
-            return xDet.data().toString();
-        }
-    }
-    return QString();
+     return GContactCustomDetail::getCustomField(contact, GContactCustomDetail::FieldGRemoteId).data().toString();
 }
 
 QContactFilter

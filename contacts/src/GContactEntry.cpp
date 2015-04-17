@@ -63,6 +63,14 @@ GContactEntry::GContactEntry(const QString &syncTargetId)
     QContactTimestamp ts;
     ts.setCreated (QDateTime::currentDateTimeUtc ());
     mQContact.saveDetail (&ts);
+
+    // Set the default group in case of a new contact
+    QContactExtendedDetail group;
+    group.setName(GContactCustomDetail::FieldGGroupMembershipInfo);
+    //FIXME: "6" is de deafult value for "My Contacts" group but we should
+    //retrieve all and check for it
+    group.setData("6");
+    mQContact.saveDetail(&group);
 }
 
 void
@@ -246,12 +254,12 @@ void
 GContactEntry::setGroupMembershipInfo (const QString membershipInfo,
                                        const QString deleted)
 {
-#ifdef CUSTOM_DETAIL_IS_SUPPORTED
-    GContactCustomDetail membershipDetail = mQContact.detail <GContactCustomDetail>();
-    membershipDetail.setGroupMembershipInfo (membershipInfo);
+    Q_UNUSED(deleted);
 
+    QContactExtendedDetail membershipDetail = GContactCustomDetail::getCustomField(mQContact,
+                                                                                   GContactCustomDetail::FieldGGroupMembershipInfo);
+    membershipDetail.setData(membershipInfo);
     mQContact.saveDetail (&membershipDetail);
-#endif
 }
 
 void
