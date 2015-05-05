@@ -24,8 +24,8 @@
 
 #include "config.h"
 #include "GContactEntry.h"
-#include "GContactCustomDetail.h"
-#include "GContactClient.h"
+
+#include <UContactsCustomDetail.h>
 
 #include <QDateTime>
 #include <QDebug>
@@ -66,7 +66,7 @@ GContactEntry::GContactEntry(const QString &syncTargetId)
 
     // Set the default group in case of a new contact
     QContactExtendedDetail group;
-    group.setName(GContactCustomDetail::FieldGGroupMembershipInfo);
+    group.setName(UContactsCustomDetail::FieldGroupMembershipInfo);
     //FIXME: "6" is de deafult value for "My Contacts" group but we should
     //retrieve all and check for it
     group.setData("6");
@@ -74,35 +74,39 @@ GContactEntry::GContactEntry(const QString &syncTargetId)
 }
 
 void
-GContactEntry::setRemoteId (const QString id)
+GContactEntry::setRemoteId(const QString id)
 {
     LOG_DEBUG ("### REMOTE-ID=" << id);
     QContactExtendedDetail contactRemoteUid;
-    contactRemoteUid.setName(GContactCustomDetail::FieldGRemoteId);
+    contactRemoteUid.setName(UContactsCustomDetail::FieldRemoteId);
     contactRemoteUid.setData(id);
     mQContact.saveDetail(&contactRemoteUid);
     mId = id;
 }
 
 QString
-GContactEntry::remoteId ()
+GContactEntry::remoteId() const
 {
     return mId;
 }
 
-void GContactEntry::setLocalId(const QString localId) {
+void
+GContactEntry::setLocalId(const QString localId)
+{
     mLocalId = localId;
     QContactId id;
     id.fromString(mLocalId);
     mQContact.setId (id);
 }
 
-QString GContactEntry::localId() {
+QString
+GContactEntry::localId() const
+{
     return mLocalId;
 }
 
 void
-GContactEntry::setEtag (const QString etag)
+GContactEntry::setEtag(const QString etag)
 {
     QtContacts::QContactExtendedDetail etagDetail;
     etagDetail.setName(GOOGLE_ETAG_DETAIL);
@@ -111,14 +115,14 @@ GContactEntry::setEtag (const QString etag)
 }
 
 void
-GContactEntry::setFullName (const QString fullName)
+GContactEntry::setFullName(const QString fullName)
 {
     // TODO: Custom tag
     // This has to go to QContactName as a schema change tag
 }
 
 void
-GContactEntry::setAdditionalName (const QString additionalName)
+GContactEntry::setAdditionalName(const QString additionalName)
 {
     QContactName name = mQContact.detail <QContactName>();
     name.setMiddleName (additionalName);
@@ -126,7 +130,7 @@ GContactEntry::setAdditionalName (const QString additionalName)
 }
 
 void
-GContactEntry::setFamilyName (const QString familyName)
+GContactEntry::setFamilyName(const QString familyName)
 {
     QContactName name = mQContact.detail <QContactName>();
     name.setLastName (familyName);
@@ -135,7 +139,7 @@ GContactEntry::setFamilyName (const QString familyName)
 }
 
 void
-GContactEntry::setNamePrefix (const QString namePrefix)
+GContactEntry::setNamePrefix(const QString namePrefix)
 {
     QContactName name = mQContact.detail <QContactName>();
     name.setPrefix (namePrefix);
@@ -143,7 +147,7 @@ GContactEntry::setNamePrefix (const QString namePrefix)
 }
 
 void
-GContactEntry::setNameSuffix (const QString nameSuffix)
+GContactEntry::setNameSuffix(const QString nameSuffix)
 {
     QContactName name = mQContact.detail <QContactName>();
     name.setSuffix (nameSuffix);
@@ -151,7 +155,7 @@ GContactEntry::setNameSuffix (const QString nameSuffix)
 }
 
 void
-GContactEntry::setGivenName (const QString givenName)
+GContactEntry::setGivenName(const QString givenName)
 {
     QContactName name = mQContact.detail <QContactName>();
     name.setFirstName (givenName);
@@ -160,8 +164,8 @@ GContactEntry::setGivenName (const QString givenName)
 }
 
 void
-GContactEntry::setEmail (const QString address, const QString rel,
-                         const QString primary)
+GContactEntry::setEmail(const QString address, const QString rel,
+                        const QString primary)
 {
     QContactEmailAddress email;
     email.setEmailAddress (address);
@@ -170,7 +174,7 @@ GContactEntry::setEmail (const QString address, const QString rel,
 }
 
 void
-GContactEntry::setBillingInformation (const QString billingInfo)
+GContactEntry::setBillingInformation(const QString billingInfo)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail billing = mQContact.detail <GContactCustomDetail>();
@@ -181,7 +185,7 @@ GContactEntry::setBillingInformation (const QString billingInfo)
 }
 
 void
-GContactEntry::setBirthday (const QString birthday)
+GContactEntry::setBirthday(const QString birthday)
 {
     qDebug() << birthday;
     QContactBirthday bday;
@@ -191,8 +195,8 @@ GContactEntry::setBirthday (const QString birthday)
 }
 
 void
-GContactEntry::setCalendarLink (const QString href,
-                                const QString rel, const QString primary)
+GContactEntry::setCalendarLink(const QString href,
+                               const QString rel, const QString primary)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail calendarLink = mQContact.detail <GContactCustomDetail>();
@@ -203,7 +207,7 @@ GContactEntry::setCalendarLink (const QString href,
 }
 
 void
-GContactEntry::setDirectoryServer (const QString dirServer)
+GContactEntry::setDirectoryServer(const QString dirServer)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail dirServerDetail = mQContact.detail <GContactCustomDetail>();
@@ -214,7 +218,7 @@ GContactEntry::setDirectoryServer (const QString dirServer)
 }
 
 void
-GContactEntry::setEvent (const QString event, const QString when)
+GContactEntry::setEvent(const QString event, const QString when)
 {
     QContactAnniversary anniversary;
 
@@ -225,8 +229,8 @@ GContactEntry::setEvent (const QString event, const QString when)
 }
 
 void
-GContactEntry::setExternalId (const QString externalId,
-                              const QString rel)
+GContactEntry::setExternalId(const QString externalId,
+                             const QString rel)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail externalIdDetail = mQContact.detail <GContactCustomDetail>();
@@ -237,7 +241,7 @@ GContactEntry::setExternalId (const QString externalId,
 }
 
 void
-GContactEntry::setGender (const QString gender)
+GContactEntry::setGender(const QString gender)
 {
     QContactGender contactGender;
     if (gender.compare("male", Qt::CaseInsensitive)) {
@@ -251,19 +255,20 @@ GContactEntry::setGender (const QString gender)
 }
 
 void
-GContactEntry::setGroupMembershipInfo (const QString membershipInfo,
-                                       const QString deleted)
+GContactEntry::setGroupMembershipInfo(const QString membershipInfo,
+                                      const QString deleted)
 {
     Q_UNUSED(deleted);
 
-    QContactExtendedDetail membershipDetail = GContactCustomDetail::getCustomField(mQContact,
-                                                                                   GContactCustomDetail::FieldGGroupMembershipInfo);
+    QContactExtendedDetail membershipDetail =
+            UContactsCustomDetail::getCustomField(mQContact,
+                                                  UContactsCustomDetail::FieldGroupMembershipInfo);
     membershipDetail.setData(membershipInfo);
     mQContact.saveDetail (&membershipDetail);
 }
 
 void
-GContactEntry::setHobby (const QString hobby)
+GContactEntry::setHobby(const QString hobby)
 {
     QContactHobby contactHobby;
     contactHobby.setHobby (hobby);
@@ -271,7 +276,7 @@ GContactEntry::setHobby (const QString hobby)
 }
 
 void
-GContactEntry::setInitials (const QString initials)
+GContactEntry::setInitials(const QString initials)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail initialsDetail = mQContact.detail <GContactCustomDetail>();
@@ -282,7 +287,7 @@ GContactEntry::setInitials (const QString initials)
 }
 
 void
-GContactEntry::setJot (const QString jot, const QString jotType)
+GContactEntry::setJot(const QString jot, const QString jotType)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail jotDetail = mQContact.detail <GContactCustomDetail>();
@@ -293,7 +298,7 @@ GContactEntry::setJot (const QString jot, const QString jotType)
 }
 
 void
-GContactEntry::setLanguage (const QString language)
+GContactEntry::setLanguage(const QString language)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail languageDetail = mQContact.detail <GContactCustomDetail>();
@@ -304,14 +309,14 @@ GContactEntry::setLanguage (const QString language)
 }
 
 void
-GContactEntry::setMaidenName (const QString maidenName)
+GContactEntry::setMaidenName(const QString maidenName)
 {
     // TODO: Custom field
     // This should be part QContactName
 }
 
 void
-GContactEntry::setMileage (const QString mileage)
+GContactEntry::setMileage(const QString mileage)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail mileageDetail = mQContact.detail <GContactCustomDetail>();
@@ -322,7 +327,7 @@ GContactEntry::setMileage (const QString mileage)
 }
 
 void
-GContactEntry::setNickname (const QString nickname)
+GContactEntry::setNickname(const QString nickname)
 {
     QContactNickname nick;
     nick.setNickname (nickname);
@@ -330,7 +335,7 @@ GContactEntry::setNickname (const QString nickname)
 }
 
 void
-GContactEntry::setOccupation (const QString occupation)
+GContactEntry::setOccupation(const QString occupation)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail occupationDetail = mQContact.detail <GContactCustomDetail>();
@@ -341,7 +346,7 @@ GContactEntry::setOccupation (const QString occupation)
 }
 
 void
-GContactEntry::setPriority (const QString priority)
+GContactEntry::setPriority(const QString priority)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail priorityDetail;
@@ -352,15 +357,15 @@ GContactEntry::setPriority (const QString priority)
 }
 
 void
-GContactEntry::setRelation (const QString relativeName,
-                            const QString relation)
+GContactEntry::setRelation(const QString relativeName,
+                           const QString relation)
 {
     // TODO: Custom fiel. Support available for children and spouse
     // Create a if() condition to handle this
 }
 
 void
-GContactEntry::setSensitivity (const QString sensitivity)
+GContactEntry::setSensitivity(const QString sensitivity)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail sensitivityDetail = mQContact.detail <GContactCustomDetail>();
@@ -371,13 +376,13 @@ GContactEntry::setSensitivity (const QString sensitivity)
 }
 
 void
-GContactEntry::setShortname (const QString shortname)
+GContactEntry::setShortname(const QString shortname)
 {
     // TODO: Custom field
 }
 
 void
-GContactEntry::setSubject (const QString subject)
+GContactEntry::setSubject(const QString subject)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail subjectDetail = mQContact.detail <GContactCustomDetail>();
@@ -388,7 +393,7 @@ GContactEntry::setSubject (const QString subject)
 }
 
 void
-GContactEntry::setSystemGroup (const QString systemGroup)
+GContactEntry::setSystemGroup(const QString systemGroup)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail systemGroupDetail = mQContact.detail <GContactCustomDetail>();
@@ -399,16 +404,16 @@ GContactEntry::setSystemGroup (const QString systemGroup)
 }
 
 void
-GContactEntry::setUserDefinedField (const QString key,
-                                    const QString value)
+GContactEntry::setUserDefinedField(const QString key,
+                                   const QString value)
 {
     // TODO: Custom field
     // How should this be handled?
 }
 
 void
-GContactEntry::setWebsite (const QString website, const QString rel,
-                           const QString primary)
+GContactEntry::setWebsite(const QString website, const QString rel,
+                          const QString primary)
 {
     QContactUrl url = mQContact.detail <QContactUrl> ();
     url.setUrl (website);
@@ -418,7 +423,7 @@ GContactEntry::setWebsite (const QString website, const QString rel,
 
 // gd:xxx schema handler methods
 void
-GContactEntry::setComments (const QString comments)
+GContactEntry::setComments(const QString comments)
 {
     QContactNote note;
     note.setNote (comments);
@@ -427,7 +432,7 @@ GContactEntry::setComments (const QString comments)
 }
 
 void
-GContactEntry::setCountry (const QString country)
+GContactEntry::setCountry(const QString country)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail countryDetail = mQContact.detail <GContactCustomDetail>();
@@ -438,28 +443,28 @@ GContactEntry::setCountry (const QString country)
 }
 
 void
-GContactEntry::setDeleted (const bool deleted)
+GContactEntry::setDeleted(const bool deleted)
 {
     Q_UNUSED(deleted);
     mDeleted = true;
 }
 
 bool
-GContactEntry::deleted ()
+GContactEntry::deleted() const
 {
     return mDeleted;
 }
 
 void
-GContactEntry::setExtendedProperty (const QString name,
-                                    const QString extProperty)
+GContactEntry::setExtendedProperty(const QString name,
+                                   const QString extProperty)
 {
     // TODO: Custom field
     // How should this be handled?
 }
 
 void
-GContactEntry::setFeedLink (const QString feedLink)
+GContactEntry::setFeedLink(const QString feedLink)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail feedlinkDetail = mQContact.detail <GContactCustomDetail>();
@@ -470,8 +475,8 @@ GContactEntry::setFeedLink (const QString feedLink)
 }
 
 void
-GContactEntry::setIm (const QString address, const QString rel,
-                      const QString protocol, const QString primary)
+GContactEntry::setIm(const QString address, const QString rel,
+                     const QString protocol, const QString primary)
 {
     QContactOnlineAccount imAccount;
     imAccount.setAccountUri (address);
@@ -482,7 +487,7 @@ GContactEntry::setIm (const QString address, const QString rel,
 }
 
 void
-GContactEntry::setMoney (const QString amount, const QString currencyCode)
+GContactEntry::setMoney(const QString amount, const QString currencyCode)
 {
 #ifdef CUSTOM_DETAIL_IS_SUPPORTED
     GContactCustomDetail moneyDetail = mQContact.detail <GContactCustomDetail>();
@@ -493,7 +498,7 @@ GContactEntry::setMoney (const QString amount, const QString currencyCode)
 }
 
 void
-GContactEntry::setOrgDepartment (const QString orgDept)
+GContactEntry::setOrgDepartment(const QString orgDept)
 {
     QContactOrganization org = mQContact.detail <QContactOrganization>();
     QStringList deptList;
@@ -504,7 +509,7 @@ GContactEntry::setOrgDepartment (const QString orgDept)
 }
 
 void
-GContactEntry::setOrgJobDescription (const QString orgJobDesc)
+GContactEntry::setOrgJobDescription(const QString orgJobDesc)
 {
     QContactOrganization org = mQContact.detail <QContactOrganization>();
     org.setRole (orgJobDesc);
@@ -513,7 +518,7 @@ GContactEntry::setOrgJobDescription (const QString orgJobDesc)
 }
 
 void
-GContactEntry::setOrgName (const QString orgName)
+GContactEntry::setOrgName(const QString orgName)
 {
     QContactOrganization org = mQContact.detail <QContactOrganization>();
     org.setName (orgName);
@@ -522,14 +527,14 @@ GContactEntry::setOrgName (const QString orgName)
 }
 
 void
-GContactEntry::setOrgSymbol (const QString orgSymbol)
+GContactEntry::setOrgSymbol(const QString orgSymbol)
 {
     //TODO: Custom field
     // Should be part of Organization detail
 }
 
 void
-GContactEntry::setOrgTitle (const QString orgTitle)
+GContactEntry::setOrgTitle(const QString orgTitle)
 {
     QContactOrganization org = mQContact.detail <QContactOrganization>();
     org.setTitle (orgTitle);
@@ -538,14 +543,14 @@ GContactEntry::setOrgTitle (const QString orgTitle)
 }
 
 void
-GContactEntry::setOriginalEvent (const QString origEvent)
+GContactEntry::setOriginalEvent(const QString origEvent)
 {
     //TODO: Custom field
 }
 
 void
-GContactEntry::setPhoneNumber (const QString phoneNumber, const QString rel,
-                               const QString uri, const bool primary=false)
+GContactEntry::setPhoneNumber(const QString phoneNumber, const QString rel,
+                              const QString uri, const bool primary=false)
 {
     QContactPhoneNumber number;
     number.setNumber (phoneNumber);
@@ -556,26 +561,26 @@ GContactEntry::setPhoneNumber (const QString phoneNumber, const QString rel,
 }
 
 void
-GContactEntry::setRating (const QString max, const QString min, const QString average,
+GContactEntry::setRating(const QString max, const QString min, const QString average,
                     const QString numRaters, const QString rel, const QString value)
 {
     //TODO: Custom field
 }
 
 void
-GContactEntry::setPostalAddrAgent (const QString agent)
+GContactEntry::setPostalAddrAgent(const QString agent)
 {
     //TODO: Custom field
 }
 
 void
-GContactEntry::setPostalAddrHousename (const QString housename)
+GContactEntry::setPostalAddrHousename(const QString housename)
 {
     // TODO: Custom field
 }
 
 void
-GContactEntry::setPostalAddrStreet (const QString street)
+GContactEntry::setPostalAddrStreet(const QString street)
 {
     QContactAddress address = mQContact.detail <QContactAddress>();
     address.setStreet (street);
@@ -584,7 +589,7 @@ GContactEntry::setPostalAddrStreet (const QString street)
 }
 
 void
-GContactEntry::setPostalAddrPobox (const QString pobox)
+GContactEntry::setPostalAddrPobox(const QString pobox)
 {
     QContactAddress address = mQContact.detail <QContactAddress>();
     address.setPostOfficeBox (pobox);
@@ -593,7 +598,7 @@ GContactEntry::setPostalAddrPobox (const QString pobox)
 }
 
 void
-GContactEntry::setPostalAddrNeighborhood (const QString neighborhood)
+GContactEntry::setPostalAddrNeighborhood(const QString neighborhood)
 {
     QContactAddress address = mQContact.detail <QContactAddress>();
     address.setLocality (neighborhood);
@@ -602,20 +607,20 @@ GContactEntry::setPostalAddrNeighborhood (const QString neighborhood)
 }
 
 void
-GContactEntry::setPostalAddrCity (const QString city)
+GContactEntry::setPostalAddrCity(const QString city)
 {
     //TODO: Custom field
 }
 
 void
-GContactEntry::setPostalAddrSubregion (const QString subregion)
+GContactEntry::setPostalAddrSubregion(const QString subregion)
 {
     //TODO: Custom field
     // Belongs to QContactAddress
 }
 
 void
-GContactEntry::setPostalAddrRegion (const QString region)
+GContactEntry::setPostalAddrRegion(const QString region)
 {
     QContactAddress address = mQContact.detail <QContactAddress>();
     address.setRegion (region);
@@ -624,7 +629,7 @@ GContactEntry::setPostalAddrRegion (const QString region)
 }
 
 void
-GContactEntry::setPostalAddrPostCode (const QString postCode)
+GContactEntry::setPostalAddrPostCode(const QString postCode)
 {
     QContactAddress address = mQContact.detail <QContactAddress>();
     address.setPostcode (postCode);
@@ -633,7 +638,7 @@ GContactEntry::setPostalAddrPostCode (const QString postCode)
 }
 
 void
-GContactEntry::setPostalAddrCountry (const QString country)
+GContactEntry::setPostalAddrCountry(const QString country)
 {
     QContactAddress address = mQContact.detail <QContactAddress>();
     address.setCountry (country);
@@ -642,7 +647,7 @@ GContactEntry::setPostalAddrCountry (const QString country)
 }
 
 void
-GContactEntry::setPostalAddrFormatted (const QString formattedAddr)
+GContactEntry::setPostalAddrFormatted(const QString formattedAddr)
 {
     //TODO: Custom field
 }
@@ -662,19 +667,19 @@ GContactEntry::setSyncTarget()
 }
 
 void
-GContactEntry::setBatchResponseStatusCode (const int code)
+GContactEntry::setBatchResponseStatusCode(const int code)
 {
     this->mResponseCode = code;
 }
 
 void
-GContactEntry::setBatchResponseReason (const QString reason)
+GContactEntry::setBatchResponseReason(const QString reason)
 {
     this->mReason = reason;
 }
 
 void
-GContactEntry::setBatchResponseReasonText (const QString reasonText)
+GContactEntry::setBatchResponseReasonText(const QString reasonText)
 {
     this->mReasonText = reasonText;
 }
@@ -685,37 +690,37 @@ GContactEntry::GContactEntry::setBatchResponseOpsType (const QString opsType)
 }
 
 QContact
-GContactEntry::qContact()
+GContactEntry::qContact() const
 {
     return mQContact;
 }
 
 void
-GContactEntry::setError (const bool errorFlag)
+GContactEntry::setError(const bool errorFlag)
 {
     mError = errorFlag;
 }
 
 bool
-GContactEntry::error ()
+GContactEntry::error() const
 {
     return mError;
 }
 
 void
-GContactEntry::setHasPhoto (const bool hasPhotoFlag)
+GContactEntry::setHasPhoto(const bool hasPhotoFlag)
 {
     mHasPhoto = hasPhotoFlag;
 }
 
 bool
-GContactEntry::hasPhoto ()
+GContactEntry::hasPhoto() const
 {
     return mHasPhoto;
 }
 
 void
-GContactEntry::setPhotoUrl (const QString photoUrl)
+GContactEntry::setPhotoUrl(const QString photoUrl)
 {
     mPhotoUrl = photoUrl;
 
@@ -726,7 +731,7 @@ GContactEntry::setPhotoUrl (const QString photoUrl)
 }
 
 QString
-GContactEntry::photoUrl ()
+GContactEntry::photoUrl() const
 {
     return mPhotoUrl;
 }

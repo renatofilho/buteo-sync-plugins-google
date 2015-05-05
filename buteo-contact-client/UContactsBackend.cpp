@@ -22,11 +22,11 @@
  *
  */
 #include "config.h"
-#include "GContactsBackend.h"
-#include "GContactClient.h"
-#include "GContactCustomDetail.h"
+#include "UContactsBackend.h"
+#include "UContactsCustomDetail.h"
 
 #include <LogMacros.h>
+
 #include <QContactTimestamp>
 #include <QContactIdFilter>
 #include <QContactIntersectionFilter>
@@ -40,14 +40,21 @@
 #include <QSet>
 #include <QHash>
 
-GContactsBackend::GContactsBackend(QObject* parent)
+#include <QDBusInterface>
+#include <QDBusReply>
+
+static const QString CPIM_SERVICE_NAME             ("com.canonical.pim");
+static const QString CPIM_ADDRESSBOOK_OBJECT_PATH  ("/com/canonical/pim/AddressBook");
+static const QString CPIM_ADDRESSBOOK_IFACE_NAME   ("com.canonical.pim.AddressBook");
+
+UContactsBackend::UContactsBackend(QObject* parent)
     : QObject (parent),
       iMgr(new QContactManager (QCONTACTS_BACKEND_NAME))
 {
     FUNCTION_CALL_TRACE;
 }
 
-GContactsBackend::~GContactsBackend()
+UContactsBackend::~UContactsBackend()
 {
     FUNCTION_CALL_TRACE;
 
@@ -56,9 +63,10 @@ GContactsBackend::~GContactsBackend()
 }
 
 bool
-GContactsBackend::init(const QString &syncTarget)
+UContactsBackend::init(const QString &syncTarget)
 {
     FUNCTION_CALL_TRACE;
+
     // create address book it it does not exists
     // check if the source already exists
     QContactDetailFilter filter;
@@ -100,7 +108,7 @@ GContactsBackend::init(const QString &syncTarget)
 }
 
 bool
-GContactsBackend::uninit()
+UContactsBackend::uninit()
 {
     FUNCTION_CALL_TRACE;
 
@@ -108,7 +116,7 @@ GContactsBackend::uninit()
 }
 
 QList<QContactId>
-GContactsBackend::getAllContactIds()
+UContactsBackend::getAllContactIds()
 {
     FUNCTION_CALL_TRACE;
     Q_ASSERT (iMgr);
@@ -116,7 +124,7 @@ GContactsBackend::getAllContactIds()
 }
 
 QHash<QString, QContactId>
-GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
+UContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
 
@@ -132,7 +140,7 @@ GContactsBackend::getAllNewContactIds(const QDateTime &aTimeStamp)
 }
 
 QHash<QString, QContactId>
-GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
+UContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
 {
 
     FUNCTION_CALL_TRACE;
@@ -149,17 +157,9 @@ GContactsBackend::getAllModifiedContactIds(const QDateTime &aTimeStamp)
 }
 
 QHash<QString, QContactId>
-GContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
+UContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
 {
     FUNCTION_CALL_TRACE;
-    // Getting the following error while retrieving deleted contacts
-    // So, it is not possible to sync deleted contacts
-
-    // "Warning: libqtcontacts-tracker: querybuilder.cpp:2127:
-    // QContactFilter::ChangeLogFilter: Unsupported event type:
-    // QContactChangeLogFilter::EventRemoved"
-
-
     LOG_DEBUG("Retrieve Deleted Contacts Since " << aTimeStamp);
 
     QHash<QString, QContactId> idList;
@@ -172,13 +172,12 @@ GContactsBackend::getAllDeletedContactIds(const QDateTime &aTimeStamp)
 }
 
 bool
-GContactsBackend::addContacts(QList<QContact>& aContactList,
-                              QMap<int, GContactsStatus>& aStatusMap)
+UContactsBackend::addContacts(QList<QContact>& aContactList,
+                              QMap<int, UContactsStatus>& aStatusMap)
 {
     FUNCTION_CALL_TRACE;
     Q_ASSERT( iMgr );
 
-    GContactsStatus status;
     QMap<int, QContactManager::Error> errorMap;
 
     // Check if contact already exists if it exists set the contact id
@@ -202,26 +201,22 @@ GContactsBackend::addContacts(QList<QContact>& aContactList,
     // TODO QContactManager populates indices from the qContactList, but we populate keys, is this OK?
     for (int i = 0; i < aContactList.size(); i++)
     {
-        QContactId contactId = aContactList.at(i).id();
-        if (!errorMap.contains(i))
-        {
+        UContactsStatus status;
+        status.id = i;
+        if (!errorMap.contains(i)) {
             status.errorCode = QContactManager::NoError;
-            aStatusMap.insert(i, status);
+        } else {
+            qDebug() << "Contact with id " <<  aContactList.at(i).id() << " and index " << i <<" is in error";
+            status.errorCode = errorMap.value(i);
         }
-        else
-        {
-            qDebug() << "Contact with id " << contactId << " and index " << i <<" is in error";
-            QContactManager::Error errorCode = errorMap.value(i);
-            status.errorCode = errorCode;
-            aStatusMap.insert(i, status);
-        }
+        aStatusMap.insert(i, status);
     }
 
     return retVal;
 }
 
 QContactManager::Error
-GContactsBackend::modifyContact(const QString &aID,
+UContactsBackend::modifyContact(const QString &aID,
                                 QContact &aContact)
 {
     FUNCTION_CALL_TRACE;
@@ -249,17 +244,17 @@ GContactsBackend::modifyContact(const QString &aID,
     return modificationStatus;
 }
 
-QMap<int,GContactsStatus>
-GContactsBackend::modifyContacts( QList<QContact> &aContactList,
+QMap<int,UContactsStatus>
+UContactsBackend::modifyContacts( QList<QContact> &aContactList,
                                   const QStringList &aContactIdList)
 {
     FUNCTION_CALL_TRACE;
 
     Q_ASSERT (iMgr);
-    GContactsStatus status;
+    UContactsStatus status;
 
     QMap<int,QContactManager::Error> errors;
-    QMap<int,GContactsStatus> statusMap;
+    QMap<int,UContactsStatus> statusMap;
 
     for (int i = 0; i < aContactList.size(); i++) {
         LOG_DEBUG("Replacing item's ID " << aContactList.at(i));
@@ -296,8 +291,8 @@ GContactsBackend::modifyContacts( QList<QContact> &aContactList,
     return statusMap;
 }
 
-QMap<int, GContactsStatus>
-GContactsBackend::deleteContacts(const QStringList &aContactIDList)
+QMap<int, UContactsStatus>
+UContactsBackend::deleteContacts(const QStringList &aContactIDList)
 {
     FUNCTION_CALL_TRACE;
 
@@ -309,14 +304,14 @@ GContactsBackend::deleteContacts(const QStringList &aContactIDList)
     return deleteContacts(qContactIdList);
 }
 
-QMap<int, GContactsStatus>
-GContactsBackend::deleteContacts(const QList<QContactId> &aContactIDList) {
+QMap<int, UContactsStatus>
+UContactsBackend::deleteContacts(const QList<QContactId> &aContactIDList) {
     FUNCTION_CALL_TRACE;
 
     Q_ASSERT (iMgr);
-    GContactsStatus status;
+    UContactsStatus status;
     QMap<int, QContactManager::Error> errors;
-    QMap<int, GContactsStatus> statusMap;
+    QMap<int, UContactsStatus> statusMap;
 
     qDebug() << "WILL REMOVE CONTACTS:" << aContactIDList;
     if(true) { //iMgr->removeContacts(aContactIDList , &errors)) {
@@ -351,7 +346,7 @@ GContactsBackend::deleteContacts(const QList<QContactId> &aContactIDList) {
 
 
 void
-GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
+UContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventType aEventType,
                                          const QDateTime& aTimeStamp,
                                          QHash<QString, QContactId>& aIdList)
 {
@@ -402,7 +397,7 @@ GContactsBackend::getSpecifiedContactIds(const QContactChangeLogFilter::EventTyp
 }
 
 QDateTime
-GContactsBackend::lastModificationTime(const QContactId &aContactId)
+UContactsBackend::lastModificationTime(const QContactId &aContactId)
 {
     FUNCTION_CALL_TRACE;
 
@@ -422,7 +417,7 @@ GContactsBackend::lastModificationTime(const QContactId &aContactId)
     \fn GContactsBackend::getContact(QContactId aContactId)
  */
 void
-GContactsBackend::getContact(const QContactId& aContactId,
+UContactsBackend::getContact(const QContactId& aContactId,
                              QContact& aContact)
 {
     FUNCTION_CALL_TRACE;
@@ -449,7 +444,7 @@ GContactsBackend::getContact(const QContactId& aContactId,
     \fn GContactsBackend::getContacts(QContactId aContactId)
  */
 void
-GContactsBackend::getContacts(const QList<QContactId>& aContactIds,
+UContactsBackend::getContacts(const QList<QContactId>& aContactIds,
                               QList<QContact>& aContacts)
 {
     FUNCTION_CALL_TRACE;
@@ -463,7 +458,8 @@ GContactsBackend::getContacts(const QList<QContactId>& aContactIds,
     LOG_DEBUG("Contacts retreived from Contact manager  = " << aContacts.count());
 }
 
-QContact GContactsBackend::getContact(const QString& remoteId)
+QContact
+UContactsBackend::getContact(const QString& remoteId)
 {
     FUNCTION_CALL_TRACE;
     Q_ASSERT (iMgr);
@@ -479,7 +475,7 @@ QContact GContactsBackend::getContact(const QString& remoteId)
 }
 
 QDateTime
-GContactsBackend::getCreationTime( const QContact& aContact )
+UContactsBackend::getCreationTime( const QContact& aContact )
 {
     FUNCTION_CALL_TRACE;
 
@@ -489,7 +485,7 @@ GContactsBackend::getCreationTime( const QContact& aContact )
 }
 
 QList<QDateTime>
-GContactsBackend::getCreationTimes( const QList<QContactId>& aContactIds )
+UContactsBackend::getCreationTimes( const QList<QContactId>& aContactIds )
 {
     FUNCTION_CALL_TRACE;
 
@@ -560,7 +556,7 @@ GContactsBackend::getCreationTimes( const QList<QContactId>& aContactIds )
 }
 
 QContactId
-GContactsBackend::entryExists(const QString entryGuid)
+UContactsBackend::entryExists(const QString entryGuid)
 {
     QContactFilter ridFilter = getRemoteIdFilter(entryGuid);
     QList<QContactId> idList = iMgr->contactIds(ridFilter & getSyncTargetFilter());
@@ -570,13 +566,14 @@ GContactsBackend::entryExists(const QString entryGuid)
         return QContactId();
 }
 
-QString GContactsBackend::syncTargetId() const
+QString
+UContactsBackend::syncTargetId() const
 {
     return mSyncTargetId;
 }
 
-const
-QStringList GContactsBackend::localIds(const QStringList guidList)
+const QStringList
+UContactsBackend::localIds(const QStringList guidList)
 {
     QStringList localIdList;
     foreach (QString guid , guidList) {
@@ -588,7 +585,7 @@ QStringList GContactsBackend::localIds(const QStringList guidList)
 }
 
 const QList<QPair<QContactId, QString> >
-GContactsBackend::guids(const QList<QContactId> localIdList)
+UContactsBackend::guids(const QList<QContactId> localIdList)
 {
     QContactFetchHint hint;
     QList<QContactDetail::DetailType> detailTypes;
@@ -604,14 +601,15 @@ GContactsBackend::guids(const QList<QContactId> localIdList)
     return idPair;
 }
 
-QContactFilter GContactsBackend::getRemoteIdFilter(const QString &remoteId) const
+QContactFilter
+UContactsBackend::getRemoteIdFilter(const QString &remoteId) const
 {
     QContactIntersectionFilter remoteFilter;
 
     QContactDetailFilter xDetailNameFilter;
     xDetailNameFilter.setDetailType(QContactExtendedDetail::Type,
                                     QContactExtendedDetail::FieldName);
-    xDetailNameFilter.setValue(GContactCustomDetail::FieldGRemoteId);
+    xDetailNameFilter.setValue(UContactsCustomDetail::FieldRemoteId);
 
     QContactDetailFilter xDetailValueFilter;
     xDetailValueFilter.setDetailType(QContactExtendedDetail::Type,
@@ -620,18 +618,31 @@ QContactFilter GContactsBackend::getRemoteIdFilter(const QString &remoteId) cons
 
     remoteFilter << xDetailNameFilter
                  << xDetailValueFilter;
-    qDebug() << "REMOTE FILTER" << remoteFilter;
-
     return remoteFilter;
 }
 
-QString GContactsBackend::getRemoteId(const QContact &contact)
+QString
+UContactsBackend::getRemoteId(const QContact &contact)
 {
-     return GContactCustomDetail::getCustomField(contact, GContactCustomDetail::FieldGRemoteId).data().toString();
+    return UContactsCustomDetail::getCustomField(contact, UContactsCustomDetail::FieldRemoteId).data().toString();
+}
+
+void
+UContactsBackend::purgecontacts()
+{
+    QDBusInterface iface(CPIM_SERVICE_NAME,
+                         CPIM_ADDRESSBOOK_OBJECT_PATH,
+                         CPIM_ADDRESSBOOK_IFACE_NAME);
+    QDBusReply<void> reply = iface.call("purgeContacts", QString(""));
+    if (reply.error().isValid()) {
+        LOG_WARNING("Fail to purge contacts" << reply.error());
+    } else {
+        LOG_DEBUG("Purged backend contacts");
+    }
 }
 
 QContactFilter
-GContactsBackend::getSyncTargetFilter() const
+UContactsBackend::getSyncTargetFilter() const
 {
     // user enterred contacts, i.e. all other contacts that are not sourcing
     // from restricted backends or instant messaging service
@@ -639,7 +650,7 @@ GContactsBackend::getSyncTargetFilter() const
 
     if (detailFilterDefaultSyncTarget.value().isNull()) {
         detailFilterDefaultSyncTarget.setDetailType(QContactSyncTarget::Type,
-                                                    QContactSyncTarget::FieldSyncTarget);
+                                                    QContactSyncTarget::FieldSyncTarget + 1);
         detailFilterDefaultSyncTarget.setValue(mSyncTargetId);
     }
 

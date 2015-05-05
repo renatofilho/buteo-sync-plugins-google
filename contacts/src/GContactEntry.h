@@ -37,161 +37,161 @@ public:
 
     explicit GContactEntry (const QString &syncTargetId);
 
-    void setUpdated (QDateTime updated);
+    void setUpdated(QDateTime updated);
 
-    void setRemoteId (const QString id);
+    void setRemoteId(const QString id);
 
-    QString remoteId ();
+    QString remoteId() const;
 
     void setLocalId(const QString localId);
 
-    QString localId();
+    QString localId() const;
 
-    void setEtag (const QString etag);
+    void setEtag(const QString etag);
 
-    void setFullName (const QString fullName);
+    void setFullName(const QString fullName);
 
-    void setAdditionalName (const QString additionalName);
+    void setAdditionalName(const QString additionalName);
 
-    void setFamilyName (const QString familyName);
+    void setFamilyName(const QString familyName);
 
-    void setNamePrefix (const QString namePrefix);
+    void setNamePrefix(const QString namePrefix);
 
-    void setNameSuffix (const QString nameSuffix);
+    void setNameSuffix(const QString nameSuffix);
 
-    void setGivenName (const QString givenName);
+    void setGivenName(const QString givenName);
 
-    void setEmail (const QString address, const QString rel, const QString primary);
+    void setEmail(const QString address, const QString rel, const QString primary);
 
-    void setBillingInformation (const QString billingInfo);
+    void setBillingInformation(const QString billingInfo);
 
-    void setBirthday (const QString birthday);
+    void setBirthday(const QString birthday);
 
-    void setCalendarLink (const QString href, const QString rel, const QString primary);
+    void setCalendarLink(const QString href, const QString rel, const QString primary);
 
-    void setDirectoryServer (const QString dirServer);
+    void setDirectoryServer(const QString dirServer);
 
-    void setEvent (const QString event, const QString when);
+    void setEvent(const QString event, const QString when);
 
-    void setExternalId (const QString externalId, const QString rel);
+    void setExternalId(const QString externalId, const QString rel);
 
-    void setGender (const QString gender);
+    void setGender(const QString gender);
 
-    void setGroupMembershipInfo (const QString membershipInfo, const QString deleted);
+    void setGroupMembershipInfo(const QString membershipInfo, const QString deleted);
 
-    void setHobby (const QString hobby);
+    void setHobby(const QString hobby);
 
-    void setInitials (const QString initials);
+    void setInitials(const QString initials);
 
-    void setJot (const QString jot, const QString jotType);
+    void setJot(const QString jot, const QString jotType);
 
-    void setLanguage (const QString language);
+    void setLanguage(const QString language);
 
-    void setMaidenName (const QString maidenName);
+    void setMaidenName(const QString maidenName);
 
-    void setMileage (const QString mileage);
+    void setMileage(const QString mileage);
 
-    void setNickname (const QString nickname);
+    void setNickname(const QString nickname);
 
-    void setOccupation (const QString occupation);
+    void setOccupation(const QString occupation);
 
-    void setPriority (const QString priority);
+    void setPriority(const QString priority);
 
-    void setRelation (const QString relativeName, const QString relation);
+    void setRelation(const QString relativeName, const QString relation);
 
-    void setSensitivity (const QString sensitivity);
+    void setSensitivity(const QString sensitivity);
 
-    void setShortname (const QString shortname);
+    void setShortname(const QString shortname);
 
-    void setSubject (const QString subject);
+    void setSubject(const QString subject);
 
-    void setSystemGroup (const QString systemGroup);
+    void setSystemGroup(const QString systemGroup);
 
-    void setUserDefinedField (const QString key, const QString value);
+    void setUserDefinedField(const QString key, const QString value);
 
-    void setWebsite (const QString website, const QString rel, const QString primary="false");
+    void setWebsite(const QString website, const QString rel, const QString primary="false");
 
     // gd:xxx schema handler methods
-    void setComments (const QString comments);
+    void setComments(const QString comments);
 
-    void setCountry (const QString country);
+    void setCountry(const QString country);
 
-    void setDeleted (const bool deleted);
+    void setDeleted(const bool deleted);
 
-    bool deleted ();
+    bool deleted() const;
 
-    void setExtendedProperty (const QString name, const QString extProperty);
+    void setExtendedProperty(const QString name, const QString extProperty);
 
-    void setFeedLink (const QString feedLink);
+    void setFeedLink(const QString feedLink);
 
-    void setIm (const QString address, const QString rel, const QString protocol, QString primary);
+    void setIm(const QString address, const QString rel, const QString protocol, QString primary);
 
-    void setMoney (const QString amount, const QString currencyCode);
+    void setMoney(const QString amount, const QString currencyCode);
 
-    void setOrgDepartment (const QString orgDept);
+    void setOrgDepartment(const QString orgDept);
 
-    void setOrgJobDescription (const QString orgJobDesc);
+    void setOrgJobDescription(const QString orgJobDesc);
 
-    void setOrgName (const QString orgName);
+    void setOrgName(const QString orgName);
 
-    void setOrgSymbol (const QString orgSymbol);
+    void setOrgSymbol(const QString orgSymbol);
 
-    void setOrgTitle (const QString orgTitle);
+    void setOrgTitle(const QString orgTitle);
 
-    void setOriginalEvent (const QString origEvent);
+    void setOriginalEvent(const QString origEvent);
 
-    void setPhoneNumber (const QString phoneNumber, const QString rel, const QString uri, const bool primary);
+    void setPhoneNumber(const QString phoneNumber, const QString rel, const QString uri, const bool primary);
 
-    void setRating (const QString max, const QString min, const QString average,
-                    const QString numRaters, const QString rel, const QString value);
+    void setRating(const QString max, const QString min, const QString average,
+                   const QString numRaters, const QString rel, const QString value);
 
-    void setPostalAddrAgent (const QString agent);
+    void setPostalAddrAgent(const QString agent);
 
-    void setPostalAddrHousename (const QString housename);
+    void setPostalAddrHousename(const QString housename);
 
-    void setPostalAddrStreet (const QString street);
+    void setPostalAddrStreet(const QString street);
 
-    void setPostalAddrPobox (const QString pobox);
+    void setPostalAddrPobox(const QString pobox);
 
-    void setPostalAddrNeighborhood (const QString neighborhood);
+    void setPostalAddrNeighborhood(const QString neighborhood);
 
-    void setPostalAddrCity (const QString city);
+    void setPostalAddrCity(const QString city);
 
-    void setPostalAddrSubregion (const QString subregion);
+    void setPostalAddrSubregion(const QString subregion);
 
-    void setPostalAddrRegion (const QString region);
+    void setPostalAddrRegion(const QString region);
 
-    void setPostalAddrPostCode (const QString postCode);
+    void setPostalAddrPostCode(const QString postCode);
 
-    void setPostalAddrCountry (const QString country);
+    void setPostalAddrCountry(const QString country);
 
-    void setPostalAddrFormatted (const QString formattedAddr);
+    void setPostalAddrFormatted(const QString formattedAddr);
 
     void setPostalAddrAttrs(const QString rel, const QString mailClass, const QString usage, const QString primary);
 
     void setSyncTarget();
 
-    void setBatchResponseStatusCode (const int code);
+    void setBatchResponseStatusCode(const int code);
 
-    void setBatchResponseReason (const QString reason);
+    void setBatchResponseReason(const QString reason);
 
-    void setBatchResponseReasonText (const QString reasonText);
+    void setBatchResponseReasonText(const QString reasonText);
 
-    void setBatchResponseOpsType (const QString opsType);
+    void setBatchResponseOpsType(const QString opsType);
 
-    QContact qContact ();
+    QContact qContact() const;
 
-    void setError (const bool errorFlag);
+    void setError(const bool errorFlag);
 
-    bool error ();
+    bool error() const;
 
-    void setHasPhoto (const bool hasPhotoFlag);
+    void setHasPhoto(const bool hasPhotoFlag);
 
-    bool hasPhoto ();
+    bool hasPhoto() const;
 
     void setPhotoUrl (const QString photoUrl);
 
-    QString photoUrl ();
+    QString photoUrl() const;
 
 private:
     GContactEntry();

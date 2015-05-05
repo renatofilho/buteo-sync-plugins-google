@@ -24,7 +24,9 @@
 
 #include "config.h"
 #include "GWriteStream.h"
-#include "GContactCustomDetail.h"
+
+#include <UContactsCustomDetail.h>
+#include <UContactInfo.h>
 
 #include <QXmlStreamWriter>
 
@@ -69,19 +71,8 @@ GWriteStream::~GWriteStream ()
 {
 }
 
-void
-GWriteStream::encodeContacts (const QList<QContactId> idList, GConfig::TRANSACTION_TYPE type)
-{
-    QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap;
-    foreach (QContactId localId, idList) {
-        qContactMap.insert (localId, type);
-    }
-
-    encodeContact (qContactMap);
-}
-
 QByteArray
-GWriteStream::encodeContact (QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap)
+GWriteStream::encodeContacts(const QHash<UContactInfo, GConfig::TRANSACTION_TYPE> &qContactMap)
 {
     if (qContactMap.size () <= 0)
         return mXmlBuffer;
@@ -91,23 +82,13 @@ GWriteStream::encodeContact (QHash<QContactId, GConfig::TRANSACTION_TYPE> qConta
     bool batch = true;
     startBatchFeed ();
 
-    QHash<QContactId, GConfig::TRANSACTION_TYPE>::iterator contactPair;
+    QHash<UContactInfo, GConfig::TRANSACTION_TYPE>::const_iterator contactPair;
     for (contactPair = qContactMap.begin (); contactPair != qContactMap.end (); ++contactPair)
     {
-        QContact contact;
-        mContactsBackend.getContact (contactPair.key (), contact);
-        if (!contact.isEmpty ()) {
-            GConfig::TRANSACTION_TYPE ttype = contactPair.value ();
-            if (ttype == GConfig::ADD_OR_UPDATE) {
-                // If the contactact contains the remote id
-                // it means that the contact exists on remote server
-                if (GContactsBackend::getRemoteId(contact).isEmpty()) {
-                    ttype = GConfig::ADD;
-                } else {
-                    ttype = GConfig::UPDATE;
-                }
-            }
-            encodeContact (contact, ttype, batch);
+        UContactInfo uContact = contactPair.key();
+        if (!uContact.contact().isEmpty()) {
+            GConfig::TRANSACTION_TYPE ttype = contactPair.value();
+            encodeContact(uContact, ttype, batch);
         }
     }
 
@@ -126,13 +107,15 @@ GWriteStream::encodedStream ()
 }
 
 QByteArray
-GWriteStream::encodeContact(const QContact qContact,
+GWriteStream::encodeContact(const UContactInfo &uContact,
                             const GConfig::TRANSACTION_TYPE updateType,
                             const bool batch)
 {
-    QList<QContactDetail> allDetails = qContact.details ();
+    QContact qContact = uContact.contact();
+    QList<QContactDetail> allDetails = qContact.details();
     // check if group exists otherwise add it
-    QContactExtendedDetail group = GContactCustomDetail::getCustomField(qContact, GContactCustomDetail::FieldGGroupMembershipInfo);
+    QContactExtendedDetail group = UContactsCustomDetail::getCustomField(qContact,
+                                                                         UContactsCustomDetail::FieldGroupMembershipInfo);
     if (group.data().isNull()) {
         group.setData("6"); // this is default id for "My Contacts"
         allDetails << group;
@@ -152,13 +135,13 @@ GWriteStream::encodeContact(const QContact qContact,
     }
 
     if (updateType == GConfig::UPDATE) {
-        encodeId (qContact);
+        encodeId(uContact);
         encodeUpdated (qContact);
     }
 
     if (updateType == GConfig::DELETE) {
-        encodeId (qContact);
-        mXmlWriter.writeEndElement ();
+        encodeId(uContact);
+        mXmlWriter.writeEndElement();
         return mXmlBuffer;
     }
 
@@ -187,7 +170,7 @@ GWriteStream::encodeContact(const QContact qContact,
         else if (detail.type () == QContactOrganization::Type)
             encodeOrganization (detail);
         else if (detail.type () == QContactAvatar::Type)
-            encodeAvatar (detail, qContact);
+            encodeAvatar (detail, uContact);
         else if (detail.type () == QContactAnniversary::Type)
             encodeAnniversary (detail);
         else if (detail.type () == QContactNickname::Type)
@@ -246,9 +229,9 @@ GWriteStream::encodeBatchTag (const GConfig::TRANSACTION_TYPE type, const QStrin
 }
 
 void
-GWriteStream::encodeId (const QContact qContact)
+GWriteStream::encodeId(const UContactInfo &uContact)
 {
-    QString remoteId = GContactsBackend::getRemoteId(qContact);
+    QString remoteId = uContact.remoteId();
 
     if (!remoteId.isNull ()) {
         QString uname = "default";
@@ -513,9 +496,9 @@ GWriteStream::encodeOrganization (const QContactDetail& detail)
  * Encode avatar URIs into the Google contact XML Document
  */
 void
-GWriteStream::encodeAvatar (const QContactDetail &detail, const QContact qContact)
+GWriteStream::encodeAvatar (const QContactDetail &detail, const UContactInfo &uContact)
 {
-    mContactsWithAvatars << qContact.id ();
+    mContactsWithAvatars << uContact.contact().id ();
 
     QContactAvatar contactAvatar = static_cast<QContactAvatar>(detail);
     QUrl imageUrl(contactAvatar.imageUrl());
@@ -528,8 +511,7 @@ GWriteStream::encodeAvatar (const QContactDetail &detail, const QContact qContac
          imageUrl.isValid () &&
          !imageUrl.isEmpty ())
     {
-        QString remoteId = GContactsBackend::getRemoteId(qContact);
-        imageUrl.setFragment(remoteId);
+        imageUrl.setFragment(uContact.remoteId());
     }
 }
 
@@ -652,7 +634,7 @@ void GWriteStream::encodeExtendedDetail(const QContactDetail &detail)
 {
     QString fieldName = detail.value(QContactExtendedDetail::FieldName).toString();
     QString fieldData = detail.value(QContactExtendedDetail::FieldData).toString();
-    if (fieldName == GContactCustomDetail::FieldGGroupMembershipInfo) {
+    if (fieldName == UContactsCustomDetail::FieldGroupMembershipInfo) {
         encodeGroupMembership(fieldData);
     } else {
         LOG_WARNING("extended detail not supported:" << fieldName);

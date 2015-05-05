@@ -21,10 +21,11 @@
  *
  */
 
-#ifndef GAUTH_H
-#define GAUTH_H
+#ifndef UAUTH_H
+#define UAUTH_H
 
 #include <QObject>
+#include <QScopedPointer>
 
 #include <SignOn/AuthService>
 #include <SignOn/Identity>
@@ -32,44 +33,37 @@
 #include <Accounts/Account>
 #include <Accounts/Manager>
 
-#include "buteosyncfw_p.h"
+class UAuthPrivate;
 
-class GAuth : public QObject
+class UAuth : public QObject
 {
     Q_OBJECT
+    Q_DECLARE_PRIVATE(UAuth)
 public:
-    explicit GAuth(const quint32 accountId, const QString scope, QObject *parent = 0);
-    void authenticate();
-    const QString token();
-    bool init();
-    QString accountDisplayName() const;
+    explicit UAuth(QObject *parent = 0);
+    ~UAuth();
+
+    virtual void authenticate();
+    virtual bool init(const quint32 accountId, const QString serviceName);
+
+    inline QString accountDisplayName() const { return mDisplayName; }
+    inline QString token() const { return mToken; }
 
 signals:
     void success();
     void failed();
 
-public slots:
+protected:
+    QString mToken;
+    QString mDisplayName;
+
+private:
+    QScopedPointer<UAuthPrivate> d_ptr;
+
+private slots:
     void credentialsStored(const quint32);
     void error(const SignOn::Error &);
     void sessionResponse(const SignOn::SessionData &);
-
-private:
-    quint32 mAccountId;
-    QPointer<Accounts::Manager> mAccountManager;
-    QPointer<SignOn::Identity> mIdentity;
-    QPointer<SignOn::AuthSession> mSession;
-    QPointer<Accounts::Account> mAccount;
-    QString mToken;
-    QString mScope;
-    QString iDeviceCode;
-    QString iUserCode;
-    QString iVerificationURL;
-    QString iToken;
-
-    void getToken();
-    void processTokenResponse(const QByteArray tokenJSON);
-    void deviceAuth();
-    void processDeviceCode(const QByteArray deviceCodeJSON);
 };
 
 #endif // GAUTH_H

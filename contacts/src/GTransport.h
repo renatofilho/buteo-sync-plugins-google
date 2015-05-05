@@ -79,6 +79,7 @@ public:
     void setMaxResults (unsigned int limit);
 
     void setShowDeleted ();
+    bool showDeleted() const;
 
     void setStartIndex (const int index);
 

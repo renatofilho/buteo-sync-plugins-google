@@ -26,6 +26,8 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
                IMMEDIATE @ONLY)
 
 enable_testing()
+
+add_subdirectory(buteo-contact-client)
 add_subdirectory(contacts)
 add_subdirectory(accounts)
 

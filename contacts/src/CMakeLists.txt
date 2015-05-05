@@ -2,14 +2,15 @@ set(GOOGLE_CONTACTS_CLIENT googlecontacts-client)
 
 include_directories(
     ${CMAKE_BINARY_DIR}
+    ${buteo-contact-client_SOURCE_DIR}
     ${ACCOUNTS_INCLUDE_DIRS}
     ${BUTEOSYNCFW_INCLUDE_DIRS}
     ${LIBSIGNON_INCLUDE_DIRS}
 )
 
 # Buteo oop plugin
-add_definitions(-DCLASSNAME=GContactClient)
-add_definitions(-DCLASSNAME_H=\"GContactClient.h\")
+add_definitions(-DCLASSNAME=GContactsClient)
+add_definitions(-DCLASSNAME_H=\"GContactsClient.h\")
 add_definitions(-DCLIENT_PLUGIN)
 set(GOOGLE_CONTACT_BUTEO_SRCS
     ${BUTEOSYNCFW_INCLUDEDIR}/ButeoPluginIfaceAdaptor.h
@@ -27,20 +28,17 @@ set(GOOGLE_CONTACTS_CLIENT_SRCS
     buteosyncfw_p.h
     GAtom.cpp
     GAtom.h
-    GAuth.cpp
-    GAuth.h
     GConfig.h
-    GContactClient.cpp
-    GContactClient.h
-    GContactCustomDetail.cpp
-    GContactCustomDetail.h
+    GConfig.cpp
+    GContactsClient.h
+    GContactsClient.cpp
     GContactDetail.h
     GContactEntry.cpp
     GContactEntry.h
-    GContactsBackend.cpp
-    GContactsBackend.h
     GParseStream.cpp
     GParseStream.h
+    GRemoteSource.h
+    GRemoteSource.cpp
     GTransport.cpp
     GTransport.h
     GWriteStream.cpp
@@ -57,6 +55,7 @@ target_link_libraries(${GOOGLE_CONTACTS_CLIENT}
     ${ACCOUNTS_LIBRARIES}
     ${BUTEOSYNCFW_LIBRARIES}
     ${LIBSIGNON_LIBRARIES}
+    ubuntu-contact-client
 )
 
 qt5_use_modules(${GOOGLE_CONTACTS_CLIENT} Core DBus Network Contacts)

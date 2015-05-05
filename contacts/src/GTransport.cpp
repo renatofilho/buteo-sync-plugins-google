@@ -354,6 +354,12 @@ GTransport::setShowDeleted ()
     }
 }
 
+bool GTransport::showDeleted() const
+{
+    QUrlQuery urlQuery(iUrl);
+    return urlQuery.hasQueryItem(SHOW_DELETED_TAG);
+}
+
 void
 GTransport::setStartIndex (const int index)
 {

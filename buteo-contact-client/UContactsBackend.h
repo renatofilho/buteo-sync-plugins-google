@@ -20,8 +20,8 @@
  * 02110-1301 USA
  *
  */
-#ifndef CONTACTSBACKEND_H_
-#define CONTACTSBACKEND_H_
+#ifndef UCONTACTSBACKEND_H_
+#define UCONTACTSBACKEND_H_
 
 #include <QContact>
 #include <QContactId>
@@ -34,7 +34,7 @@
 
 QTCONTACTS_USE_NAMESPACE
 
-struct GContactsStatus
+struct UContactsStatus
 {
     int id;
     QContactManager::Error errorCode;
@@ -44,17 +44,16 @@ struct GContactsStatus
 ///
 /// This class interfaces with the backend implementation of contact manager on harmattan
 /// device
-class GContactsBackend : public QObject
+class UContactsBackend : public QObject
 {
 
 public:
-
-    explicit GContactsBackend(QObject* parent = 0);
+    explicit UContactsBackend(QObject* parent = 0);
 
     /*!
      * \brief Destructor
      */
-    ~GContactsBackend();
+    ~UContactsBackend();
 
     /*!
      * \brief Searches for available storage plugins and sets the manager to that plugin
@@ -135,7 +134,7 @@ public:
      * @return Errors
      */
     bool addContacts( QList<QContact>& aContactList,
-                      QMap<int, GContactsStatus> &aStatusMap );
+                      QMap<int, UContactsStatus> &aStatusMap );
 
     // Functions for modifying contacts
 
@@ -153,7 +152,7 @@ public:
      * @param aContactsIdList Contact IDs
      * @return Errors
      */
-    QMap<int, GContactsStatus> modifyContacts(QList<QContact> &aContactList,
+    QMap<int, UContactsStatus> modifyContacts(QList<QContact> &aContactList,
                                              const QStringList &aContactsIdList);
 
     /*!
@@ -161,14 +160,14 @@ public:
      * @param aContactIDList Contact IDs
      * @return Errors
      */
-    QMap<int, GContactsStatus> deleteContacts(const QStringList &aContactIDList);
+    QMap<int, UContactsStatus> deleteContacts(const QStringList &aContactIDList);
 
     /*!
      * \brief Batch deletion of contacts
      * @param aContactIDList Contact IDs
      * @return Errors
      */
-    QMap<int, GContactsStatus> deleteContacts(const QList<QContactId> &aContactIDList);
+    QMap<int, UContactsStatus> deleteContacts(const QList<QContactId> &aContactIDList);
 
     /*!
      * \brief Tells if batch updates are enabled
@@ -206,6 +205,8 @@ public:
     const QList<QPair<QContactId, QString> > guids (const QList<QContactId> localIdList);
 
     static QString getRemoteId(const QContact &contact);
+
+    void purgecontacts();
 
 private: // functions
 

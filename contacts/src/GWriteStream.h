@@ -1,11 +1,12 @@
 #ifndef GWRITESTREAM_H
 #define GWRITESTREAM_H
 
+#include "GConfig.h"
+
+#include <UContactInfo.h>
+
 #include <QContact>
 #include <QXmlStreamWriter>
-
-#include "GContactsBackend.h"
-#include "GConfig.h"
 
 QTCONTACTS_USE_NAMESPACE
 
@@ -16,22 +17,23 @@ public:
     GWriteStream(const QString &accountDisplayName);
     ~GWriteStream();
 
+    QByteArray encodeContacts(const QHash<UContactInfo, GConfig::TRANSACTION_TYPE> &qContactMap);
+
     void encodeContacts(const QList<QContactId> idList,
                         GConfig::TRANSACTION_TYPE type);
+
     QByteArray encodeContact(QHash<QContactId, GConfig::TRANSACTION_TYPE> qContactMap);
     QByteArray encodedStream();
     QList<QContactId>& contactsWithAvatars();
 
 private:
-
-    QByteArray encodeContact (const QContact qContact,
+    QByteArray encodeContact (const UContactInfo &uContact,
                               const GConfig::TRANSACTION_TYPE updateType,
                               const bool batch);
-
     void startBatchFeed ();
     void endBatchFeed ();
     void encodeBatchTag (const GConfig::TRANSACTION_TYPE type, const QString batchId);
-    void encodeId (const QContact qContact);
+    void encodeId (const UContactInfo &qContact);
     void encodeUpdated (const QContact qContact);
     void encodeEtag (const QContact qContact);
     void encodeCategory ();
@@ -46,7 +48,7 @@ private:
     void encodeHobby (const QContactDetail& detail);
     void encodeGeoLocation (const QContactDetail& detail);
     void encodeOrganization (const QContactDetail& detail);
-    void encodeAvatar (const QContactDetail &detail, const QContact qContact);
+    void encodeAvatar (const QContactDetail &detail, const UContactInfo &uContact);
     void encodeGender (const QContactDetail &detail);
     void encodeNickname (const QContactDetail &detail);
     void encodeAnniversary (const QContactDetail &detail);
@@ -59,7 +61,6 @@ private:
     QString          mAccountDisplayName;
     QByteArray       mXmlBuffer;
     QXmlStreamWriter mXmlWriter;
-    GContactsBackend mContactsBackend;
     QList<QContactId>   mContactsWithAvatars;
 };
 
