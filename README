@@ -1,0 +1,14 @@
+This project is no longer under active development
+===================================================
+
+For Buteo sync plugins for Google accounts please refer to https://github.com/nemomobile/buteo-sync-plugins-social
+
+buteo-sync-plugins-google
+=================================
+
+This package provides a "client" synchronization plugin to the Buteo
+sync framework.  It connects to Google using a valid account
+(accounts&sso framework) and synchronizes contact data from the Google
+Contacts service to the device.
+
+Note: this plugin performs one-way sync only.
